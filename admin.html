@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Precifica 3D — Painel Admin</title>
+<title>PrecoExato 3D — Painel Admin</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root {
@@ -353,21 +353,27 @@
           <input class="search-input" id="user-search" placeholder="Buscar por nome ou e-mail..." oninput="filterUsers()">
           <select class="filter-select" id="user-plan-filter" onchange="filterUsers()">
             <option value="">Todos os planos</option>
-            <option value="free">Free</option>
+            <option value="free">Free / Hobby</option>
             <option value="maker">Maker</option>
             <option value="pro">Pro</option>
             <option value="annual_maker">Anual</option>
+          </select>
+          <select class="filter-select" id="user-role-filter" onchange="filterUsers()">
+            <option value="">Todos os roles</option>
+            <option value="user">Usuário</option>
+            <option value="admin">Administrador</option>
           </select>
           <select class="filter-select" id="user-status-filter" onchange="filterUsers()">
             <option value="">Todos</option>
             <option value="active">Ativos</option>
             <option value="blocked">Bloqueados</option>
           </select>
+          <button class="btn btn-primary" onclick="openAddUserModal()">+ Adicionar usuário</button>
         </div>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>Usuário</th><th>Plano</th><th>Status</th><th>Cadastro</th><th>Ações</th></tr></thead>
-            <tbody id="users-table"><tr><td colspan="5" class="loading"><span class="spinner"></span></td></tr></tbody>
+            <thead><tr><th>Usuário</th><th>Plano</th><th>Role</th><th>Módulos</th><th>Status</th><th>Cadastro</th><th>Ações</th></tr></thead>
+            <tbody id="users-table"><tr><td colspan="7" class="loading"><span class="spinner"></span></td></tr></tbody>
           </table>
         </div>
       </div>
@@ -442,9 +448,60 @@
   </div>
 </div>
 
+<!-- MODAL ADICIONAR USUÁRIO -->
+<div class="modal-overlay" id="modal-add-user">
+  <div class="modal" style="max-width:500px">
+    <div class="modal-title">➕ Adicionar usuário</div>
+    <div class="form-group">
+      <label class="form-label">E-mail</label>
+      <input class="form-input" id="new-user-email" type="email" placeholder="email@exemplo.com">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Nome</label>
+      <input class="form-input" id="new-user-name" placeholder="Nome completo">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Plano</label>
+      <select class="form-select" id="new-user-plan" onchange="newUserPlanChanged()">
+        <option value="free">Hobby — Grátis</option>
+        <option value="maker">Pro Mensal — R$11,99/mês</option>
+        <option value="pro">Pro Anual — R$9,99/mês</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Role / Permissão</label>
+      <select class="form-select" id="new-user-role">
+        <option value="user">👤 Usuário — acesso somente ao PrecoExato 3D</option>
+        <option value="admin">🔑 Administrador — acesso ao painel admin + app</option>
+      </select>
+      <div style="margin-top:6px;font-size:12px;color:#6b7294">⚠️ Administradores têm acesso total ao painel e a todos os dados.</div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Módulos liberados</label>
+      <div id="new-user-modules-wrap" style="display:flex;flex-direction:column;gap:6px;background:#232736;border-radius:8px;padding:12px">
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" id="new-mod-calc" checked> Calculadora de custos completa</label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" id="new-mod-pdf"> PDF com logo e marca</label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" id="new-mod-crm"> CRM de vendas</label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" id="new-mod-fila"> Fila de produção</label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" id="new-mod-estoque"> Estoque de filamentos</label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" id="new-mod-relatorio"> Relatórios avançados</label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" id="new-mod-wpp"> Compartilhar via WhatsApp</label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" id="new-mod-ilimitado"> Projetos e impressoras ilimitados</label>
+      </div>
+    </div>
+    <div id="new-user-info" style="background:rgba(249,115,22,.08);border:1px solid rgba(249,115,22,.3);border-radius:8px;padding:10px 14px;font-size:12px;color:#f97316;margin-top:4px">
+      📧 Um convite será enviado por e-mail para o usuário definir a senha.
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modal-add-user')">Cancelar</button>
+      <button class="btn btn-primary" onclick="addUserManual()">Criar usuário</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL EDITAR USUÁRIO -->
 <div class="modal-overlay" id="modal-user">
-  <div class="modal">
+  <div class="modal" style="max-width:500px">
     <div class="modal-title">Editar Usuário</div>
     <input type="hidden" id="edit-user-id">
     <div class="form-group">
@@ -457,19 +514,33 @@
     </div>
     <div class="form-group">
       <label class="form-label">Plano</label>
-      <select class="form-select" id="edit-user-plan">
-        <option value="free">Free</option>
-        <option value="maker">Maker</option>
-        <option value="pro">Pro</option>
-        <option value="annual_maker">Anual Maker</option>
+      <select class="form-select" id="edit-user-plan" onchange="editPlanChanged()">
+        <option value="free">Hobby — Grátis</option>
+        <option value="maker">Pro Mensal — R$11,99/mês</option>
+        <option value="pro">Pro Anual — R$9,99/mês</option>
+        <option value="annual_maker">Anual Maker (legado)</option>
       </select>
     </div>
     <div class="form-group">
-      <label class="form-label">Role</label>
+      <label class="form-label">Role / Permissão</label>
       <select class="form-select" id="edit-user-role">
-        <option value="user">Usuário</option>
-        <option value="admin">Admin</option>
+        <option value="user">👤 Usuário — acesso somente ao PrecoExato 3D</option>
+        <option value="admin">🔑 Administrador — acesso ao painel admin + app</option>
       </select>
+      <div style="margin-top:6px;font-size:12px;color:#6b7294">⚠️ Administradores têm acesso total ao painel e a todos os dados.</div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Módulos liberados</label>
+      <div id="edit-modules-wrap" style="display:flex;flex-direction:column;gap:6px;background:#232736;border-radius:8px;padding:12px">
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" id="edit-mod-calc"> Calculadora de custos completa</label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" id="edit-mod-pdf"> PDF com logo e marca</label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" id="edit-mod-crm"> CRM de vendas</label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" id="edit-mod-fila"> Fila de produção</label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" id="edit-mod-estoque"> Estoque de filamentos</label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" id="edit-mod-relatorio"> Relatórios avançados</label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" id="edit-mod-wpp"> Compartilhar via WhatsApp</label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" id="edit-mod-ilimitado"> Projetos e impressoras ilimitados</label>
+      </div>
     </div>
     <div class="form-group">
       <label class="form-label">Bloqueado</label>
@@ -530,11 +601,33 @@
     </div>
     <div class="form-group">
       <label class="form-label">Plano</label>
-      <select class="form-select" id="sub-plan">
-        <option value="maker">Maker — R$18/mês</option>
-        <option value="pro">Pro — R$39/mês</option>
-        <option value="annual_maker">Anual Maker — R$159/ano</option>
+      <select class="form-select" id="sub-plan" onchange="subPlanChanged()">
+        <option value="free">Hobby — Grátis</option>
+        <option value="maker">Pro Mensal — R$11,99/mês</option>
+        <option value="pro">Pro Anual — R$9,99/mês (R$119,88/ano)</option>
+        <option value="annual_maker">Anual Maker — R$159/ano (legado)</option>
       </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Role / Permissão</label>
+      <select class="form-select" id="sub-role">
+        <option value="user">👤 Usuário — acesso somente ao PrecoExato 3D</option>
+        <option value="admin">🔑 Administrador — acesso ao painel admin + app</option>
+      </select>
+      <div style="margin-top:6px;font-size:12px;color:#6b7294">⚠️ Administradores têm acesso total ao painel e a todos os dados.</div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Módulos liberados</label>
+      <div id="sub-modules-wrap" style="display:flex;flex-direction:column;gap:6px;background:#232736;border-radius:8px;padding:12px">
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" id="mod-calc" checked> Calculadora de custos completa</label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" id="mod-pdf"> PDF com logo e marca</label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" id="mod-crm"> CRM de vendas</label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" id="mod-fila"> Fila de produção</label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" id="mod-estoque"> Estoque de filamentos</label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" id="mod-relatorio"> Relatórios avançados</label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" id="mod-wpp"> Compartilhar via WhatsApp</label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" id="mod-ilimitado"> Projetos e impressoras ilimitados</label>
+      </div>
     </div>
     <div class="form-group">
       <label class="form-label">Status</label>
@@ -545,8 +638,8 @@
       </select>
     </div>
     <div class="form-group">
-      <label class="form-label">Valor (R$)</label>
-      <input class="form-input" id="sub-amount" type="number" step="0.01" value="18.00">
+      <label class="form-label">Valor cobrado (R$)</label>
+      <input class="form-input" id="sub-amount" type="number" step="0.01" value="0.00">
     </div>
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="closeModal('modal-sub')">Cancelar</button>
@@ -690,10 +783,49 @@ async function loadDashboard() {
 }
 
 // ============================================================
+// MAPEAMENTO DE PLANOS → MÓDULOS (automático Kiwify)
+// ============================================================
+const PLAN_MODULES = {
+  free:         ['calc'],
+  maker:        ['calc','pdf','wpp','crm','fila','estoque'],
+  pro:          ['calc','pdf','wpp','crm','fila','estoque','relatorio','ilimitado'],
+  annual_maker: ['calc','pdf','wpp','crm','fila','estoque','relatorio','ilimitado'],
+};
+
+const PLAN_PRICES = { free: 0, maker: 11.99, pro: 9.99, annual_maker: 13.25 };
+const PLAN_LABELS = { free:'Hobby', maker:'Pro Mensal', pro:'Pro Anual', annual_maker:'Anual' };
+
+function applyPlanModules(prefix, plan) {
+  const mods = PLAN_MODULES[plan] || ['calc'];
+  ['calc','pdf','crm','fila','estoque','relatorio','wpp','ilimitado'].forEach(m => {
+    const el = document.getElementById(prefix + m);
+    if (el) el.checked = mods.includes(m);
+  });
+}
+
+function newUserPlanChanged() {
+  applyPlanModules('new-mod-', document.getElementById('new-user-plan').value);
+}
+function editPlanChanged() {
+  applyPlanModules('edit-mod-', document.getElementById('edit-user-plan').value);
+}
+function subPlanChanged() {
+  const plan = document.getElementById('sub-plan').value;
+  applyPlanModules('mod-', plan);
+  document.getElementById('sub-amount').value = PLAN_PRICES[plan]?.toFixed(2) || '0.00';
+}
+
+function getCheckedModules(prefix) {
+  return ['calc','pdf','crm','fila','estoque','relatorio','wpp','ilimitado'].filter(m => {
+    const el = document.getElementById(prefix + m); return el && el.checked;
+  });
+}
+
+// ============================================================
 // USUÁRIOS
 // ============================================================
 async function loadUsers() {
-  document.getElementById('users-table').innerHTML = '<tr><td colspan="5" class="loading"><span class="spinner"></span></td></tr>';
+  document.getElementById('users-table').innerHTML = '<tr><td colspan="7" class="loading"><span class="spinner"></span></td></tr>';
   const { data } = await sb.from('profiles').select('*').order('created_at', { ascending: false });
   allUsers = data || [];
   renderUsers(allUsers);
@@ -702,36 +834,81 @@ async function loadUsers() {
 function filterUsers() {
   const q      = document.getElementById('user-search').value.toLowerCase();
   const plan   = document.getElementById('user-plan-filter').value;
+  const role   = document.getElementById('user-role-filter').value;
   const status = document.getElementById('user-status-filter').value;
-  let filtered = allUsers.filter(u => {
+  const filtered = allUsers.filter(u => {
     const matchQ = !q || (u.name||'').toLowerCase().includes(q) || (u.email||'').toLowerCase().includes(q);
     const matchP = !plan || u.plan === plan;
+    const matchR = !role || u.role === role;
     const matchS = !status || (status === 'blocked' ? u.is_blocked : !u.is_blocked);
-    return matchQ && matchP && matchS;
+    return matchQ && matchP && matchR && matchS;
   });
   renderUsers(filtered);
 }
 
 function renderUsers(users) {
   const tbody = document.getElementById('users-table');
-  if (!users.length) { tbody.innerHTML = '<tr><td colspan="5" class="empty-row">Nenhum usuário encontrado</td></tr>'; return; }
-  tbody.innerHTML = users.map(u => `
-    <tr>
+  if (!users.length) { tbody.innerHTML = '<tr><td colspan="7" class="empty-row">Nenhum usuário encontrado</td></tr>'; return; }
+  tbody.innerHTML = users.map(u => {
+    const mods = u.modules || PLAN_MODULES[u.plan] || ['calc'];
+    const modBadges = mods.slice(0,3).map(m=>
+      `<span style="font-size:10px;background:rgba(249,115,22,.12);color:var(--accent);padding:1px 6px;border-radius:10px;white-space:nowrap">${m}</span>`
+    ).join(' ') + (mods.length > 3 ? `<span style="font-size:10px;color:var(--text3)">+${mods.length-3}</span>` : '');
+    return `<tr>
       <td>
-        <div style="font-weight:600;">${u.name || '—'}</div>
-        <div style="font-size:12px;color:var(--text3);">${u.email || '—'}</div>
+        <div style="font-weight:600">${u.name || '—'}</div>
+        <div style="font-size:12px;color:var(--text3)">${u.email || '—'}</div>
       </td>
-      <td><span class="badge badge-${u.plan === 'annual_maker' ? 'annual' : u.plan}">${planLabel(u.plan)}</span></td>
-      <td>
-        ${u.role === 'admin' ? '<span class="badge badge-admin">Admin</span>' : ''}
-        ${u.is_blocked ? '<span class="badge badge-blocked">Bloqueado</span>' : '<span class="badge badge-active">Ativo</span>'}
-      </td>
-      <td>${fmtDate(u.created_at)}</td>
-      <td>
-        <button class="btn btn-ghost btn-sm" onclick='openEditUser(${JSON.stringify(u)})'>Editar</button>
-      </td>
-    </tr>
-  `).join('');
+      <td><span class="badge badge-${u.plan === 'annual_maker' ? 'annual' : u.plan}">${PLAN_LABELS[u.plan]||u.plan}</span></td>
+      <td>${u.role === 'admin'
+        ? '<span class="badge badge-admin">🔑 Admin</span>'
+        : '<span style="font-size:12px;color:var(--text3)">👤 Usuário</span>'}</td>
+      <td style="font-size:12px">${modBadges}</td>
+      <td>${u.is_blocked
+        ? '<span class="badge badge-blocked">Bloqueado</span>'
+        : '<span class="badge badge-active">Ativo</span>'}</td>
+      <td style="font-size:12px;color:var(--text3)">${fmtDate(u.created_at)}</td>
+      <td><button class="btn btn-ghost btn-sm" onclick='openEditUser(${JSON.stringify(u).replace(/'/g,"&#39;")})'>Editar</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function openAddUserModal() {
+  document.getElementById('new-user-email').value = '';
+  document.getElementById('new-user-name').value = '';
+  document.getElementById('new-user-plan').value = 'free';
+  document.getElementById('new-user-role').value = 'user';
+  applyPlanModules('new-mod-', 'free');
+  openModal('modal-add-user');
+}
+
+async function addUserManual() {
+  const email = document.getElementById('new-user-email').value.trim();
+  const name  = document.getElementById('new-user-name').value.trim();
+  const plan  = document.getElementById('new-user-plan').value;
+  const role  = document.getElementById('new-user-role').value;
+  const mods  = getCheckedModules('new-mod-');
+  if (!email) { showToast('E-mail obrigatório', 'error'); return; }
+
+  // Convidar via Supabase Auth (envia email com link de definição de senha)
+  const { data, error } = await sb.auth.admin?.inviteUserByEmail
+    ? await sb.auth.admin.inviteUserByEmail(email, { data: { full_name: name } })
+    : { data: null, error: { message: 'Convite requer Service Role Key. Use o Supabase Dashboard → Authentication → Invite.' }};
+
+  if (error) {
+    // Fallback: mostrar instruções
+    showToast('Convite: use o Supabase Dashboard → Authentication → Users → Invite. Depois edite o plano aqui.', 'error');
+    closeModal('modal-add-user');
+    return;
+  }
+
+  if (data?.user) {
+    await sb.from('profiles').update({ name, plan, role, modules: mods, updated_at: new Date() }).eq('id', data.user.id);
+    await sb.from('admin_logs').insert({ admin_id: currentAdmin.id, action: 'invite_user', target_user: data.user.id, details: { plan, role, mods } });
+    showToast('Convite enviado para ' + email, 'success');
+  }
+  closeModal('modal-add-user');
+  loadUsers();
 }
 
 function openEditUser(u) {
@@ -741,6 +918,12 @@ function openEditUser(u) {
   document.getElementById('edit-user-plan').value    = u.plan || 'free';
   document.getElementById('edit-user-role').value    = u.role || 'user';
   document.getElementById('edit-user-blocked').value = String(u.is_blocked || false);
+  // Aplicar módulos salvos ou default do plano
+  const mods = u.modules || PLAN_MODULES[u.plan] || ['calc'];
+  ['calc','pdf','crm','fila','estoque','relatorio','wpp','ilimitado'].forEach(m => {
+    const el = document.getElementById('edit-mod-' + m);
+    if (el) el.checked = mods.includes(m);
+  });
   openModal('modal-user');
 }
 
@@ -750,13 +933,12 @@ async function saveUser() {
   const plan    = document.getElementById('edit-user-plan').value;
   const role    = document.getElementById('edit-user-role').value;
   const blocked = document.getElementById('edit-user-blocked').value === 'true';
+  const mods    = getCheckedModules('edit-mod-');
 
-  const { error } = await sb.from('profiles').update({ name, plan, role, is_blocked: blocked, updated_at: new Date() }).eq('id', id);
+  const { error } = await sb.from('profiles').update({ name, plan, role, is_blocked: blocked, modules: mods, updated_at: new Date() }).eq('id', id);
   if (error) { showToast('Erro ao salvar: ' + error.message, 'error'); return; }
 
-  // Log da ação
-  await sb.from('admin_logs').insert({ admin_id: currentAdmin.id, action: 'update_user', target_user: id, details: { plan, role, blocked } });
-
+  await sb.from('admin_logs').insert({ admin_id: currentAdmin.id, action: 'update_user', target_user: id, details: { plan, role, blocked, mods } });
   closeModal('modal-user');
   showToast('Usuário atualizado com sucesso', 'success');
   loadUsers();
