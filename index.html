@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<!-- saved from url=(0039)https://precifica3d-meshit.netlify.app/ -->
+<!-- saved from url=(0039)https://moneyflow3d-meshit.netlify.app/ -->
 <html lang="pt-BR"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>PrecoExato 3D</title>
+<title>MoneyFlow 3D</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
 /* ── TOKENS ───────────────────────────────────────────── */
@@ -302,7 +302,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 <!-- LOGIN -->
 <div class="login-overlay" id="login-overlay" style="display: none;">
   <div class="login-box">
-    <div class="login-logo">⬡ PrecoExato 3D</div>
+    <div class="login-logo">⬡ MoneyFlow 3D</div>
     <div class="login-sub">MeshIT Tecnologia</div>
 
     <div id="bio-section" style="display:none;margin-bottom:14px">
@@ -333,8 +333,8 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   <!-- SIDEBAR -->
   <aside class="sidebar" id="sidebar">
     <div class="logo" style="cursor:pointer" onclick="showPage(&#39;settings&#39;)" title="Clique para alterar logo">
-      <div id="logo-img-wrap" style="margin-bottom:6px;display:none"><img id="logo-img" src="https://precifica3d-meshit.netlify.app/" style="max-width:140px;max-height:40px;object-fit:contain;border-radius:4px"></div>
-      <div class="logo-title" id="logo-title-text">⬡ PrecoExato 3D</div>
+      <div id="logo-img-wrap" style="margin-bottom:6px;display:none"><img id="logo-img" src="https://moneyflow3d-meshit.netlify.app/" style="max-width:140px;max-height:40px;object-fit:contain;border-radius:4px"></div>
+      <div class="logo-title" id="logo-title-text">⬡ MoneyFlow 3D</div>
       <div class="logo-sub" id="logo-sub-text">MeshIT Tecnologia</div>
     </div>
     <nav class="nav">
@@ -1012,7 +1012,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
             <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
               <div id="logo-preview-box" style="width:140px;height:60px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--rsm);display:flex;align-items:center;justify-content:center;overflow:hidden">
                 <span id="logo-preview-placeholder" style="font-size:12px;color:var(--text3)">Sem logo</span>
-                <img id="logo-preview-img" src="https://precifica3d-meshit.netlify.app/" style="max-width:130px;max-height:54px;object-fit:contain;display:none">
+                <img id="logo-preview-img" src="https://moneyflow3d-meshit.netlify.app/" style="max-width:130px;max-height:54px;object-fit:contain;display:none">
               </div>
               <div style="flex:1;display:flex;flex-direction:column;gap:8px">
                 <button class="btn btn-ghost" onclick="document.getElementById(&#39;logo-file&#39;).click()">📁 Escolher imagem (PNG, JPG, SVG)</button>
@@ -1023,7 +1023,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
             </div>
             <hr>
             <div class="form-grid">
-              <div class="field"><label>Nome do sistema</label><input type="text" id="cfg-sysname" value="PrecoExato 3D" oninput="updateLogoText()"></div>
+              <div class="field"><label>Nome do sistema</label><input type="text" id="cfg-sysname" value="MoneyFlow 3D" oninput="updateLogoText()"></div>
               <div class="field"><label>Nome da empresa</label><input type="text" id="cfg-empresa" value="MeshIT Tecnologia" oninput="updateLogoText()"></div>
             </div>
             <div style="margin-top:10px"><button class="btn btn-primary" onclick="saveSettings()">Salvar</button></div>
@@ -1971,7 +1971,7 @@ function baixarRelatorio(){
   const blob=new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8'});
   const a=document.createElement('a');
   a.href=URL.createObjectURL(blob);
-  a.download='relatorio_precifica3d_'+new Date().toISOString().slice(0,10)+'.csv';
+  a.download='relatorio_moneyflow3d_'+new Date().toISOString().slice(0,10)+'.csv';
   a.click();
   notify('Relatório exportado!');
 }
@@ -2356,14 +2356,14 @@ function removerLogo(){
 }
 
 function updateLogoText(){
-  const name=document.getElementById('cfg-sysname').value||'PrecoExato 3D';
+  const name=document.getElementById('cfg-sysname').value||'MoneyFlow 3D';
   const emp=document.getElementById('cfg-empresa').value||'MeshIT Tecnologia';
   document.getElementById('logo-title-text').textContent=name;
   document.getElementById('logo-sub-text').textContent=emp;
 }
 
 function saveSettings(){
-  const name=document.getElementById('cfg-sysname').value||'PrecoExato 3D';
+  const name=document.getElementById('cfg-sysname').value||'MoneyFlow 3D';
   const emp=document.getElementById('cfg-empresa').value||'MeshIT Tecnologia';
   const s=JSON.parse(localStorage.getItem('p3d_settings')||'{}');
   s.sysname=name;s.empresa=emp;
@@ -2374,7 +2374,7 @@ function saveSettings(){
 function exportarDados(){
   const blob=new Blob([JSON.stringify(DB,null,2)],{type:'application/json'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);
-  a.download='precifica3d_backup_'+new Date().toISOString().slice(0,10)+'.json';a.click();
+  a.download='moneyflow3d_backup_'+new Date().toISOString().slice(0,10)+'.json';a.click();
   notify('Backup exportado!');
 }
 
@@ -2402,7 +2402,7 @@ function limparDados(){
 /* ── LOGIN ──────────────────────────────────────────── */
 const SENHA='Levi@813463';
 const RP_ID=location.hostname||'localhost';
-const RP_NAME='PrecoExato 3D';
+const RP_NAME='MoneyFlow 3D';
 
 function b64url(buf){
   return btoa(String.fromCharCode(...new Uint8Array(buf)))
@@ -2445,7 +2445,7 @@ async function registrarBiometria(){
     const cred=await navigator.credentials.create({publicKey:{
       challenge:crypto.getRandomValues(new Uint8Array(32)),
       rp:{id:RP_ID,name:RP_NAME},
-      user:{id:uid,name:'usuario',displayName:'Usuário PrecoExato 3D'},
+      user:{id:uid,name:'usuario',displayName:'Usuário MoneyFlow 3D'},
       pubKeyCredParams:[{type:'public-key',alg:-7},{type:'public-key',alg:-257}],
       authenticatorSelection:{authenticatorAttachment:'platform',userVerification:'required'},
       timeout:60000,
@@ -2534,7 +2534,7 @@ function checkBioAvailable(){
 /* ── BOOT ───────────────────────────────────────────── */
 function loadSettingsPage(){
   const s=JSON.parse(localStorage.getItem('p3d_settings')||'{}');
-  const sn=document.getElementById('cfg-sysname');if(sn)sn.value=s.sysname||'PrecoExato 3D';
+  const sn=document.getElementById('cfg-sysname');if(sn)sn.value=s.sysname||'MoneyFlow 3D';
   const em=document.getElementById('cfg-empresa');if(em)em.value=s.empresa||'MeshIT Tecnologia';
   if(s.logo){
     const pi=document.getElementById('logo-preview-img');
@@ -2729,7 +2729,7 @@ function verOrcamentoPDF(id){
   orcAtual=o;
   const s=JSON.parse(localStorage.getItem('p3d_settings')||'{}');
   const empresa=s.empresa||'MeshIT Tecnologia';
-  const sysname=s.sysname||'PrecoExato 3D';
+  const sysname=s.sysname||'MoneyFlow 3D';
   const logoSrc=s.logo||'';
   const valStr=o.validade?new Date(o.validade).toLocaleDateString('pt-BR'):'—';
   const logoHtml=logoSrc?`<img src="${logoSrc}" style="max-height:50px;max-width:160px;object-fit:contain;margin-bottom:8px"><br>`:'';
@@ -2789,7 +2789,7 @@ function exportarPDF(){
   const doc=new jsPDF({orientation:'p',unit:'mm',format:'a4'});
   const s=JSON.parse(localStorage.getItem('p3d_settings')||'{}');
   const empresa=s.empresa||'MeshIT Tecnologia';
-  const sysname=s.sysname||'PrecoExato 3D';
+  const sysname=s.sysname||'MoneyFlow 3D';
   const o=orcAtual;
   const valStr=o.validade?new Date(o.validade).toLocaleDateString('pt-BR'):'—';
 
@@ -2873,7 +2873,7 @@ function compartilharWhatsApp(){
   const s=JSON.parse(localStorage.getItem('p3d_settings')||'{}');
   const empresa=s.empresa||'MeshIT Tecnologia';
   const valStr=o.validade?new Date(o.validade).toLocaleDateString('pt-BR'):'—';
-  const msg=`*ORÇAMENTO — ${empresa}*\n\nOlá ${o.clienteNome}! 👋\n\n📦 *Produto:* ${o.produtoNome}\n📊 *Quantidade:* ${o.qtd}\n💰 *Valor:* R$ ${o.total.toFixed(2).replace('.',',')}\n${o.desc>0?`🏷 *Desconto:* ${o.desc}%\n`:''}\n🛒 *Canal:* ${o.marketplace}\n📅 *Válido até:* ${valStr}\n${o.obs?`\n📝 *Obs:* ${o.obs}\n`:''}\n_Gerado por ${s.sysname||'PrecoExato 3D'}_`;
+  const msg=`*ORÇAMENTO — ${empresa}*\n\nOlá ${o.clienteNome}! 👋\n\n📦 *Produto:* ${o.produtoNome}\n📊 *Quantidade:* ${o.qtd}\n💰 *Valor:* R$ ${o.total.toFixed(2).replace('.',',')}\n${o.desc>0?`🏷 *Desconto:* ${o.desc}%\n`:''}\n🛒 *Canal:* ${o.marketplace}\n📅 *Válido até:* ${valStr}\n${o.obs?`\n📝 *Obs:* ${o.obs}\n`:''}\n_Gerado por ${s.sysname||'MoneyFlow 3D'}_`;
   const num=o.clienteWpp?o.clienteWpp.replace(/\D/g,''):'';
   const url=`https://wa.me/${num?'55'+num:''}?text=${encodeURIComponent(msg)}`;
   window.open(url,'_blank');
@@ -2884,7 +2884,7 @@ function enviarEmail(){
   const o=orcAtual;if(!o){notify('Nenhum orçamento aberto','red');return;}
   const s=JSON.parse(localStorage.getItem('p3d_settings')||'{}');
   const empresa=s.empresa||'MeshIT Tecnologia';
-  const sysname=s.sysname||'PrecoExato 3D';
+  const sysname=s.sysname||'MoneyFlow 3D';
   const valStr=o.validade?new Date(o.validade).toLocaleDateString('pt-BR'):'—';
   // Buscar email do cliente
   const cli=DB.clientes.find(c=>c.id==o.clienteId);
@@ -3466,7 +3466,7 @@ function wppFila(id){
   const st=FILA_STATUS[item.status]||{label:item.status};
   const prazoStr=item.prazo?new Date(item.prazo).toLocaleDateString('pt-BR'):'—';
   const s=JSON.parse(localStorage.getItem('p3d_settings')||'{}');
-  const msg=`Olá ${item.clienteNome}! 👋\n\nAtualização do seu pedido:\n\n📦 *${item.produto}*\n📊 Quantidade: ${item.qtd}\n${st.label}\n📅 Prazo: ${prazoStr}\n\n_${s.sysname||'PrecoExato 3D'} — ${s.empresa||'MeshIT Tecnologia'}_`;
+  const msg=`Olá ${item.clienteNome}! 👋\n\nAtualização do seu pedido:\n\n📦 *${item.produto}*\n📊 Quantidade: ${item.qtd}\n${st.label}\n📅 Prazo: ${prazoStr}\n\n_${s.sysname||'MoneyFlow 3D'} — ${s.empresa||'MeshIT Tecnologia'}_`;
   const num=cli&&cli.wpp?cli.wpp.replace(/\D/g,''):'';
   window.open(`https://wa.me/${num?'55'+num:''}?text=${encodeURIComponent(msg)}`,'_blank');
 }
