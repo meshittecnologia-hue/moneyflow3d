@@ -266,8 +266,13 @@
     <div class="login-logo">⬡ MoneyFlow 3D</div>
     <div class="login-sub">Painel Administrativo — MeshIT Tecnologia</div>
     <input type="email" id="login-email" placeholder="E-mail admin" value="meshit.tecnologia@gmail.com">
-    <input type="password" id="login-pass" placeholder="Senha" id="login-pass">
+    <input type="password" id="login-pass" placeholder="Senha" onkeydown="if(event.key==='Enter')doLogin()">
     <button class="btn-login" onclick="doLogin()">Entrar</button>
+    <div id="bio-admin-section" style="display:none;margin-top:12px">
+      <button onclick="loginAdminBio()" style="width:100%;padding:11px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);color:var(--text2);font-size:14px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">
+        <span id="bio-admin-icon">🔐</span> Entrar com biometria
+      </button>
+    </div>
     <div id="login-error"></div>
   </div>
 </div>
@@ -312,6 +317,10 @@
         <button class="nav-item" onclick="showPage('backup')">
           <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           Backup
+        </button>
+        <button class="nav-item" onclick="showPage('config')">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          Configurações
         </button>
       </nav>
       <div class="sidebar-footer">
@@ -511,6 +520,67 @@
         <div id="backup-status" style="margin-top:16px;font-size:13px;color:var(--text3)"></div>
       </div>
 
+      <!-- CONFIGURAÇÕES -->
+      <div class="page" id="page-config">
+        <div class="page-header">
+          <div class="page-title">Configurações</div>
+          <div class="page-sub">Logo, segurança e preferências do painel</div>
+        </div>
+
+        <!-- LOGO -->
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:16px">
+          <div style="font-size:14px;font-weight:700;margin-bottom:4px">Logo da empresa</div>
+          <div style="font-size:12px;color:var(--text3);margin-bottom:16px">Aparece no painel admin e nos PDFs de orçamento gerados no app</div>
+          <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap">
+            <div id="admin-logo-preview" style="width:120px;height:80px;background:var(--bg3);border:1px dashed var(--border);border-radius:8px;display:flex;align-items:center;justify-content:center;overflow:hidden">
+              <span style="font-size:12px;color:var(--text3)">Sem logo</span>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <button class="btn btn-primary btn-sm" onclick="document.getElementById('admin-logo-input').click()">📁 Selecionar imagem</button>
+              <button class="btn btn-ghost btn-sm" onclick="removerLogoAdmin()" id="btn-remove-logo" style="display:none">✕ Remover logo</button>
+              <input type="file" id="admin-logo-input" accept="image/*" style="display:none" onchange="carregarLogoAdmin(event)">
+              <div style="font-size:11px;color:var(--text3)">PNG, JPG ou SVG · Máx. 2MB</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- BIOMETRIA -->
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:16px">
+          <div style="font-size:14px;font-weight:700;margin-bottom:4px">🔐 Biometria / Face ID / Windows Hello</div>
+          <div style="font-size:12px;color:var(--text3);margin-bottom:16px">Suporta: Face ID (iPhone/Mac), impressão digital (Android), Windows Hello (câmera facial, leitor ou PIN do Windows)</div>
+          <div id="admin-bio-status"></div>
+        </div>
+
+        <!-- NOME E EMPRESA -->
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:16px">
+          <div style="font-size:14px;font-weight:700;margin-bottom:16px">Dados da empresa</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div>
+              <label style="font-size:12px;color:var(--text3);display:block;margin-bottom:6px">Nome do sistema</label>
+              <input class="form-input" id="cfg-sysname" value="MoneyFlow 3D" placeholder="Ex: MoneyFlow 3D">
+            </div>
+            <div>
+              <label style="font-size:12px;color:var(--text3);display:block;margin-bottom:6px">Nome da empresa</label>
+              <input class="form-input" id="cfg-empresa" placeholder="Ex: MeshIT Tecnologia">
+            </div>
+          </div>
+          <button class="btn btn-primary" style="margin-top:14px" onclick="salvarConfigAdmin()">💾 Salvar configurações</button>
+        </div>
+
+        <!-- SENHA DO ADMIN -->
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:24px">
+          <div style="font-size:14px;font-weight:700;margin-bottom:4px">🔑 Alterar senha do admin</div>
+          <div style="font-size:12px;color:var(--text3);margin-bottom:16px">Recomendado trocar a senha padrão imediatamente</div>
+          <div style="display:flex;flex-direction:column;gap:10px;max-width:380px">
+            <input class="form-input" id="cfg-nova-senha" type="password" placeholder="Nova senha">
+            <input class="form-input" id="cfg-conf-senha" type="password" placeholder="Confirmar nova senha">
+            <button class="btn btn-primary btn-sm" onclick="alterarSenhaAdmin()">Alterar senha</button>
+            <div id="cfg-senha-msg" style="font-size:12px;min-height:16px"></div>
+          </div>
+        </div>
+
+      </div>
+
     </main>
   </div>
 </div>
@@ -520,8 +590,17 @@
   <div class="modal" style="max-width:500px">
     <div class="modal-title">➕ Adicionar usuário</div>
     <div class="form-group">
-      <label class="form-label">E-mail</label>
+      <label class="form-label" style="display:flex;justify-content:space-between;align-items:center">
+        <span>E-mail</span>
+        <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text3);cursor:pointer;font-weight:400">
+          <input type="checkbox" id="toggle-sem-email" onchange="toggleSemEmail()" style="width:14px;height:14px;cursor:pointer">
+          <span>Sem e-mail / acesso direto</span>
+        </label>
+      </label>
       <input class="form-input" id="new-user-email" type="email" placeholder="email@exemplo.com">
+      <div id="sem-email-wrap" style="display:none;margin-top:8px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--text3)">
+        ℹ️ Um e-mail temporário será gerado automaticamente. O usuário acessa somente por senha ou biometria — sem recuperação por e-mail.
+      </div>
     </div>
     <div class="form-group">
       <label class="form-label">Nome</label>
@@ -831,12 +910,154 @@ function showPage(page) {
   if (page === 'modules')       loadModules();
   if (page === 'logs')          loadLogs();
   if (page === 'webhooks')      loadWebhooks();
+  if (page === 'config')        loadConfigPage();
   // backup não precisa carregar nada
 }
 
 // ============================================================
-// SENHA — GERADOR E VALIDAÇÃO
+// CONFIGURAÇÕES DO ADMIN
 // ============================================================
+const ADMIN_RP_ID   = location.hostname || 'localhost';
+const ADMIN_RP_NAME = 'MoneyFlow 3D Admin';
+
+function loadConfigPage() {
+  // Logo
+  const logo = localStorage.getItem('admin_logo');
+  const prev = document.getElementById('admin-logo-preview');
+  const btnRem = document.getElementById('btn-remove-logo');
+  if (logo) {
+    prev.innerHTML = `<img src="${logo}" style="max-width:100%;max-height:100%;object-fit:contain">`;
+    btnRem.style.display = '';
+  }
+  // Dados empresa
+  const s = JSON.parse(localStorage.getItem('admin_settings') || '{}');
+  document.getElementById('cfg-sysname').value = s.sysname || 'MoneyFlow 3D';
+  document.getElementById('cfg-empresa').value = s.empresa || '';
+  // Biometria
+  renderAdminBioStatus();
+}
+
+function carregarLogoAdmin(e) {
+  const file = e.target.files[0]; if (!file) return;
+  if (file.size > 2 * 1024 * 1024) { showToast('Imagem muito grande (máx 2MB)', 'error'); return; }
+  const reader = new FileReader();
+  reader.onload = ev => {
+    localStorage.setItem('admin_logo', ev.target.result);
+    document.getElementById('admin-logo-preview').innerHTML = `<img src="${ev.target.result}" style="max-width:100%;max-height:100%;object-fit:contain">`;
+    document.getElementById('btn-remove-logo').style.display = '';
+    showToast('Logo salva!', 'success');
+  };
+  reader.readAsDataURL(file);
+}
+
+function removerLogoAdmin() {
+  localStorage.removeItem('admin_logo');
+  document.getElementById('admin-logo-preview').innerHTML = '<span style="font-size:12px;color:var(--text3)">Sem logo</span>';
+  document.getElementById('btn-remove-logo').style.display = 'none';
+  showToast('Logo removida', 'success');
+}
+
+function salvarConfigAdmin() {
+  const s = {
+    sysname: document.getElementById('cfg-sysname').value.trim() || 'MoneyFlow 3D',
+    empresa: document.getElementById('cfg-empresa').value.trim(),
+  };
+  localStorage.setItem('admin_settings', JSON.stringify(s));
+  showToast('Configurações salvas!', 'success');
+}
+
+async function alterarSenhaAdmin() {
+  const nova  = document.getElementById('cfg-nova-senha').value;
+  const conf  = document.getElementById('cfg-conf-senha').value;
+  const msg   = document.getElementById('cfg-senha-msg');
+  if (!nova || !conf) { msg.innerHTML = '<span style="color:var(--red)">Preencha os dois campos.</span>'; return; }
+  if (nova !== conf)  { msg.innerHTML = '<span style="color:var(--red)">As senhas não coincidem.</span>'; return; }
+  if (nova.length < 8){ msg.innerHTML = '<span style="color:var(--red)">Mínimo 8 caracteres.</span>'; return; }
+  const { error } = await sb.auth.updateUser({ password: nova });
+  if (error) { msg.innerHTML = `<span style="color:var(--red)">${error.message}</span>`; return; }
+  msg.innerHTML = '<span style="color:var(--green)">✅ Senha alterada com sucesso!</span>';
+  document.getElementById('cfg-nova-senha').value = '';
+  document.getElementById('cfg-conf-senha').value = '';
+}
+
+// ── BIOMETRIA ADMIN ──────────────────────────────────────────
+function b64urlAdmin(buf) {
+  return btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
+}
+function fromB64urlAdmin(s) {
+  s = s.replace(/-/g,'+').replace(/_/g,'/');
+  while(s.length%4) s+='=';
+  return Uint8Array.from(atob(s), c=>c.charCodeAt(0)).buffer;
+}
+
+function renderAdminBioStatus() {
+  const el = document.getElementById('admin-bio-status'); if (!el) return;
+  if (!window.PublicKeyCredential) {
+    el.innerHTML = '<div style="color:var(--text3);font-size:13px">Este navegador/dispositivo não suporta biometria.</div>'; return;
+  }
+  const hasCred = localStorage.getItem('admin_bio_cred');
+  if (hasCred) {
+    el.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+      <div>
+        <div style="font-weight:600;color:var(--green)">✅ Biometria ativa neste dispositivo</div>
+        <div style="font-size:12px;color:var(--text3);margin-top:3px">Próximo acesso ao painel será pelo sensor biométrico</div>
+      </div>
+      <button class="btn btn-ghost btn-sm" style="color:var(--red)" onclick="removerAdminBio()">Remover</button>
+    </div>`;
+  } else {
+    el.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+      <div>
+        <div style="font-weight:600">🔐 Biometria não configurada</div>
+        <div style="font-size:12px;color:var(--text3);margin-top:3px">Ative para entrar com Face ID / impressão digital / Windows Hello</div>
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="ativarAdminBio()">Ativar agora</button>
+    </div>`;
+  }
+}
+
+async function ativarAdminBio() {
+  if (!window.PublicKeyCredential) { showToast('Dispositivo não suporta biometria', 'error'); return; }
+  try {
+    const uid = new Uint8Array(16); crypto.getRandomValues(uid);
+    const cred = await navigator.credentials.create({ publicKey: {
+      challenge: crypto.getRandomValues(new Uint8Array(32)),
+      rp: { id: ADMIN_RP_ID, name: ADMIN_RP_NAME },
+      user: { id: uid, name: currentAdmin?.email || 'admin', displayName: 'Admin MoneyFlow 3D' },
+      pubKeyCredParams: [{ type: 'public-key', alg: -7 }, { type: 'public-key', alg: -257 }],
+      authenticatorSelection: { authenticatorAttachment: 'platform', userVerification: 'required' },
+      timeout: 60000, attestation: 'none'
+    }});
+    localStorage.setItem('admin_bio_cred', b64urlAdmin(cred.rawId));
+    renderAdminBioStatus();
+    showToast('Biometria ativada! Próximo acesso será automático.', 'success');
+  } catch(e) {
+    showToast('Não foi possível ativar: ' + e.message, 'error');
+  }
+}
+
+async function loginAdminBio() {
+  const credId = localStorage.getItem('admin_bio_cred'); if (!credId) return;
+  try {
+    await navigator.credentials.get({ publicKey: {
+      challenge: crypto.getRandomValues(new Uint8Array(32)),
+      rpId: ADMIN_RP_ID,
+      allowCredentials: [{ type: 'public-key', id: fromB64urlAdmin(credId) }],
+      userVerification: 'required', timeout: 60000
+    }});
+    // Biometria ok — fazer login com sessão salva
+    const { data: { session } } = await sb.auth.getSession();
+    if (session) {
+      const { data: profile } = await sb.from('profiles').select('*').eq('id', session.user.id).single();
+      if (profile?.role === 'admin') { currentAdmin = profile; initApp(); }
+    }
+  } catch(e) { /* silencioso — usuário cancela */ }
+}
+
+function removerAdminBio() {
+  localStorage.removeItem('admin_bio_cred');
+  renderAdminBioStatus();
+  showToast('Biometria removida', 'success');
+}
 function gerarSenha() {
   const maiusculas = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
   const minusculas = 'abcdefghjkmnpqrstuvwxyz';
@@ -1088,8 +1309,32 @@ function renderUsers(users) {
   }).join('');
 }
 
+function toggleSemEmail() {
+  const semEmail = document.getElementById('toggle-sem-email').checked;
+  const emailInput = document.getElementById('new-user-email');
+  const wrap = document.getElementById('sem-email-wrap');
+  if (semEmail) {
+    emailInput.disabled = true;
+    emailInput.style.opacity = '0.4';
+    emailInput.value = '';
+    emailInput.placeholder = 'Será gerado automaticamente';
+    wrap.style.display = 'block';
+  } else {
+    emailInput.disabled = false;
+    emailInput.style.opacity = '1';
+    emailInput.placeholder = 'email@exemplo.com';
+    wrap.style.display = 'none';
+  }
+}
+
 function openAddUserModal() {
-  document.getElementById('new-user-email').value = '';
+  const emailInput = document.getElementById('new-user-email');
+  emailInput.value = '';
+  emailInput.disabled = false;
+  emailInput.style.opacity = '1';
+  emailInput.placeholder = 'email@exemplo.com';
+  document.getElementById('toggle-sem-email').checked = false;
+  document.getElementById('sem-email-wrap').style.display = 'none';
   document.getElementById('new-user-name').value = '';
   document.getElementById('new-user-plan').value = 'free';
   document.getElementById('new-user-role').value = 'user';
@@ -1103,39 +1348,31 @@ function openAddUserModal() {
 }
 
 async function addUserManual() {
-  const email = document.getElementById('new-user-email').value.trim();
+  const semEmail = document.getElementById('toggle-sem-email').checked;
   const name  = document.getElementById('new-user-name').value.trim();
   const plan  = document.getElementById('new-user-plan').value;
   const role  = document.getElementById('new-user-role').value;
   const senha = document.getElementById('new-user-senha').value;
   const mods  = getCheckedModules('new-mod-');
 
-  if (!email) { showToast('E-mail obrigatório', 'error'); return; }
+  // Gerar email temporário se sem email
+  const email = semEmail
+    ? `user_${Date.now()}@moneyflow3d.interno`
+    : document.getElementById('new-user-email').value.trim();
+
+  if (!semEmail && !email) { showToast('E-mail obrigatório', 'error'); return; }
   if (!senha) { showToast('Defina uma senha ou gere automaticamente', 'error'); return; }
   if (!validarForcaSenha(senha)) { showToast('Senha não atende aos critérios de segurança', 'error'); return; }
 
-  // Criar usuário via Supabase Auth Admin (requer service role — fallback com instrução)
-  const { data, error } = await sb.auth.admin?.createUser
-    ? await sb.auth.admin.createUser({ email, password: senha, email_confirm: true, user_metadata: { full_name: name } })
-    : { data: null, error: { message: 'service_role' } };
-
-  if (error) {
-    if (error.message === 'service_role' || error.message?.includes('not allowed')) {
-      // Fallback: criar via signUp público (funciona no free tier)
-      const { data: d2, error: e2 } = await sb.auth.signUp({ email, password: senha, options: { data: { full_name: name } } });
-      if (e2) { showToast('Erro: ' + e2.message, 'error'); return; }
-      if (d2?.user) {
-        await sb.from('profiles').update({ name, plan, role, modules: mods, updated_at: new Date() }).eq('id', d2.user.id);
-        await sb.from('admin_logs').insert({ admin_id: currentAdmin.id, action: 'create_user', target_user: d2.user.id, details: { plan, role, mods } });
-        showToast('Usuário criado! Peça para verificar o e-mail.', 'success');
-      }
-    } else {
-      showToast('Erro: ' + error.message, 'error'); return;
-    }
-  } else if (data?.user) {
-    await sb.from('profiles').update({ name, plan, role, modules: mods, updated_at: new Date() }).eq('id', data.user.id);
-    await sb.from('admin_logs').insert({ admin_id: currentAdmin.id, action: 'create_user', target_user: data.user.id, details: { plan, role, mods } });
-    showToast('Usuário criado com sucesso!', 'success');
+  // Criar usuário via signUp público (funciona no Supabase free tier)
+  const { data: d2, error: e2 } = await sb.auth.signUp({
+    email, password: senha, options: { data: { full_name: name } }
+  });
+  if (e2) { showToast('Erro ao criar: ' + e2.message, 'error'); return; }
+  if (d2?.user) {
+    await sb.from('profiles').update({ name, plan, role, modules: mods, updated_at: new Date() }).eq('id', d2.user.id);
+    await sb.from('admin_logs').insert({ admin_id: currentAdmin.id, action: 'create_user', target_user: d2.user.id, details: { plan, role, mods, sem_email: semEmail } });
+    showToast(semEmail ? 'Usuário criado! Acesso somente por senha.' : 'Usuário criado! Peça para verificar o e-mail.', 'success');
   }
 
   closeModal('modal-add-user');
@@ -1388,6 +1625,12 @@ document.querySelectorAll('.modal-overlay').forEach(o => {
 // INICIALIZAR
 // ============================================================
 checkSession();
+
+// Mostrar botão de biometria se disponível
+if (window.PublicKeyCredential && localStorage.getItem('admin_bio_cred')) {
+  document.getElementById('bio-admin-section').style.display = 'block';
+  setTimeout(loginAdminBio, 600);
+}
 </script>
 </body>
 </html>
