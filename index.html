@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>MoneyFlow 3D</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 /* ── TOKENS ───────────────────────────────────────────── */
 :root{
@@ -305,21 +306,44 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
     <div class="login-logo">⬡ MoneyFlow 3D</div>
     <div class="login-sub">MeshIT Tecnologia</div>
 
-    <div id="bio-section" style="display:none;margin-bottom:14px">
-      <button class="login-btn" id="bio-btn" onclick="loginBiometria()" style="background:var(--bg3);color:var(--text);border:1px solid var(--border);margin-bottom:8px">
-        <span id="bio-icon">🔐</span> &nbsp;Entrar com biometria
-      </button>
-      <div style="font-size:11px;color:var(--text3);margin-bottom:12px">ou use sua senha abaixo</div>
+    <!-- MODO RESET DE SENHA -->
+    <div id="reset-section" style="display:none">
+      <div style="font-size:13px;color:var(--text2);margin-bottom:14px;text-align:center">Digite sua nova senha</div>
+      <input class="login-input" type="password" id="reset-pw" placeholder="Nova senha">
+      <input class="login-input" type="password" id="reset-pw2" placeholder="Confirmar nova senha" style="margin-top:8px">
+      <button class="login-btn" onclick="doResetSenha()">Salvar nova senha</button>
+      <div class="login-error" id="reset-err"></div>
     </div>
 
-    <input class="login-input" type="password" id="login-pw" placeholder="Senha" onkeydown="if(event.key===&#39;Enter&#39;)doLogin()">
-    <button class="login-btn" onclick="doLogin()">Entrar com senha</button>
-    <div class="login-error" id="login-err"></div>
+    <!-- MODO LOGIN NORMAL -->
+    <div id="login-section">
+      <div id="bio-section" style="display:none;margin-bottom:14px">
+        <button class="login-btn" id="bio-btn" onclick="loginBiometria()" style="background:var(--bg3);color:var(--text);border:1px solid var(--border);margin-bottom:8px">
+          <span id="bio-icon">🔐</span> &nbsp;Entrar com biometria
+        </button>
+        <div style="font-size:11px;color:var(--text3);margin-bottom:12px">ou use seu email abaixo</div>
+      </div>
 
-    <div id="bio-register-wrap" style="display:none;margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">
-      <button class="login-btn" onclick="registrarBiometria()" style="background:var(--bg3);color:var(--text);border:1px solid var(--border);font-size:12px;padding:8px">
-        <span id="bio-reg-icon">📱</span> &nbsp;Ativar Face ID / Biometria neste dispositivo
-      </button>
+      <input class="login-input" type="email" id="login-email" placeholder="Email">
+      <input class="login-input" type="password" id="login-pw" placeholder="Senha" style="margin-top:8px" onkeydown="if(event.key===&#39;Enter&#39;)doLogin()">
+      <button class="login-btn" id="login-btn-submit" onclick="doLogin()">Entrar</button>
+      <div class="login-error" id="login-err"></div>
+
+      <div style="margin-top:12px;text-align:center">
+        <span style="font-size:12px;color:var(--text2);cursor:pointer;text-decoration:underline" onclick="toggleEsqueciSenha()">Esqueci minha senha</span>
+      </div>
+
+      <div id="esqueci-wrap" style="display:none;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
+        <input class="login-input" type="email" id="esqueci-email" placeholder="Seu email">
+        <button class="login-btn" onclick="enviarResetSenha()" style="background:var(--bg3);color:var(--text);border:1px solid var(--border);font-size:13px;margin-top:6px">Enviar link de redefinição</button>
+        <div id="esqueci-msg" style="font-size:12px;color:var(--green);margin-top:6px;text-align:center"></div>
+      </div>
+
+      <div id="bio-register-wrap" style="display:none;margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">
+        <button class="login-btn" onclick="registrarBiometria()" style="background:var(--bg3);color:var(--text);border:1px solid var(--border);font-size:12px;padding:8px">
+          <span id="bio-reg-icon">📱</span> &nbsp;Ativar Face ID / Biometria neste dispositivo
+        </button>
+      </div>
     </div>
   </div>
 </div>
@@ -373,6 +397,10 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
       </div>
       <div class="topbar-right">
         <button class="btn btn-primary btn-sm" onclick="showPage(&#39;calc&#39;)" style="display:none" id="topbar-new">+ Novo</button>
+        <button onclick="doLogout()" title="Sair" style="background:transparent;border:1px solid var(--border);color:var(--text2);padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px;display:flex;align-items:center;gap:5px;transition:all .2s" onmouseover="this.style.borderColor='var(--red)';this.style.color='var(--red)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text2)'">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          Sair
+        </button>
       </div>
     </header>
 
@@ -2399,8 +2427,12 @@ function limparDados(){
 }
 
 /* ── THEME (sync both buttons) ───────────────────────── */
+/* ── SUPABASE ────────────────────────────────────────── */
+const SUPABASE_URL = 'https://fqthlewarcqvmqojmzzs.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZxdGhsZXdhcmNxdm1xb2ptenpzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0ODgzNjMsImV4cCI6MjA5ODA2NDM2M30.PdRQ0VsUWa4L-ZKSxWyUvQ2sGD0O-cz4Vw3yZ6ZRSgs';
+const _supa = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+
 /* ── LOGIN ──────────────────────────────────────────── */
-const SENHA='Levi@813463';
 const RP_ID=location.hostname||'localhost';
 const RP_NAME='MoneyFlow 3D';
 
@@ -2413,24 +2445,74 @@ function fromB64url(s){
   return Uint8Array.from(atob(s),c=>c.charCodeAt(0)).buffer;
 }
 
-function doLogin(){
-  const v=document.getElementById('login-pw').value;
-  const err=document.getElementById('login-err');
-  if(v===SENHA){
-    sessionStorage.setItem('p3d_ok','1');
-    document.getElementById('login-overlay').style.display='none';
-    initApp();
-    // If bio not registered yet, show toast after short delay
-    if(window.PublicKeyCredential && !localStorage.getItem('p3d_cred')){
-      setTimeout(()=>{
-        notify('💡 Ative a biometria em Configurações para entrar mais rápido!');
-      }, 1200);
-    }
-  } else {
-    err.textContent='Senha incorreta.';
+async function doLogin(){
+  const email = document.getElementById('login-email').value.trim();
+  const senha = document.getElementById('login-pw').value;
+  const err = document.getElementById('login-err');
+  const btn = document.getElementById('login-btn-submit');
+  err.textContent = '';
+  if(!email){ err.textContent='Informe seu email.'; return; }
+  if(!senha){ err.textContent='Informe sua senha.'; return; }
+  btn.textContent = 'Entrando...';
+  btn.disabled = true;
+  const { data, error } = await _supa.auth.signInWithPassword({ email, password: senha });
+  btn.textContent = 'Entrar';
+  btn.disabled = false;
+  if(error){
+    err.textContent = 'Email ou senha incorretos.';
     document.getElementById('login-pw').value='';
     document.getElementById('login-pw').focus();
+    return;
   }
+  sessionStorage.setItem('p3d_ok','1');
+  document.getElementById('login-overlay').style.display='none';
+  initApp();
+  if(window.PublicKeyCredential && !localStorage.getItem('p3d_cred')){
+    setTimeout(()=>{ notify('💡 Ative a biometria em Configurações para entrar mais rápido!'); }, 1200);
+  }
+}
+
+function toggleEsqueciSenha(){
+  const w = document.getElementById('esqueci-wrap');
+  w.style.display = w.style.display==='none' ? 'block' : 'none';
+  if(w.style.display==='block') document.getElementById('esqueci-email').focus();
+}
+
+async function enviarResetSenha(){
+  const email = document.getElementById('esqueci-email').value.trim();
+  const msg = document.getElementById('esqueci-msg');
+  msg.style.color='var(--text2)';
+  msg.textContent='Enviando...';
+  if(!email){ msg.style.color='var(--red)'; msg.textContent='Informe seu email.'; return; }
+  const { error } = await _supa.auth.resetPasswordForEmail(email, {
+    redirectTo: 'https://moneyflow3d.com.br'
+  });
+  if(error){ msg.style.color='var(--red)'; msg.textContent='Erro ao enviar. Verifique o email.'; return; }
+  msg.style.color='var(--green)';
+  msg.textContent='Link enviado! Verifique seu email.';
+}
+
+async function doResetSenha(){
+  const pw = document.getElementById('reset-pw').value;
+  const pw2 = document.getElementById('reset-pw2').value;
+  const err = document.getElementById('reset-err');
+  err.textContent='';
+  if(!pw || pw.length < 6){ err.textContent='Senha deve ter pelo menos 6 caracteres.'; return; }
+  if(pw !== pw2){ err.textContent='As senhas não coincidem.'; return; }
+  const { error } = await _supa.auth.updateUser({ password: pw });
+  if(error){ err.textContent='Erro ao atualizar senha. Tente novamente.'; return; }
+  document.getElementById('reset-section').style.display='none';
+  document.getElementById('login-section').style.display='block';
+  notify('Senha atualizada com sucesso! Faça login.', 'green');
+}
+
+async function doLogout(){
+  await _supa.auth.signOut();
+  sessionStorage.removeItem('p3d_ok');
+  document.getElementById('login-overlay').style.display='flex';
+  document.getElementById('login-email').value='';
+  document.getElementById('login-pw').value='';
+  document.getElementById('login-err').textContent='';
 }
 
 async function registrarBiometria(){
@@ -3698,12 +3780,43 @@ function setCrmView(m){
   renderCRM();
 }
 
-if(sessionStorage.getItem('p3d_ok')==='1'){
-  document.getElementById('login-overlay').style.display='none';
-  initApp();
-} else {
-  setTimeout(()=>document.getElementById('login-pw').focus(),150);
-}
+// Verificar se é redirect de reset de senha
+(async ()=>{
+  const hash = window.location.hash;
+  if(hash && hash.includes('access_token')){
+    const params = new URLSearchParams(hash.substring(1));
+    const type = params.get('type');
+    const accessToken = params.get('access_token');
+    const refreshToken = params.get('refresh_token');
+    if(type === 'recovery' && accessToken){
+      // Setar sessão do reset
+      await _supa.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
+      // Limpar hash da URL
+      history.replaceState(null, '', window.location.pathname);
+      // Mostrar tela de reset
+      document.getElementById('login-overlay').style.display='flex';
+      document.getElementById('login-section').style.display='none';
+      document.getElementById('reset-section').style.display='block';
+      setTimeout(()=>document.getElementById('reset-pw').focus(), 150);
+      return;
+    }
+  }
+  // Verificar sessão Supabase ativa
+  const { data: { session } } = await _supa.auth.getSession();
+  if(session){
+    sessionStorage.setItem('p3d_ok','1');
+    document.getElementById('login-overlay').style.display='none';
+    initApp();
+  } else if(sessionStorage.getItem('p3d_ok')==='1'){
+    // Sessão local mas sem Supabase — limpar
+    sessionStorage.removeItem('p3d_ok');
+    document.getElementById('login-overlay').style.display='flex';
+    setTimeout(()=>document.getElementById('login-email').focus(), 150);
+  } else {
+    document.getElementById('login-overlay').style.display='flex';
+    setTimeout(()=>document.getElementById('login-email').focus(), 150);
+  }
+})();
 </script>
 
 
