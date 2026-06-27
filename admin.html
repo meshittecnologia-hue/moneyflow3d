@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Precifica 3D — Painel Admin</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root {
+    --bg:       #0f1117;
+    --bg2:      #1a1d27;
+    --bg3:      #232736;
+    --border:   #2e3347;
+    --accent:   #f97316;
+    --accent2:  #fb923c;
+    --text:     #e8eaf0;
+    --text2:    #9aa0b8;
+    --text3:    #6b7294;
+    --green:    #22c55e;
+    --yellow:   #eab308;
+    --red:      #ef4444;
+    --blue:     #3b82f6;
+    --radius:   10px;
+    --sidebar:  240px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  /* LOGIN */
+  #login-screen {
+    display: flex; align-items: center; justify-content: center;
+    min-height: 100vh; background: var(--bg);
+  }
+  .login-box {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 16px; padding: 40px; width: 380px; text-align: center;
+  }
+  .login-logo { font-size: 28px; font-weight: 800; color: var(--accent); margin-bottom: 4px; }
+  .login-sub { color: var(--text3); font-size: 13px; margin-bottom: 32px; }
+  .login-box input {
+    width: 100%; padding: 12px 16px; background: var(--bg3);
+    border: 1px solid var(--border); border-radius: var(--radius);
+    color: var(--text); font-size: 14px; margin-bottom: 12px; outline: none;
+  }
+  .login-box input:focus { border-color: var(--accent); }
+  .btn-login {
+    width: 100%; padding: 13px; background: var(--accent);
+    border: none; border-radius: var(--radius); color: white;
+    font-size: 15px; font-weight: 600; cursor: pointer; transition: background .2s;
+  }
+  .btn-login:hover { background: var(--accent2); }
+  #login-error { color: var(--red); font-size: 13px; margin-top: 10px; min-height: 18px; }
+
+  /* LAYOUT */
+  #app { display: none; }
+  .layout { display: flex; min-height: 100vh; }
+
+  /* SIDEBAR */
+  .sidebar {
+    width: var(--sidebar); background: var(--bg2);
+    border-right: 1px solid var(--border);
+    display: flex; flex-direction: column;
+    position: fixed; top: 0; left: 0; height: 100vh; z-index: 100;
+  }
+  .sidebar-logo {
+    padding: 24px 20px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+  .sidebar-logo .brand { font-size: 16px; font-weight: 800; color: var(--accent); }
+  .sidebar-logo .sub { font-size: 11px; color: var(--text3); margin-top: 2px; }
+  .nav { padding: 12px 10px; flex: 1; overflow-y: auto; }
+  .nav-label {
+    font-size: 10px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .08em; color: var(--text3); padding: 8px 10px 4px;
+  }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 12px; border-radius: 8px; cursor: pointer;
+    color: var(--text2); font-size: 13.5px; font-weight: 500;
+    transition: all .15s; margin-bottom: 2px; border: none; background: none; width: 100%; text-align: left;
+  }
+  .nav-item:hover { background: var(--bg3); color: var(--text); }
+  .nav-item.active { background: rgba(249,115,22,.12); color: var(--accent); }
+  .nav-item svg { flex-shrink: 0; }
+  .sidebar-footer {
+    padding: 16px; border-top: 1px solid var(--border);
+  }
+  .admin-badge {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--bg3); border-radius: 8px; padding: 10px 12px;
+  }
+  .admin-avatar {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: var(--accent); display: flex; align-items: center;
+    justify-content: center; font-size: 14px; font-weight: 700; color: white; flex-shrink: 0;
+  }
+  .admin-info .name { font-size: 13px; font-weight: 600; }
+  .admin-info .role { font-size: 11px; color: var(--accent); font-weight: 500; }
+  .btn-logout {
+    background: none; border: none; color: var(--text3);
+    cursor: pointer; padding: 4px; border-radius: 6px; transition: color .2s;
+  }
+  .btn-logout:hover { color: var(--red); }
+
+  /* MAIN */
+  .main { margin-left: var(--sidebar); flex: 1; padding: 32px; max-width: calc(100% - var(--sidebar)); }
+  .page { display: none; }
+  .page.active { display: block; }
+  .page-header { margin-bottom: 28px; }
+  .page-title { font-size: 22px; font-weight: 800; color: var(--text); }
+  .page-sub { color: var(--text3); font-size: 13px; margin-top: 4px; }
+
+  /* CARDS */
+  .cards-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 28px; }
+  .card {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 20px;
+  }
+  .card-label { font-size: 12px; color: var(--text3); font-weight: 500; text-transform: uppercase; letter-spacing: .05em; }
+  .card-value { font-size: 28px; font-weight: 800; margin: 6px 0 2px; }
+  .card-delta { font-size: 12px; color: var(--text3); }
+  .card-value.green { color: var(--green); }
+  .card-value.accent { color: var(--accent); }
+  .card-value.blue { color: var(--blue); }
+  .card-value.yellow { color: var(--yellow); }
+
+  /* TABLES */
+  .table-wrap { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  .table-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 20px; border-bottom: 1px solid var(--border);
+  }
+  .table-title { font-size: 15px; font-weight: 700; }
+  table { width: 100%; border-collapse: collapse; }
+  th {
+    text-align: left; padding: 11px 16px;
+    font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .05em; color: var(--text3);
+    border-bottom: 1px solid var(--border); background: var(--bg3);
+  }
+  td { padding: 13px 16px; font-size: 13.5px; border-bottom: 1px solid var(--border); }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(255,255,255,.02); }
+  .empty-row td { color: var(--text3); text-align: center; padding: 40px; }
+
+  /* BADGES */
+  .badge {
+    display: inline-block; padding: 3px 10px; border-radius: 20px;
+    font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
+  }
+  .badge-free     { background: rgba(107,114,148,.2); color: var(--text3); }
+  .badge-maker    { background: rgba(249,115,22,.15); color: var(--accent); }
+  .badge-pro      { background: rgba(59,130,246,.15); color: var(--blue); }
+  .badge-annual   { background: rgba(168,85,247,.15); color: #a855f7; }
+  .badge-admin    { background: rgba(239,68,68,.15); color: var(--red); }
+  .badge-active   { background: rgba(34,197,94,.15); color: var(--green); }
+  .badge-cancelled{ background: rgba(239,68,68,.15); color: var(--red); }
+  .badge-overdue  { background: rgba(234,179,8,.15); color: var(--yellow); }
+  .badge-blocked  { background: rgba(239,68,68,.2); color: var(--red); }
+
+  /* BUTTONS */
+  .btn {
+    padding: 8px 16px; border-radius: 8px; font-size: 13px;
+    font-weight: 600; cursor: pointer; transition: all .15s; border: none;
+  }
+  .btn-primary { background: var(--accent); color: white; }
+  .btn-primary:hover { background: var(--accent2); }
+  .btn-ghost { background: var(--bg3); color: var(--text2); border: 1px solid var(--border); }
+  .btn-ghost:hover { color: var(--text); border-color: var(--text3); }
+  .btn-danger { background: rgba(239,68,68,.15); color: var(--red); border: 1px solid rgba(239,68,68,.3); }
+  .btn-danger:hover { background: rgba(239,68,68,.25); }
+  .btn-sm { padding: 5px 10px; font-size: 12px; }
+  .btn-success { background: rgba(34,197,94,.15); color: var(--green); border: 1px solid rgba(34,197,94,.3); }
+  .btn-success:hover { background: rgba(34,197,94,.25); }
+
+  /* SEARCH / FILTER */
+  .toolbar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 16px; }
+  .search-input {
+    flex: 1; min-width: 200px; padding: 9px 14px;
+    background: var(--bg3); border: 1px solid var(--border);
+    border-radius: 8px; color: var(--text); font-size: 13px; outline: none;
+  }
+  .search-input:focus { border-color: var(--accent); }
+  select.filter-select {
+    padding: 9px 12px; background: var(--bg3); border: 1px solid var(--border);
+    border-radius: 8px; color: var(--text); font-size: 13px; outline: none; cursor: pointer;
+  }
+
+  /* MODAL */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,.6); z-index: 1000;
+    align-items: center; justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 14px; padding: 28px; width: 480px; max-width: 95vw;
+    max-height: 90vh; overflow-y: auto;
+  }
+  .modal-title { font-size: 17px; font-weight: 700; margin-bottom: 20px; }
+  .form-group { margin-bottom: 16px; }
+  .form-label { display: block; font-size: 12px; font-weight: 600; color: var(--text2); margin-bottom: 6px; text-transform: uppercase; letter-spacing: .05em; }
+  .form-input, .form-select {
+    width: 100%; padding: 10px 14px;
+    background: var(--bg3); border: 1px solid var(--border);
+    border-radius: 8px; color: var(--text); font-size: 14px; outline: none;
+  }
+  .form-input:focus, .form-select:focus { border-color: var(--accent); }
+  .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 24px; }
+
+  /* TOAST */
+  #toast {
+    position: fixed; bottom: 24px; right: 24px;
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 10px; padding: 14px 20px;
+    font-size: 14px; font-weight: 500; z-index: 9999;
+    transform: translateY(80px); opacity: 0;
+    transition: all .3s ease; pointer-events: none;
+    display: flex; align-items: center; gap: 10px;
+  }
+  #toast.show { transform: translateY(0); opacity: 1; }
+  #toast.success { border-color: var(--green); color: var(--green); }
+  #toast.error { border-color: var(--red); color: var(--red); }
+
+  /* LOADING */
+  .loading { color: var(--text3); font-size: 13px; padding: 40px; text-align: center; }
+  .spinner { display: inline-block; width: 18px; height: 18px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin .7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* LOG ENTRY */
+  .log-entry { padding: 12px 16px; border-bottom: 1px solid var(--border); font-size: 13px; }
+  .log-entry:last-child { border-bottom: none; }
+  .log-time { font-size: 11px; color: var(--text3); margin-top: 3px; }
+  .log-action { font-weight: 600; color: var(--accent); }
+
+  /* USER DETAIL */
+  .user-detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+  .detail-item .label { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 4px; }
+  .detail-item .value { font-size: 14px; font-weight: 600; }
+
+  /* RESPONSIVE */
+  @media (max-width: 768px) {
+    :root { --sidebar: 200px; }
+    .main { padding: 20px; }
+    .cards-grid { grid-template-columns: 1fr 1fr; }
+    .user-detail-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">⬡ Precifica 3D</div>
+    <div class="login-sub">Painel Administrativo — MeshIT Tecnologia</div>
+    <input type="email" id="login-email" placeholder="E-mail admin" value="meshit.tecnologia@gmail.com">
+    <input type="password" id="login-pass" placeholder="Senha" id="login-pass">
+    <button class="btn-login" onclick="doLogin()">Entrar</button>
+    <div id="login-error"></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="layout">
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="sidebar-logo">
+        <div class="brand">⬡ Precifica 3D</div>
+        <div class="sub">Admin Panel</div>
+      </div>
+      <nav class="nav">
+        <div class="nav-label">Visão Geral</div>
+        <button class="nav-item active" onclick="showPage('dashboard')">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+          Dashboard
+        </button>
+        <div class="nav-label">Gestão</div>
+        <button class="nav-item" onclick="showPage('users')">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Usuários
+        </button>
+        <button class="nav-item" onclick="showPage('subscriptions')">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+          Assinaturas
+        </button>
+        <button class="nav-item" onclick="showPage('modules')">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+          Módulos
+        </button>
+        <div class="nav-label">Sistema</div>
+        <button class="nav-item" onclick="showPage('logs')">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          Logs Admin
+        </button>
+        <button class="nav-item" onclick="showPage('webhooks')">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          Webhooks
+        </button>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="admin-badge">
+          <div class="admin-avatar" id="admin-avatar">A</div>
+          <div class="admin-info" style="flex:1;min-width:0;">
+            <div class="name" id="admin-name" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">Admin</div>
+            <div class="role">Administrador</div>
+          </div>
+          <button class="btn-logout" title="Sair" onclick="doLogout()">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main">
+
+      <!-- DASHBOARD -->
+      <div class="page active" id="page-dashboard">
+        <div class="page-header">
+          <div class="page-title">Dashboard</div>
+          <div class="page-sub">Visão geral do Precifica 3D SaaS</div>
+        </div>
+        <div class="cards-grid" id="dash-cards">
+          <div class="card"><div class="card-label">Total Usuários</div><div class="card-value blue" id="d-total">—</div><div class="card-delta">cadastrados</div></div>
+          <div class="card"><div class="card-label">Assinantes Ativos</div><div class="card-value green" id="d-active">—</div><div class="card-delta">planos pagos</div></div>
+          <div class="card"><div class="card-label">MRR Estimado</div><div class="card-value accent" id="d-mrr">—</div><div class="card-delta">receita mensal recorrente</div></div>
+          <div class="card"><div class="card-label">Plano Free</div><div class="card-value yellow" id="d-free">—</div><div class="card-delta">usuários gratuitos</div></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+          <div class="table-wrap">
+            <div class="table-header"><span class="table-title">Distribuição por Plano</span></div>
+            <table><thead><tr><th>Plano</th><th>Usuários</th></tr></thead>
+            <tbody id="dash-plan-dist"><tr><td colspan="2" class="loading">Carregando...</td></tr></tbody></table>
+          </div>
+          <div class="table-wrap">
+            <div class="table-header"><span class="table-title">Últimos Cadastros</span></div>
+            <table><thead><tr><th>Usuário</th><th>Plano</th><th>Data</th></tr></thead>
+            <tbody id="dash-recent"><tr><td colspan="3" class="loading">Carregando...</td></tr></tbody></table>
+          </div>
+        </div>
+      </div>
+
+      <!-- USUÁRIOS -->
+      <div class="page" id="page-users">
+        <div class="page-header">
+          <div class="page-title">Usuários</div>
+          <div class="page-sub">Gerencie todos os usuários cadastrados</div>
+        </div>
+        <div class="toolbar">
+          <input class="search-input" id="user-search" placeholder="Buscar por nome ou e-mail..." oninput="filterUsers()">
+          <select class="filter-select" id="user-plan-filter" onchange="filterUsers()">
+            <option value="">Todos os planos</option>
+            <option value="free">Free</option>
+            <option value="maker">Maker</option>
+            <option value="pro">Pro</option>
+            <option value="annual_maker">Anual</option>
+          </select>
+          <select class="filter-select" id="user-status-filter" onchange="filterUsers()">
+            <option value="">Todos</option>
+            <option value="active">Ativos</option>
+            <option value="blocked">Bloqueados</option>
+          </select>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Usuário</th><th>Plano</th><th>Status</th><th>Cadastro</th><th>Ações</th></tr></thead>
+            <tbody id="users-table"><tr><td colspan="5" class="loading"><span class="spinner"></span></td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ASSINATURAS -->
+      <div class="page" id="page-subscriptions">
+        <div class="page-header">
+          <div class="page-title">Assinaturas</div>
+          <div class="page-sub">Histórico de todas as assinaturas</div>
+        </div>
+        <div class="toolbar">
+          <input class="search-input" id="sub-search" placeholder="Buscar..." oninput="filterSubs()">
+          <select class="filter-select" id="sub-status-filter" onchange="filterSubs()">
+            <option value="">Todos os status</option>
+            <option value="active">Ativo</option>
+            <option value="cancelled">Cancelado</option>
+            <option value="overdue">Inadimplente</option>
+          </select>
+          <button class="btn btn-primary" onclick="openAddSubModal()">+ Adicionar</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Usuário</th><th>Plano</th><th>Plataforma</th><th>Status</th><th>Valor</th><th>Início</th></tr></thead>
+            <tbody id="subs-table"><tr><td colspan="6" class="loading"><span class="spinner"></span></td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- MÓDULOS -->
+      <div class="page" id="page-modules">
+        <div class="page-header">
+          <div class="page-title">Módulos</div>
+          <div class="page-sub">Gerencie os módulos disponíveis no sistema</div>
+        </div>
+        <div style="margin-bottom:16px; text-align:right;">
+          <button class="btn btn-primary" onclick="openModuleModal()">+ Novo Módulo</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Slug</th><th>Nome</th><th>Descrição</th><th>Preço/mês</th><th>Status</th><th>Ações</th></tr></thead>
+            <tbody id="modules-table"><tr><td colspan="6" class="loading"><span class="spinner"></span></td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- LOGS ADMIN -->
+      <div class="page" id="page-logs">
+        <div class="page-header">
+          <div class="page-title">Logs do Admin</div>
+          <div class="page-sub">Histórico de ações administrativas</div>
+        </div>
+        <div class="table-wrap">
+          <div id="logs-list"><div class="loading"><span class="spinner"></span></div></div>
+        </div>
+      </div>
+
+      <!-- WEBHOOKS -->
+      <div class="page" id="page-webhooks">
+        <div class="page-header">
+          <div class="page-title">Webhooks</div>
+          <div class="page-sub">Eventos recebidos da Kiwify / Hotmart</div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Plataforma</th><th>Evento</th><th>Status</th><th>Recebido em</th></tr></thead>
+            <tbody id="webhooks-table"><tr><td colspan="4" class="loading"><span class="spinner"></span></td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- MODAL EDITAR USUÁRIO -->
+<div class="modal-overlay" id="modal-user">
+  <div class="modal">
+    <div class="modal-title">Editar Usuário</div>
+    <input type="hidden" id="edit-user-id">
+    <div class="form-group">
+      <label class="form-label">Nome</label>
+      <input class="form-input" id="edit-user-name">
+    </div>
+    <div class="form-group">
+      <label class="form-label">E-mail</label>
+      <input class="form-input" id="edit-user-email" disabled style="opacity:.6;">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Plano</label>
+      <select class="form-select" id="edit-user-plan">
+        <option value="free">Free</option>
+        <option value="maker">Maker</option>
+        <option value="pro">Pro</option>
+        <option value="annual_maker">Anual Maker</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Role</label>
+      <select class="form-select" id="edit-user-role">
+        <option value="user">Usuário</option>
+        <option value="admin">Admin</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Bloqueado</label>
+      <select class="form-select" id="edit-user-blocked">
+        <option value="false">Não</option>
+        <option value="true">Sim — bloquear acesso</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modal-user')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveUser()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL NOVO MÓDULO -->
+<div class="modal-overlay" id="modal-module">
+  <div class="modal">
+    <div class="modal-title" id="modal-module-title">Novo Módulo</div>
+    <input type="hidden" id="edit-module-id">
+    <div class="form-group">
+      <label class="form-label">Slug (identificador único)</label>
+      <input class="form-input" id="edit-module-slug" placeholder="ex: instagram_flow">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Nome</label>
+      <input class="form-input" id="edit-module-name" placeholder="ex: Instagram Flow">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Descrição</label>
+      <input class="form-input" id="edit-module-desc">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Preço mensal (R$)</label>
+      <input class="form-input" id="edit-module-price" type="number" step="0.01" placeholder="0.00">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Status</label>
+      <select class="form-select" id="edit-module-active">
+        <option value="true">Ativo</option>
+        <option value="false">Inativo</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modal-module')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveModule()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL ADD ASSINATURA MANUAL -->
+<div class="modal-overlay" id="modal-sub">
+  <div class="modal">
+    <div class="modal-title">Adicionar Assinatura Manual</div>
+    <div class="form-group">
+      <label class="form-label">E-mail do usuário</label>
+      <input class="form-input" id="sub-user-email" placeholder="email@exemplo.com">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Plano</label>
+      <select class="form-select" id="sub-plan">
+        <option value="maker">Maker — R$18/mês</option>
+        <option value="pro">Pro — R$39/mês</option>
+        <option value="annual_maker">Anual Maker — R$159/ano</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Status</label>
+      <select class="form-select" id="sub-status">
+        <option value="active">Ativo</option>
+        <option value="trial">Trial</option>
+        <option value="cancelled">Cancelado</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Valor (R$)</label>
+      <input class="form-input" id="sub-amount" type="number" step="0.01" value="18.00">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modal-sub')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveSubManual()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<script>
+// ============================================================
+// CONFIG SUPABASE
+// ============================================================
+const SUPABASE_URL  = 'https://fqthlewarcqvmqojmzzs.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZxdGhsZXdhcmNxdm1xb2ptenpzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0ODgzNjMsImV4cCI6MjA5ODA2NDM2M30.PdRQ0VsUWa4L-ZKSxWyUvQ2sGD0O-cz4Vw3yZ6ZRSgs';
+
+const { createClient } = supabase;
+const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
+
+let currentAdmin = null;
+let allUsers = [];
+let allSubs = [];
+
+// ============================================================
+// AUTH
+// ============================================================
+async function doLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const pass  = document.getElementById('login-pass').value;
+  const errEl = document.getElementById('login-error');
+  errEl.textContent = '';
+
+  if (!email || !pass) { errEl.textContent = 'Preencha e-mail e senha.'; return; }
+
+  const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
+  if (error) { errEl.textContent = 'Credenciais inválidas: ' + error.message; return; }
+
+  // Aguardar sessão estabilizar
+  await new Promise(r => setTimeout(r, 500));
+
+  // Verificar se é admin
+  const { data: profile, error: profileError } = await sb.from('profiles').select('*').eq('id', data.user.id).single();
+  
+  if (profileError) { 
+    errEl.textContent = 'Erro ao carregar perfil: ' + profileError.message; 
+    await sb.auth.signOut();
+    return; 
+  }
+  
+  if (!profile || profile.role !== 'admin') {
+    await sb.auth.signOut();
+    errEl.textContent = 'Acesso restrito. Role atual: ' + (profile?.role || 'não encontrado');
+    return;
+  }
+
+  currentAdmin = profile;
+  initApp();
+}
+
+async function doLogout() {
+  await sb.auth.signOut();
+  currentAdmin = null;
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+}
+
+async function checkSession() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) return;
+  const { data: profile } = await sb.from('profiles').select('*').eq('id', session.user.id).single();
+  if (profile && profile.role === 'admin') {
+    currentAdmin = profile;
+    initApp();
+  }
+}
+
+function initApp() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  const name = currentAdmin.name || currentAdmin.email.split('@')[0];
+  document.getElementById('admin-name').textContent = name;
+  document.getElementById('admin-avatar').textContent = name[0].toUpperCase();
+  loadDashboard();
+}
+
+// ============================================================
+// NAVEGAÇÃO
+// ============================================================
+function showPage(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  event.currentTarget.classList.add('active');
+
+  if (page === 'dashboard')     loadDashboard();
+  if (page === 'users')         loadUsers();
+  if (page === 'subscriptions') loadSubscriptions();
+  if (page === 'modules')       loadModules();
+  if (page === 'logs')          loadLogs();
+  if (page === 'webhooks')      loadWebhooks();
+}
+
+// ============================================================
+// DASHBOARD
+// ============================================================
+async function loadDashboard() {
+  const { data: profiles } = await sb.from('profiles').select('plan, created_at, name, email, is_blocked');
+  if (!profiles) return;
+
+  const total  = profiles.length;
+  const active = profiles.filter(p => p.plan !== 'free').length;
+  const free   = profiles.filter(p => p.plan === 'free').length;
+
+  const planPrices = { maker: 18, pro: 39, annual_maker: 159/12 };
+  const mrr = profiles.reduce((acc, p) => acc + (planPrices[p.plan] || 0), 0);
+
+  document.getElementById('d-total').textContent = total;
+  document.getElementById('d-active').textContent = active;
+  document.getElementById('d-mrr').textContent = 'R$ ' + mrr.toFixed(2);
+  document.getElementById('d-free').textContent = free;
+
+  // Distribuição por plano
+  const dist = {};
+  profiles.forEach(p => { dist[p.plan] = (dist[p.plan] || 0) + 1; });
+  const distBody = document.getElementById('dash-plan-dist');
+  distBody.innerHTML = Object.entries(dist).map(([plan, count]) =>
+    `<tr><td><span class="badge badge-${plan === 'annual_maker' ? 'annual' : plan}">${planLabel(plan)}</span></td><td>${count}</td></tr>`
+  ).join('') || '<tr><td colspan="2" class="empty-row">Nenhum usuário</td></tr>';
+
+  // Últimos cadastros
+  const recent = [...profiles].sort((a,b) => new Date(b.created_at) - new Date(a.created_at)).slice(0,5);
+  document.getElementById('dash-recent').innerHTML = recent.map(p =>
+    `<tr>
+      <td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.name || p.email}</td>
+      <td><span class="badge badge-${p.plan === 'annual_maker' ? 'annual' : p.plan}">${planLabel(p.plan)}</span></td>
+      <td>${fmtDate(p.created_at)}</td>
+    </tr>`
+  ).join('');
+}
+
+// ============================================================
+// USUÁRIOS
+// ============================================================
+async function loadUsers() {
+  document.getElementById('users-table').innerHTML = '<tr><td colspan="5" class="loading"><span class="spinner"></span></td></tr>';
+  const { data } = await sb.from('profiles').select('*').order('created_at', { ascending: false });
+  allUsers = data || [];
+  renderUsers(allUsers);
+}
+
+function filterUsers() {
+  const q      = document.getElementById('user-search').value.toLowerCase();
+  const plan   = document.getElementById('user-plan-filter').value;
+  const status = document.getElementById('user-status-filter').value;
+  let filtered = allUsers.filter(u => {
+    const matchQ = !q || (u.name||'').toLowerCase().includes(q) || (u.email||'').toLowerCase().includes(q);
+    const matchP = !plan || u.plan === plan;
+    const matchS = !status || (status === 'blocked' ? u.is_blocked : !u.is_blocked);
+    return matchQ && matchP && matchS;
+  });
+  renderUsers(filtered);
+}
+
+function renderUsers(users) {
+  const tbody = document.getElementById('users-table');
+  if (!users.length) { tbody.innerHTML = '<tr><td colspan="5" class="empty-row">Nenhum usuário encontrado</td></tr>'; return; }
+  tbody.innerHTML = users.map(u => `
+    <tr>
+      <td>
+        <div style="font-weight:600;">${u.name || '—'}</div>
+        <div style="font-size:12px;color:var(--text3);">${u.email || '—'}</div>
+      </td>
+      <td><span class="badge badge-${u.plan === 'annual_maker' ? 'annual' : u.plan}">${planLabel(u.plan)}</span></td>
+      <td>
+        ${u.role === 'admin' ? '<span class="badge badge-admin">Admin</span>' : ''}
+        ${u.is_blocked ? '<span class="badge badge-blocked">Bloqueado</span>' : '<span class="badge badge-active">Ativo</span>'}
+      </td>
+      <td>${fmtDate(u.created_at)}</td>
+      <td>
+        <button class="btn btn-ghost btn-sm" onclick='openEditUser(${JSON.stringify(u)})'>Editar</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function openEditUser(u) {
+  document.getElementById('edit-user-id').value      = u.id;
+  document.getElementById('edit-user-name').value    = u.name || '';
+  document.getElementById('edit-user-email').value   = u.email || '';
+  document.getElementById('edit-user-plan').value    = u.plan || 'free';
+  document.getElementById('edit-user-role').value    = u.role || 'user';
+  document.getElementById('edit-user-blocked').value = String(u.is_blocked || false);
+  openModal('modal-user');
+}
+
+async function saveUser() {
+  const id      = document.getElementById('edit-user-id').value;
+  const name    = document.getElementById('edit-user-name').value.trim();
+  const plan    = document.getElementById('edit-user-plan').value;
+  const role    = document.getElementById('edit-user-role').value;
+  const blocked = document.getElementById('edit-user-blocked').value === 'true';
+
+  const { error } = await sb.from('profiles').update({ name, plan, role, is_blocked: blocked, updated_at: new Date() }).eq('id', id);
+  if (error) { showToast('Erro ao salvar: ' + error.message, 'error'); return; }
+
+  // Log da ação
+  await sb.from('admin_logs').insert({ admin_id: currentAdmin.id, action: 'update_user', target_user: id, details: { plan, role, blocked } });
+
+  closeModal('modal-user');
+  showToast('Usuário atualizado com sucesso', 'success');
+  loadUsers();
+  loadDashboard();
+}
+
+// ============================================================
+// ASSINATURAS
+// ============================================================
+async function loadSubscriptions() {
+  document.getElementById('subs-table').innerHTML = '<tr><td colspan="6" class="loading"><span class="spinner"></span></td></tr>';
+  const { data } = await sb.from('subscriptions').select('*, profiles(name, email)').order('created_at', { ascending: false });
+  allSubs = data || [];
+  renderSubs(allSubs);
+}
+
+function filterSubs() {
+  const q      = document.getElementById('sub-search').value.toLowerCase();
+  const status = document.getElementById('sub-status-filter').value;
+  let filtered = allSubs.filter(s => {
+    const email = s.profiles?.email || '';
+    const name  = s.profiles?.name  || '';
+    const matchQ = !q || email.toLowerCase().includes(q) || name.toLowerCase().includes(q);
+    const matchS = !status || s.status === status;
+    return matchQ && matchS;
+  });
+  renderSubs(filtered);
+}
+
+function renderSubs(subs) {
+  const tbody = document.getElementById('subs-table');
+  if (!subs.length) { tbody.innerHTML = '<tr><td colspan="6" class="empty-row">Nenhuma assinatura encontrada</td></tr>'; return; }
+  tbody.innerHTML = subs.map(s => `
+    <tr>
+      <td>${s.profiles?.name || s.profiles?.email || '—'}</td>
+      <td><span class="badge badge-${s.plan === 'annual_maker' ? 'annual' : s.plan || 'free'}">${planLabel(s.plan)}</span></td>
+      <td style="text-transform:capitalize;">${s.platform || '—'}</td>
+      <td><span class="badge badge-${s.status}">${statusLabel(s.status)}</span></td>
+      <td>R$ ${Number(s.amount||0).toFixed(2)}</td>
+      <td>${fmtDate(s.started_at || s.created_at)}</td>
+    </tr>
+  `).join('');
+}
+
+function openAddSubModal() {
+  document.getElementById('sub-user-email').value = '';
+  openModal('modal-sub');
+}
+
+async function saveSubManual() {
+  const email  = document.getElementById('sub-user-email').value.trim();
+  const plan   = document.getElementById('sub-plan').value;
+  const status = document.getElementById('sub-status').value;
+  const amount = parseFloat(document.getElementById('sub-amount').value);
+
+  if (!email) { showToast('Informe o e-mail do usuário', 'error'); return; }
+
+  // Buscar usuário pelo e-mail
+  const { data: profile } = await sb.from('profiles').select('id').eq('email', email).single();
+  if (!profile) { showToast('Usuário não encontrado com esse e-mail', 'error'); return; }
+
+  // Inserir assinatura
+  const { error } = await sb.from('subscriptions').insert({
+    user_id: profile.id, platform: 'manual', plan, status, amount,
+    started_at: new Date(), next_billing_at: new Date(Date.now() + 30*24*60*60*1000)
+  });
+  if (error) { showToast('Erro: ' + error.message, 'error'); return; }
+
+  // Atualizar plano no perfil
+  await sb.from('profiles').update({ plan, updated_at: new Date() }).eq('id', profile.id);
+  await sb.from('admin_logs').insert({ admin_id: currentAdmin.id, action: 'manual_subscription', target_user: profile.id, details: { plan, status, amount } });
+
+  closeModal('modal-sub');
+  showToast('Assinatura criada com sucesso', 'success');
+  loadSubscriptions();
+}
+
+// ============================================================
+// MÓDULOS
+// ============================================================
+async function loadModules() {
+  document.getElementById('modules-table').innerHTML = '<tr><td colspan="6" class="loading"><span class="spinner"></span></td></tr>';
+  const { data } = await sb.from('modules').select('*').order('id');
+  const tbody = document.getElementById('modules-table');
+  if (!data || !data.length) { tbody.innerHTML = '<tr><td colspan="6" class="empty-row">Nenhum módulo</td></tr>'; return; }
+  tbody.innerHTML = data.map(m => `
+    <tr>
+      <td><code style="background:var(--bg3);padding:2px 8px;border-radius:4px;font-size:12px;">${m.slug}</code></td>
+      <td style="font-weight:600;">${m.name}</td>
+      <td style="color:var(--text3);">${m.description || '—'}</td>
+      <td>${m.price_monthly > 0 ? 'R$ ' + Number(m.price_monthly).toFixed(2) : 'Grátis'}</td>
+      <td><span class="badge ${m.active ? 'badge-active' : 'badge-cancelled'}">${m.active ? 'Ativo' : 'Inativo'}</span></td>
+      <td>
+        <button class="btn btn-ghost btn-sm" onclick='openModuleModal(${JSON.stringify(m)})'>Editar</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function openModuleModal(m) {
+  document.getElementById('modal-module-title').textContent = m ? 'Editar Módulo' : 'Novo Módulo';
+  document.getElementById('edit-module-id').value     = m?.id || '';
+  document.getElementById('edit-module-slug').value   = m?.slug || '';
+  document.getElementById('edit-module-name').value   = m?.name || '';
+  document.getElementById('edit-module-desc').value   = m?.description || '';
+  document.getElementById('edit-module-price').value  = m?.price_monthly || '';
+  document.getElementById('edit-module-active').value = String(m?.active !== false);
+  if (m) document.getElementById('edit-module-slug').disabled = true;
+  else   document.getElementById('edit-module-slug').disabled = false;
+  openModal('modal-module');
+}
+
+async function saveModule() {
+  const id     = document.getElementById('edit-module-id').value;
+  const slug   = document.getElementById('edit-module-slug').value.trim();
+  const name   = document.getElementById('edit-module-name').value.trim();
+  const desc   = document.getElementById('edit-module-desc').value.trim();
+  const price  = parseFloat(document.getElementById('edit-module-price').value) || 0;
+  const active = document.getElementById('edit-module-active').value === 'true';
+
+  if (!name) { showToast('Nome é obrigatório', 'error'); return; }
+
+  let error;
+  if (id) {
+    ({ error } = await sb.from('modules').update({ name, description: desc, price_monthly: price, active }).eq('id', id));
+  } else {
+    if (!slug) { showToast('Slug é obrigatório', 'error'); return; }
+    ({ error } = await sb.from('modules').insert({ slug, name, description: desc, price_monthly: price, active }));
+  }
+
+  if (error) { showToast('Erro: ' + error.message, 'error'); return; }
+  closeModal('modal-module');
+  showToast('Módulo salvo com sucesso', 'success');
+  loadModules();
+}
+
+// ============================================================
+// LOGS
+// ============================================================
+async function loadLogs() {
+  document.getElementById('logs-list').innerHTML = '<div class="loading"><span class="spinner"></span></div>';
+  const { data } = await sb.from('admin_logs')
+    .select('*, admin:profiles!admin_id(name,email), target:profiles!target_user(name,email)')
+    .order('created_at', { ascending: false }).limit(50);
+
+  const el = document.getElementById('logs-list');
+  if (!data || !data.length) { el.innerHTML = '<div class="empty-row" style="padding:40px;text-align:center;color:var(--text3);">Nenhum log registrado ainda</div>'; return; }
+  el.innerHTML = data.map(l => `
+    <div class="log-entry">
+      <div>
+        <span class="log-action">${l.action}</span>
+        ${l.target ? `→ <strong>${l.target.name || l.target.email}</strong>` : ''}
+        <span style="color:var(--text3);font-size:12px;">por ${l.admin?.name || l.admin?.email || '—'}</span>
+      </div>
+      ${l.details ? `<div style="font-size:12px;color:var(--text3);margin-top:2px;">${JSON.stringify(l.details)}</div>` : ''}
+      <div class="log-time">${fmtDateTime(l.created_at)}</div>
+    </div>
+  `).join('');
+}
+
+// ============================================================
+// WEBHOOKS
+// ============================================================
+async function loadWebhooks() {
+  const { data } = await sb.from('webhook_logs').select('*').order('created_at', { ascending: false }).limit(50);
+  const tbody = document.getElementById('webhooks-table');
+  if (!data || !data.length) {
+    tbody.innerHTML = '<tr><td colspan="4" class="empty-row">Nenhum webhook recebido ainda.<br><span style="font-size:12px;">Os eventos da Kiwify aparecerão aqui após configurar a Edge Function.</span></td></tr>';
+    return;
+  }
+  tbody.innerHTML = data.map(w => `
+    <tr>
+      <td style="text-transform:capitalize;">${w.platform || '—'}</td>
+      <td>${w.event || '—'}</td>
+      <td><span class="badge badge-${w.status === 'processed' ? 'active' : 'overdue'}">${w.status}</span></td>
+      <td>${fmtDateTime(w.created_at)}</td>
+    </tr>
+  `).join('');
+}
+
+// ============================================================
+// HELPERS
+// ============================================================
+function planLabel(plan) {
+  return { free:'Free', maker:'Maker', pro:'Pro', annual_maker:'Anual' }[plan] || plan || '—';
+}
+function statusLabel(s) {
+  return { active:'Ativo', cancelled:'Cancelado', overdue:'Inadimplente', refunded:'Reembolsado', trial:'Trial' }[s] || s || '—';
+}
+function fmtDate(d) {
+  if (!d) return '—';
+  return new Date(d).toLocaleDateString('pt-BR');
+}
+function fmtDateTime(d) {
+  if (!d) return '—';
+  return new Date(d).toLocaleString('pt-BR');
+}
+function openModal(id)  { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+let toastTimer;
+function showToast(msg, type = 'success') {
+  const t = document.getElementById('toast');
+  t.textContent = type === 'success' ? '✓ ' + msg : '✕ ' + msg;
+  t.className = 'show ' + type;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { t.className = ''; }, 3000);
+}
+
+// Fechar modais clicando fora
+document.querySelectorAll('.modal-overlay').forEach(o => {
+  o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); });
+});
+
+// ============================================================
+// INICIALIZAR
+// ============================================================
+checkSession();
+</script>
+</body>
+</html>
