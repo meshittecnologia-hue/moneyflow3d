@@ -1,6 +1,5 @@
 <!DOCTYPE html>
-<!-- saved from url=(0039)https://moneyflow3d-meshit.netlify.app/ -->
-<html lang="pt-BR"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<html lang="pt-BR"><head><meta charset="UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>MoneyFlow 3D</title>
@@ -50,7 +49,7 @@ button{cursor:pointer}
 
 /* ── SIDEBAR CONTENT ──────────────────────────────────── */
 .logo{padding:18px 16px 14px;border-bottom:1px solid var(--border);flex-shrink:0}
-.logo-title{font-size:15px;font-weight:700;color:var(--text);letter-spacing:-.3px}
+.logo-title{font-size:15px;font-weight:700;color:var(--accent);letter-spacing:-.3px}
 .logo-sub{font-size:11px;color:var(--text3);margin-top:2px}
 .nav{padding:10px 8px;flex:1}
 .nav-section{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;padding:10px 8px 5px}
@@ -1194,6 +1193,25 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   </div>
 </div>
 
+<!-- MODAL EDITAR PRODUTO -->
+<div class="modal-overlay" id="modal-edit-prod">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-title">Editar produto</div>
+    <input type="hidden" id="ep-id">
+    <div class="form-grid">
+      <div class="field full"><label>Nome do produto</label><input type="text" id="ep-nome" placeholder="Nome do produto"></div>
+      <div class="field"><label>Custo total (R$)</label><input type="number" id="ep-custo" step="0.01" min="0"></div>
+      <div class="field"><label>Preço base (R$)</label><input type="number" id="ep-preco" step="0.01" min="0" oninput="recalcEpMargem()"></div>
+      <div class="field"><label>Markup (%)</label><input type="number" id="ep-markup" step="0.1" min="0"></div>
+      <div class="field"><label>Margem (%)</label><input type="text" id="ep-margem" readonly style="opacity:.7"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-edit-prod')">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarEdicaoProduto()">Salvar alterações</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL ORÇAMENTO -->
 <div class="modal-overlay" id="modal-orc">
   <div class="modal" style="max-width:560px">
@@ -1510,17 +1528,600 @@ let crmDetalheId=null;
 let DB={config:{kwh:0.85},impressoras:[{id:1,nome:'Bambu Lab X1 Carbon',inv:9500,roi:18,watts:350,hpd:8,fail:5}],filamentos:FIL_DEFAULT,produtos:[]};
 
 /* ── DB ─────────────────────────────────────────────── */
+
+/* ── DB LOCAL (em memória) — dados vêm do Supabase ── */
 function loadDB(){
   try{
-    const s=localStorage.getItem('p3d_db');
-    if(s){
-      const d=JSON.parse(s);DB=d;
-      const ids=new Set(d.filamentos.map(f=>f.id));
-      FIL_DEFAULT.forEach(f=>{if(!ids.has(f.id))DB.filamentos.unshift(f);});
-    }
+    const ids=new Set(DB.filamentos.map(f=>f.id));
+    FIL_DEFAULT.forEach(f=>{if(!ids.has(f.id))DB.filamentos.unshift(f);});
   }catch(e){}
 }
-function saveDB(){try{localStorage.setItem('p3d_db',JSON.stringify(DB));}catch(e){}}
+async function saveDB(){/* dados persistidos pelo Supabase diretamente */}
+
+/* ═══════════════════════════════════════════════════════
+   CAMADA SUPABASE — substitui localStorage por banco real
+   Cada usuário vê só seus próprios dados (RLS)
+   ═══════════════════════════════════════════════════════ */
+
+let _currentUser = null;
+let _userProfile = null;
+
+/* ── DB SYNC ─────────────────────────────────────────── */
+function loadDB(){
+  // DB em memória — dados vêm do Supabase no initApp()
+  // Mantém filamentos default como fallback
+  const ids = new Set(DB.filamentos.map(f=>f.id));
+  FIL_DEFAULT.forEach(f=>{ if(!ids.has(f.id)) DB.filamentos.unshift(f); });
+}
+
+async function saveDB(){
+  // Persist é feito por função específica de cada módulo
+  // saveDB() agora é no-op para compatibilidade
+}
+
+/* ── LOAD DADOS DO SUPABASE ──────────────────────────── */
+async function loadSupabaseData(){
+  if(!_currentUser) return;
+  const uid = _currentUser.id;
+
+  const [
+    { data: produtos },
+    { data: filamentos },
+    { data: impressoras },
+    { data: clientes },
+    { data: orcamentos },
+    { data: fila },
+    { data: estoque },
+    { data: concorrentes },
+    { data: config },
+  ] = await Promise.all([
+    _supa.from('products').select('*').eq('user_id', uid).order('created_at', { ascending: false }),
+    _supa.from('filaments').select('*').eq('user_id', uid).order('nome'),
+    _supa.from('printers').select('*').eq('user_id', uid),
+    _supa.from('clientes').select('*').eq('user_id', uid).order('created_at', { ascending: false }),
+    _supa.from('orcamentos').select('*').eq('user_id', uid).order('created_at', { ascending: false }),
+    _supa.from('fila_producao').select('*').eq('user_id', uid).order('created_at', { ascending: false }),
+    _supa.from('estoque').select('*').eq('user_id', uid),
+    _supa.from('competitors').select('*').eq('user_id', uid).order('created_at', { ascending: false }),
+    _supa.from('user_config').select('*').eq('user_id', uid).single(),
+  ]);
+
+  // Mapear produtos do Supabase para formato do DB
+  DB.produtos = (produtos || []).map(p => ({
+    id: p.id, nome: p.name, filamento: p.filament_name || '—',
+    custoTotal: p.cost_total || 0, precoBase: p.price_base || 0,
+    margem: p.margin || 0, markup: p.markup || 0,
+    data: new Date(p.created_at).toLocaleDateString('pt-BR'),
+    ts: new Date(p.created_at).getTime(),
+    _supaid: p.id
+  }));
+
+  // Filamentos — usa os do Supabase + defaults não cadastrados
+  if(filamentos && filamentos.length){
+    const ids = new Set(filamentos.map(f=>f.id));
+    const extras = FIL_DEFAULT.filter(f=>!ids.has(f.id));
+    DB.filamentos = [...filamentos.map(f=>({
+      id: f.id, nome: f.nome||f.name, marca: f.marca||f.brand||'',
+      cor: f.cor||f.color||'', tipo: f.tipo||f.type||'PLA',
+      custo: f.custo||f.cost||0, peso: f.peso||f.weight_g||1000
+    })), ...extras];
+  }
+
+  // Impressoras
+  if(impressoras && impressoras.length){
+    DB.impressoras = impressoras.map(i=>({
+      id: i.id, nome: i.name, inv: i.investment||9500,
+      roi: i.roi_months||18, watts: i.watts||350,
+      hpd: i.hours_per_day||8, fail: i.fail_rate||5
+    }));
+  }
+
+  // Clientes
+  DB.clientes = (clientes || []).map(c=>({
+    id: c.id, nome: c.name, wpp: c.whatsapp||'',
+    insta: c.instagram||'', email: c.email||'', obs: c.notes||'',
+    ts: new Date(c.created_at).getTime()
+  }));
+
+  // Orçamentos
+  DB.orcamentos = (orcamentos || []).map(o=>({
+    id: o.id, clienteId: o.cliente_id, clienteNome: o.cliente_nome||'Cliente não informado',
+    clienteWpp: o.cliente_wpp||'', produtoNome: o.produto_nome||'',
+    qtd: o.qtd||1, preco: o.preco||0, desc: o.desconto||0,
+    total: o.total||0, marketplace: o.marketplace||'', obs: o.obs||'',
+    validade: o.validade||'', status: o.status||'pendente',
+    data: o.data||new Date(o.created_at).toLocaleDateString('pt-BR'),
+    ts: new Date(o.created_at).getTime()
+  }));
+
+  // Fila
+  DB.fila = (fila || []).map(f=>({
+    id: f.id, orcamentoId: f.orcamento_id, produto: f.produto||'',
+    clienteId: f.cliente_id, clienteNome: f.cliente_nome||'—',
+    qtd: f.qtd||1, prazo: f.prazo||'', status: f.status||'aguardando',
+    transportadora: f.transportadora||'', rastreio: f.rastreio||'',
+    obs: f.obs||'', criado: f.criado||new Date(f.created_at).toLocaleDateString('pt-BR'),
+    ts: new Date(f.created_at).getTime()
+  }));
+
+  // Estoque
+  DB.estoque = (estoque || []).map(e=>({
+    id: e.id, filId: e.filamento_id, nome: e.nome||'',
+    tipo: e.tipo||'', qtd: e.qtd||0, min: e.minimo||1,
+    obs: e.obs||'', atualizado: e.atualizado||''
+  }));
+
+  // Concorrentes
+  DB.concorrentes = (concorrentes || []).map(c=>({
+    id: c.id, nome: c.name, loja: c.store||'',
+    url: c.url||'', preco: c.price||0,
+    marketplace: c.marketplace||'', obs: c.notes||''
+  }));
+
+  // Config
+  if(config){
+    DB.config.kwh = config.kwh||0.85;
+    DB.config.kwhBase = config.kwh_base||0.85;
+    DB.config.bandeira = config.bandeira||'';
+  }
+}
+
+/* ── SALVAR PRODUTO ──────────────────────────────────── */
+async function salvar(){
+  const nome = document.getElementById('c-nome').value.trim()||'Produto sem nome';
+  const filId = parseInt(document.getElementById('c-fil').value||0);
+  const fil = DB.filamentos.find(x=>x.id===filId);
+  const r = lastCalc;
+  const uid = _currentUser.id;
+
+  const { data, error } = await _supa.from('products').insert({
+    user_id: uid, name: nome,
+    filament_id: (filId&&!isNaN(filId)&&filId>200)?null:null,
+    filament_name: fil?fil.nome:'—',
+    cost_total: r.total, price_base: r.base, price_final: r.baseFinal,
+    margin: r.base>0?((r.base-r.total)/r.base*100):0,
+    markup: r.markup*100, discount: r.desconto*100,
+    print_hours: r.printH, grams_used: parseFloat(document.getElementById('c-grams').value)||0,
+    packaging: r.emb, supplies: r.ins,
+    labor_hour: parseFloat(document.getElementById('c-hora').value)||0,
+    labor_min: parseInt(document.getElementById('c-tman').value)||0,
+  }).select().single();
+
+  if(error){ notify('Erro ao salvar: '+error.message,'red'); return; }
+
+  // Adicionar no DB local
+  DB.produtos.unshift({
+    id: data.id, nome, filamento: fil?fil.nome:'—',
+    custoTotal: r.total, precoBase: r.base, margem: r.base>0?((r.base-r.total)/r.base*100):0,
+    markup: r.markup*100, data: new Date().toLocaleDateString('pt-BR'), ts: Date.now()
+  });
+  notify('Produto salvo!'); showPage('produtos');
+}
+
+/* ── SALVAR FILAMENTO ────────────────────────────────── */
+async function saveFil(){
+  const uid = _currentUser.id;
+  const editId = editFilId;
+  const fil = {
+    nome: document.getElementById('mf-nome').value.trim(),
+    marca: document.getElementById('mf-marca').value.trim(),
+    cor: document.getElementById('mf-cor').value.trim(),
+    tipo: document.getElementById('mf-tipo').value,
+    custo: parseFloat(document.getElementById('mf-custo').value)||0,
+    peso: parseInt(document.getElementById('mf-peso').value)||1000,
+  };
+  if(!fil.nome){ notify('Informe o nome','red'); return; }
+
+  if(editId){
+    await _supa.from('filaments').update({
+      name: fil.nome, brand: fil.marca, color: fil.cor,
+      type: fil.tipo, cost: fil.custo, weight_g: fil.peso
+    }).eq('id', editId);
+    DB.filamentos = DB.filamentos.map(f=>f.id===editId?{...f,...fil}:f);
+  } else {
+    const { data } = await _supa.from('filaments').insert({
+      user_id: uid, name: fil.nome, brand: fil.marca, color: fil.cor,
+      type: fil.tipo, cost: fil.custo, weight_g: fil.peso,
+      // Campos pt-BR para compatibilidade
+      nome: fil.nome, marca: fil.marca, cor: fil.cor, tipo: fil.tipo,
+      custo: fil.custo, peso: fil.peso
+    }).select().single();
+    if(data) DB.filamentos.unshift({...fil, id: data.id});
+  }
+  editFilId = null;
+  closeModal('modal-fil');
+  renderFilamentos(); populateSelects();
+  notify('Filamento salvo!');
+}
+
+/* ── SALVAR CLIENTE ──────────────────────────────────── */
+async function saveCliente(){
+  const uid = _currentUser.id;
+  const id = document.getElementById('cli-id').value;
+  const cli = {
+    nome: document.getElementById('cli-nome').value.trim()||'Cliente sem nome',
+    wpp: document.getElementById('cli-wpp').value.trim(),
+    insta: document.getElementById('cli-insta').value.trim(),
+    email: document.getElementById('cli-email').value.trim(),
+    obs: document.getElementById('cli-obs').value.trim(),
+  };
+
+  if(id){
+    await _supa.from('clientes').update({
+      name: cli.nome, whatsapp: cli.wpp, instagram: cli.insta,
+      email: cli.email, notes: cli.obs
+    }).eq('id', id);
+    DB.clientes = DB.clientes.map(c=>c.id===id?{...c,...cli}:c);
+  } else {
+    const { data } = await _supa.from('clientes').insert({
+      user_id: uid, name: cli.nome, whatsapp: cli.wpp,
+      instagram: cli.insta, email: cli.email, notes: cli.obs
+    }).select().single();
+    if(data) DB.clientes.unshift({...cli, id: data.id, ts: Date.now()});
+  }
+  closeModal('modal-cliente'); renderCRM(); notify('Cliente salvo!');
+}
+
+async function delCliente(id){
+  if(!confirm('Remover este cliente?')) return;
+  await _supa.from('clientes').delete().eq('id', id);
+  DB.clientes = DB.clientes.filter(c=>c.id!==id);
+  renderCRM(); notify('Removido','red');
+}
+
+/* ── SALVAR ORÇAMENTO ────────────────────────────────── */
+async function saveOrcamento(){
+  const uid = _currentUser.id;
+  const editId = document.getElementById('modal-orc').dataset.editId||null;
+  const cliId = document.getElementById('orc-cliente').value;
+  const cli = DB.clientes.find(c=>c.id==cliId);
+  const prodId = parseInt(document.getElementById('orc-produto').value);
+  const prod = DB.produtos.find(p=>p.id===prodId||p._supaid===prodId);
+  const qtd = parseInt(document.getElementById('orc-qtd').value)||1;
+  const preco = parseFloat(document.getElementById('orc-preco').value)||0;
+  const desc = parseFloat(document.getElementById('orc-desc').value)||0;
+  const total = qtd*preco*(1-desc/100);
+  const prodNome = prod?prod.nome:(document.getElementById('orc-produto').options[document.getElementById('orc-produto').selectedIndex].text);
+  const payload = {
+    cliente_id: cliId||null,
+    cliente_nome: cli?cli.nome:'Cliente não informado',
+    cliente_wpp: cli?cli.wpp:'',
+    produto_nome: prodNome, qtd, preco, desconto: desc, total,
+    marketplace: document.getElementById('orc-mp').value,
+    obs: document.getElementById('orc-obs').value.trim(),
+    validade: document.getElementById('orc-validade').value,
+  };
+
+  if(editId){
+    const {error}=await _supa.from('orcamentos').update(payload).eq('id',editId);
+    if(error){notify('Erro: '+error.message,'red');return;}
+    DB.orcamentos=DB.orcamentos.map(o=>o.id==editId?{...o,
+      clienteId:cliId,clienteNome:cli?cli.nome:'Cliente não informado',
+      clienteWpp:cli?cli.wpp:'',produtoId:prodId,produtoNome:prodNome,
+      qtd,precoUnit:preco,desconto:desc,total,
+      marketplace:payload.marketplace,obs:payload.obs,validade:payload.validade}:o);
+    delete document.getElementById('modal-orc').dataset.editId;
+    document.getElementById('modal-orc').querySelector('.modal-title').textContent='Novo orçamento';
+    closeModal('modal-orc');notify('Orçamento atualizado!');renderOrcamentos();
+    return;
+  }
+
+  const { data, error } = await _supa.from('orcamentos').insert({
+    user_id: uid, ...payload,
+    status: 'pendente',
+    data: new Date().toLocaleDateString('pt-BR'),
+  }).select().single();
+
+  if(error){ notify('Erro: '+error.message,'red'); return; }
+
+  DB.orcamentos.unshift({
+    id: data.id, clienteId: cliId, clienteNome: cli?cli.nome:'Cliente não informado',
+    clienteWpp: cli?cli.wpp:'', produtoId: prodId, produtoNome: prodNome,
+    qtd, precoUnit: preco, desconto: desc, total,
+    marketplace: data.marketplace, obs: data.obs,
+    validade: data.validade, status: 'pendente',
+    data: data.data, ts: new Date(data.created_at).getTime()
+  });
+  closeModal('modal-orc'); notify('Orçamento salvo!'); renderOrcamentos();
+}
+
+/* ── ATUALIZAR STATUS ORÇAMENTO ──────────────────────── */
+async function updateOrcStatus(id, status){
+  const o = DB.orcamentos.find(x=>x.id===id); if(!o) return;
+  const anterior = o.status;
+  o.status = status;
+
+  await _supa.from('orcamentos').update({ status }).eq('id', id);
+
+  if(status==='aprovado' && anterior!=='aprovado'){
+    if(!DB.fila) DB.fila=[];
+    const jaExiste = DB.fila.find(f=>f.orcamentoId===id);
+    let filaId = null;
+    if(!jaExiste){
+      const { data: filaData } = await _supa.from('fila_producao').insert({
+        user_id: _currentUser.id,
+        orcamento_id: id,
+        produto: o.produtoNome+(o.qtd>1?' × '+o.qtd:''),
+        cliente_id: o.clienteId||null,
+        cliente_nome: o.clienteNome,
+        qtd: o.qtd,
+        status: 'aguardando',
+        obs: 'Criado automaticamente do orçamento Nº '+String(id).slice(-6),
+        criado: new Date().toLocaleDateString('pt-BR'),
+      }).select().single();
+
+      if(filaData){
+        filaId = filaData.id;
+        DB.fila.unshift({
+          id: filaId, orcamentoId: id,
+          produto: o.produtoNome+(o.qtd>1?' × '+o.qtd:''),
+          clienteId: o.clienteId, clienteNome: o.clienteNome,
+          qtd: o.qtd, prazo: '', status: 'aguardando',
+          transportadora: '', rastreio: '',
+          obs: 'Criado automaticamente do orçamento Nº '+String(id).slice(-6),
+          criado: new Date().toLocaleDateString('pt-BR'), ts: Date.now()
+        });
+      }
+    } else {
+      filaId = jaExiste.id;
+    }
+    renderOrcamentos();
+    if(filaId) abrirRastreioOpcional(filaId);
+    return;
+  }
+  renderOrcamentos();
+}
+
+async function delOrcamento(id){
+  if(!confirm('Remover orçamento?')) return;
+  await _supa.from('orcamentos').delete().eq('id', id);
+  DB.orcamentos = DB.orcamentos.filter(x=>x.id!==id);
+  renderOrcamentos(); notify('Removido','red');
+}
+
+/* ── SALVAR FILA ─────────────────────────────────────── */
+async function saveFila(){
+  const uid = _currentUser.id;
+  const editId = document.getElementById('fila-edit-id').value;
+  const cliId = document.getElementById('fp-cliente').value;
+  const cli = DB.clientes.find(c=>c.id==cliId);
+
+  const payload = {
+    produto: document.getElementById('fp-produto').value.trim()||'Pedido sem nome',
+    cliente_id: cliId||null,
+    cliente_nome: cli?cli.nome:'—',
+    qtd: parseInt(document.getElementById('fp-qtd').value)||1,
+    prazo: document.getElementById('fp-prazo').value,
+    status: document.getElementById('fp-status').value,
+    obs: document.getElementById('fp-obs').value.trim(),
+    transportadora: document.getElementById('fp-transportadora').value,
+    rastreio: document.getElementById('fp-rastreio').value.trim(),
+    criado: new Date().toLocaleDateString('pt-BR'),
+  };
+
+  if(editId){
+    await _supa.from('fila_producao').update(payload).eq('id', editId);
+    DB.fila = DB.fila.map(x=>x.id===editId?{...x,...payload,id:editId,clienteId:payload.cliente_id,clienteNome:payload.cliente_nome}:x);
+  } else {
+    const { data } = await _supa.from('fila_producao').insert({...payload, user_id: uid}).select().single();
+    if(data) DB.fila.unshift({...payload, id: data.id, clienteId: payload.cliente_id, clienteNome: payload.cliente_nome, ts: Date.now()});
+  }
+  closeModal('modal-fila'); renderFila(); notify('Pedido salvo!');
+}
+
+/* ── AVANÇAR STATUS FILA ─────────────────────────────── */
+async function avancarStatus(id){
+  const order=['aguardando','fatiando','imprimindo','pos_processo','pronto','ag_envio','enviado','entregue'];
+  const item = DB.fila.find(x=>x.id===id); if(!item) return;
+  const idx = order.indexOf(item.status);
+  if(idx<order.length-1){
+    const proximo = order[idx+1];
+    if(item.status==='pronto' && proximo==='ag_envio' && !item.transportadora){
+      abrirRastreioObrigatorio(id); return;
+    }
+    item.status = proximo;
+    await _supa.from('fila_producao').update({ status: proximo }).eq('id', id);
+    const filtro = document.getElementById('fila-status-filter');
+    if(filtro) filtro.value = item.status;
+    renderFila();
+    notify(FILA_STATUS[item.status].label+' — pedido avançado!');
+  }
+}
+
+async function updateFilaStatus(id, status){
+  const item = DB.fila.find(x=>x.id===id); if(!item) return;
+  if(status==='ag_envio' && !item.transportadora){
+    abrirRastreioObrigatorio(id); return;
+  }
+  item.status = status;
+  await _supa.from('fila_producao').update({ status }).eq('id', id);
+  renderFila(); notify('Status atualizado!');
+}
+
+async function delFila(id){
+  if(!confirm('Remover este pedido da fila?')) return;
+  await _supa.from('fila_producao').delete().eq('id', id);
+  DB.fila = DB.fila.filter(x=>x.id!==id);
+  renderFila(); notify('Removido','red');
+}
+
+/* ── SALVAR RASTREIO ─────────────────────────────────── */
+async function salvarRastreioRapido(){
+  const filaId = document.getElementById('rastreio-fila-id').value;
+  const obrigatorio = document.getElementById('rastreio-obrigatorio').value==='1';
+  const item = DB.fila.find(x=>x.id===filaId||x.id===parseInt(filaId));
+  if(!item){ closeModal('modal-rastreio'); return; }
+
+  const transp = document.getElementById('rastreio-transportadora').value;
+  const outro = document.getElementById('rastreio-outro-nome').value.trim();
+  const codigo = document.getElementById('rastreio-codigo').value.trim();
+  const semCodigo = ['maos','retirada'];
+
+  if(!transp){ notify('Selecione a forma de entrega para continuar.','red'); return; }
+  if(transp==='outro' && !outro){ notify('Informe o nome da transportadora.','red'); return; }
+  if(obrigatorio && !semCodigo.includes(transp) && transp!=='outro' && !codigo){
+    notify('Informe o código de rastreio para continuar.','red'); return;
+  }
+
+  item.transportadora = transp==='outro'?('outro:'+outro):transp;
+  item.rastreio = codigo;
+
+  const update = { transportadora: item.transportadora, rastreio: codigo };
+  if(obrigatorio){
+    item.status = 'ag_envio';
+    update.status = 'ag_envio';
+    const filtro = document.getElementById('fila-status-filter');
+    if(filtro) filtro.value = 'ag_envio';
+  }
+
+  await _supa.from('fila_producao').update(update).eq('id', item.id);
+  closeModal('modal-rastreio');
+  if(obrigatorio){ renderFila(); notify('📦 Forma de entrega registrada!'); }
+  else if(codigo||semCodigo.includes(transp)){ notify('✅ Aprovado! Entrega cadastrada.'); }
+  else { notify('✅ Orçamento aprovado! Pedido na fila de produção.'); }
+}
+
+/* ── SALVAR ESTOQUE ──────────────────────────────────── */
+async function saveEstoque(){
+  const uid = _currentUser.id;
+  const editId = document.getElementById('est-edit-id').value;
+  const filId = document.getElementById('est-fil-id').value;
+  if(!filId){ notify('Selecione um filamento','red'); return; }
+  const fil = DB.filamentos.find(f=>f.id==filId);
+  const item = {
+    filamento_id: filId, nome: fil?fil.nome:'Filamento',
+    tipo: fil?fil.tipo:'', qtd: parseInt(document.getElementById('est-qtd').value)||0,
+    minimo: parseInt(document.getElementById('est-min').value)||1,
+    obs: document.getElementById('est-obs').value.trim(),
+    atualizado: new Date().toLocaleDateString('pt-BR'),
+  };
+
+  if(editId){
+    await _supa.from('estoque').update(item).eq('id', editId);
+    DB.estoque = DB.estoque.map(x=>x.id===editId?{...x,filId:filId,qtd:item.qtd,min:item.minimo,obs:item.obs,atualizado:item.atualizado}:x);
+  } else {
+    const ex = DB.estoque.find(x=>x.filId==filId);
+    if(ex){
+      ex.qtd += item.qtd; ex.atualizado = item.atualizado;
+      await _supa.from('estoque').update({ qtd: ex.qtd, atualizado: ex.atualizado }).eq('id', ex.id);
+    } else {
+      const { data } = await _supa.from('estoque').insert({...item, user_id: uid}).select().single();
+      if(data) DB.estoque.push({id: data.id, filId, nome: item.nome, tipo: item.tipo, qtd: item.qtd, min: item.minimo, obs: item.obs, atualizado: item.atualizado});
+    }
+  }
+  closeModal('modal-estoque'); renderEstoque(); notify('Estoque atualizado!');
+}
+
+async function ajustarQtdEstoque(id, delta){
+  const item = DB.estoque.find(x=>x.id===id); if(!item) return;
+  item.qtd = Math.max(0, item.qtd+delta);
+  item.atualizado = new Date().toLocaleDateString('pt-BR');
+  await _supa.from('estoque').update({ qtd: item.qtd, atualizado: item.atualizado }).eq('id', id);
+  renderEstoque();
+}
+
+async function delEstoque(id){
+  if(!confirm('Remover do estoque?')) return;
+  await _supa.from('estoque').delete().eq('id', id);
+  DB.estoque = DB.estoque.filter(x=>x.id!==id);
+  renderEstoque(); notify('Removido','red');
+}
+
+/* ── SALVAR IMPRESSORA ───────────────────────────────── */
+async function saveImp(){
+  const uid = _currentUser.id;
+  const imp = {
+    nome: document.getElementById('mi-nome').value.trim(),
+    inv: parseFloat(document.getElementById('mi-inv').value)||9500,
+    roi: parseInt(document.getElementById('mi-roi').value)||18,
+    watts: parseInt(document.getElementById('mi-watts').value)||350,
+    hpd: parseFloat(document.getElementById('mi-hpd').value)||8,
+    fail: parseFloat(document.getElementById('mi-fail').value)||5,
+  };
+  const { data } = await _supa.from('printers').insert({
+    user_id: uid, name: imp.nome, investment: imp.inv,
+    roi_months: imp.roi, watts: imp.watts,
+    hours_per_day: imp.hpd, fail_rate: imp.fail
+  }).select().single();
+  if(data) DB.impressoras.push({...imp, id: data.id});
+  closeModal('modal-imp');
+  if(impOrigin==='calc') populateSelects();
+  else renderConfig();
+  notify('Impressora adicionada!');
+}
+
+async function delImp(id){
+  await _supa.from('printers').delete().eq('id', id);
+  DB.impressoras = DB.impressoras.filter(x=>x.id!==id);
+  renderConfig(); notify('Removida','red');
+}
+
+/* ── SALVAR CONCORRENTE ──────────────────────────────── */
+async function saveConc(){
+  const uid = _currentUser.id;
+  const c = {
+    nome: document.getElementById('mc-nome').value.trim(),
+    loja: document.getElementById('mc-loja').value.trim(),
+    url: document.getElementById('mc-url').value.trim(),
+    preco: parseFloat(document.getElementById('mc-preco').value)||0,
+    marketplace: document.getElementById('mc-mp').value,
+    obs: document.getElementById('mc-obs').value.trim(),
+  };
+  const { data } = await _supa.from('competitors').insert({
+    user_id: uid, name: c.nome, store: c.loja, url: c.url,
+    price: c.preco, marketplace: c.marketplace, notes: c.obs
+  }).select().single();
+  if(data){ if(!DB.concorrentes)DB.concorrentes=[]; DB.concorrentes.unshift({...c, id: data.id}); }
+  closeModal('modal-conc'); renderConcList(); notify('Concorrente salvo!');
+}
+
+/* ── SALVAR CONFIG ───────────────────────────────────── */
+async function saveConfig(){
+  DB.config.kwh = parseFloat(document.getElementById('cfg-kwh').value)||0.85;
+  await _supa.from('user_config').upsert({
+    user_id: _currentUser.id, kwh: DB.config.kwh,
+    kwh_base: DB.config.kwhBase||DB.config.kwh, bandeira: DB.config.bandeira||''
+  }, { onConflict: 'user_id' });
+  notify('Salvo!');
+}
+
+/* ── SALVAR SETTINGS ─────────────────────────────────── */
+function loadSettings(){
+  const s = JSON.parse(localStorage.getItem('p3d_settings')||'{}');
+  if(s.logo){
+    const el = document.getElementById('topbar-logo');
+    if(el){ el.src=s.logo; el.style.display='block'; }
+  }
+}
+
+/* ── VERIFICAR PLANO/MÓDULOS ─────────────────────────── */
+async function verificarAcesso(){
+  if(!_currentUser) return;
+  const { data: profile } = await _supa.from('profiles').select('*').eq('id', _currentUser.id).single();
+  _userProfile = profile;
+
+  if(!profile){ notify('Perfil não encontrado. Contate o administrador.','red'); return; }
+  if(profile.is_blocked){ notify('Conta suspensa. Contate o administrador.','red'); await doLogout(); return; }
+
+  // Exibir email do usuário na topbar
+  const emailEl = document.getElementById('topbar-email');
+  if(emailEl) emailEl.textContent = _currentUser.email;
+}
+
+/* ── INIT APP ────────────────────────────────────────── */
+async function initApp(){
+  applyTheme();
+  const { data: { user } } = await _supa.auth.getUser();
+  _currentUser = user;
+  await verificarAcesso();
+  await loadSupabaseData();
+  loadDB(); // mantém filamentos default
+  if(!DB.catalogos) DB.catalogos=[];
+  renderDashboard();
+  renderBioStatus();
+  loadSettingsPage();
+}
+
 
 /* ── NOTIFY ─────────────────────────────────────────── */
 function notify(msg,type='green'){
@@ -1718,14 +2319,6 @@ function renderAllMP(base,total,baseFinal,desconto){
   }).join('');
 }
 
-function salvar(){
-  const nome=document.getElementById('c-nome').value.trim()||'Produto sem nome';
-  const filId=parseInt(document.getElementById('c-fil').value||0);
-  const fil=DB.filamentos.find(x=>x.id===filId);
-  const r=lastCalc;
-  DB.produtos.unshift({id:Date.now(),nome,filamento:fil?fil.nome:'—',custoTotal:r.total,precoBase:r.base,margem:r.base>0?((r.base-r.total)/r.base*100):0,markup:r.markup*100,data:new Date().toLocaleDateString('pt-BR'),ts:Date.now()});
-  saveDB();notify('Produto salvo!');showPage('produtos');
-}
 
 function populateSelects(){
   // Preencher o select hidden (mantém compatibilidade com calcRT)
@@ -1875,7 +2468,7 @@ function renderProdutos(){
         <td style="font-weight:600">R$ ${(p.precoBase||0).toFixed(2)}</td>
         <td><span class="badge ${mc}">${(p.margem||0).toFixed(1)}%</span></td>
         <td style="color:var(--text3)">${p.data}</td>
-        <td><button class="btn btn-danger btn-sm" onclick="delProd(${p.id})">✕</button></td>
+        <td><div style="display:flex;gap:5px"><button class="btn btn-ghost btn-sm" onclick="editarProduto('${p.id}')" title="Editar">✏</button><button class="btn btn-danger btn-sm" onclick="delProd('${p.id}')">✕</button></div></td>
       </tr>`;}).join('');
   } else {
     const mc2=(m)=>m>30?'var(--green)':m>15?'var(--yellow)':'var(--red)';
@@ -1895,7 +2488,8 @@ function renderProdutos(){
         </div>
         <div style="display:flex;gap:6px;justify-content:flex-end">
           <button class="btn btn-ghost btn-sm" onclick="criarOrcamentoProduto(${p.id})">📄 Orçar</button>
-          <button class="btn btn-danger btn-sm" onclick="delProd(${p.id})">✕</button>
+          <button class="btn btn-ghost btn-sm" onclick="editarProduto('${p.id}')" title="Editar">✏</button>
+          <button class="btn btn-danger btn-sm" onclick="delProd('${p.id}')">✕</button>
         </div>
       </div>`).join('');
   }
@@ -1986,8 +2580,6 @@ function renderConfig(){
       <button class="btn btn-danger btn-sm" onclick="delImp(${i.id})">Excluir</button>
     </div>`).join('')||'<div style="color:var(--text3);font-size:13px">Nenhuma impressora cadastrada</div>';
 }
-function saveConfig(){DB.config.kwh=parseFloat(document.getElementById('cfg-kwh').value)||0.85;saveDB();notify('Salvo!');}
-function delImp(id){DB.impressoras=DB.impressoras.filter(x=>x.id!==id);saveDB();renderConfig();notify('Removida','red');}
 
 /* ── RELATÓRIO ──────────────────────────────────────── */
 function baixarRelatorio(){
@@ -2055,21 +2647,6 @@ function openConcModal(){
   document.getElementById('mc-obs').value='';
   document.getElementById('modal-conc').classList.add('open');
 }
-function saveConc(){
-  if(!DB.concorrentes)DB.concorrentes=[];
-  const url=document.getElementById('mc-url').value.trim();
-  DB.concorrentes.push({
-    id:Date.now(),
-    nome:document.getElementById('mc-nome').value||'Concorrente',
-    loja:document.getElementById('mc-loja').value,
-    url,
-    preco:parseFloat(document.getElementById('mc-preco').value)||0,
-    mp:document.getElementById('mc-mp').value,
-    obs:document.getElementById('mc-obs').value,
-    data:new Date().toLocaleDateString('pt-BR')
-  });
-  saveDB();closeModal('modal-conc');renderConcList();notify('Concorrente salvo!');
-}
 function renderConcList(){
   if(!DB.concorrentes)DB.concorrentes=[];
   const cs=DB.concorrentes;
@@ -2116,23 +2693,7 @@ function openFilModal(origin){
 }
 function closeModal(id){document.getElementById(id).classList.remove('open');}
 
-function saveImp(){
-  const imp={id:Date.now(),nome:document.getElementById('mi-nome').value||'Impressora',inv:parseFloat(document.getElementById('mi-inv').value)||0,roi:parseFloat(document.getElementById('mi-roi').value)||18,watts:parseFloat(document.getElementById('mi-watts').value)||350,hpd:parseFloat(document.getElementById('mi-hpd').value)||8,fail:parseFloat(document.getElementById('mi-fail').value)||5};
-  DB.impressoras.push(imp);saveDB();closeModal('modal-imp');
-  if(impOrigin==='calc'){populateSelects();document.getElementById('c-imp').value=imp.id;}
-  else renderConfig();
-  notify('Impressora salva!');
-}
 
-function saveFil(){
-  const f={id:editFilId||Date.now(),nome:document.getElementById('mf-nome').value||'Filamento',marca:document.getElementById('mf-marca').value,cor:document.getElementById('mf-cor').value||'',tipo:document.getElementById('mf-tipo').value,custo:parseFloat(document.getElementById('mf-custo').value)||0,peso:parseFloat(document.getElementById('mf-peso').value)||1000};
-  if(editFilId){DB.filamentos=DB.filamentos.map(x=>x.id===editFilId?f:x);}
-  else DB.filamentos.push(f);
-  editFilId=null;saveDB();closeModal('modal-fil');
-  if(filOrigin==='calc')populateSelects();
-  else renderFilamentos();
-  notify('Filamento salvo!');
-}
 
 /* ── CATÁLOGO ────────────────────────────────────────── */
 let catalogoDB = [];
@@ -2335,20 +2896,6 @@ async function importGSheets(){
 }
 
 /* ── SETTINGS / LOGO ─────────────────────────────────── */
-function loadSettings(){
-  const s=JSON.parse(localStorage.getItem('p3d_settings')||'{}');
-  if(s.sysname){
-    document.getElementById('logo-title-text').textContent=s.sysname;
-    const el=document.getElementById('cfg-sysname');if(el)el.value=s.sysname;
-  }
-  if(s.empresa){
-    document.getElementById('logo-sub-text').textContent=s.empresa;
-    const el=document.getElementById('cfg-empresa');if(el)el.value=s.empresa;
-  }
-  if(s.logo){
-    showLogoImg(s.logo);
-  }
-}
 
 function showLogoImg(src){
   document.getElementById('logo-img').src=src;
@@ -2570,8 +3117,12 @@ async function loginBiometria(){
 function renderBioStatus(){
   const el=document.getElementById('bio-status-card');
   if(!el)return;
+  if(location.protocol!=='https:'){
+    el.innerHTML='<div style="color:var(--yellow);font-size:13px">⚠️ Biometria requer conexão HTTPS segura. Acesse via https://moneyflow3d.com.br</div>';
+    return;
+  }
   if(!window.PublicKeyCredential){
-    el.innerHTML='<div style="color:var(--text3);font-size:13px">Este navegador não suporta biometria.</div>';
+    el.innerHTML='<div style="color:var(--text3);font-size:13px">Este navegador não suporta biometria (use Chrome, Safari ou Edge atualizados).</div>';
     return;
   }
   const hasCred=localStorage.getItem('p3d_cred');
@@ -2591,8 +3142,34 @@ function renderBioStatus(){
           <div style="font-weight:500">🔐 Biometria não configurada</div>
           <div style="font-size:12px;color:var(--text3);margin-top:3px">Ative para entrar com Face ID / impressão digital</div>
         </div>
-        <button class="btn btn-primary btn-sm" onclick="registrarBiometria()">Ativar agora</button>
+        <button class="btn btn-primary btn-sm" onclick="ativarBiometriaConfig(this)">Ativar agora</button>
       </div>`;
+  }
+}
+
+async function ativarBiometriaConfig(btn){
+  if(location.protocol!=='https:'){notify('Biometria requer HTTPS. Acesse via https://moneyflow3d.com.br','red');return;}
+  if(!window.PublicKeyCredential){notify('Navegador não suporta biometria.','red');return;}
+  const orig=btn.textContent;
+  btn.textContent='⏳ Aguardando...';btn.disabled=true;
+  try{
+    const uid=new Uint8Array(16);crypto.getRandomValues(uid);
+    const cred=await navigator.credentials.create({publicKey:{
+      challenge:crypto.getRandomValues(new Uint8Array(32)),
+      rp:{id:location.hostname,name:RP_NAME},
+      user:{id:uid,name:'usuario',displayName:'Usuário MoneyFlow 3D'},
+      pubKeyCredParams:[{type:'public-key',alg:-7},{type:'public-key',alg:-257}],
+      authenticatorSelection:{authenticatorAttachment:'platform',userVerification:'required'},
+      timeout:60000,
+      attestation:'none'
+    }});
+    localStorage.setItem('p3d_cred',b64url(cred.rawId));
+    notify('Biometria ativada! Próximo acesso será automático.');
+    renderBioStatus();
+  }catch(e){
+    btn.textContent=orig;btn.disabled=false;
+    const el=document.getElementById('bio-status-card');
+    if(el){const d=el.querySelector('div');if(d){const err=document.createElement('div');err.style.cssText='color:var(--red);font-size:12px;margin-top:8px';err.textContent='Erro: '+e.message;d.appendChild(err);}}
   }
 }
 
@@ -2625,18 +3202,6 @@ function loadSettingsPage(){
   }
 }
 
-function initApp(){
-  applyTheme();
-  loadDB();
-  if(!DB.catalogos)DB.catalogos=[];
-  if(!DB.orcamentos)DB.orcamentos=[];
-  if(!DB.clientes)DB.clientes=[];
-  if(!DB.estoque)DB.estoque=[];
-  if(!DB.fila)DB.fila=[];
-  renderDashboard();
-  renderBioStatus();
-  loadSettings();
-}
 
 
 /* ---
@@ -2677,36 +3242,6 @@ function calcOrcTotal(){
   return total;
 }
 
-function saveOrcamento(){
-  const cliId=document.getElementById('orc-cliente').value;
-  const cli=DB.clientes.find(c=>c.id==cliId);
-  const prodId=parseInt(document.getElementById('orc-produto').value);
-  const prod=DB.produtos.find(p=>p.id===prodId);
-  const qtd=parseInt(document.getElementById('orc-qtd').value)||1;
-  const preco=parseFloat(document.getElementById('orc-preco').value)||0;
-  const desc=parseFloat(document.getElementById('orc-desc').value)||0;
-  const total=qtd*preco*(1-desc/100);
-  const orc={
-    id:Date.now(),
-    clienteId:cliId||null,
-    clienteNome:cli?cli.nome:'Cliente não informado',
-    clienteWpp:cli?cli.wpp:'',
-    produtoNome:prod?prod.nome:(document.getElementById('orc-produto').options[document.getElementById('orc-produto').selectedIndex].text),
-    qtd,preco,desc,total,
-    marketplace:document.getElementById('orc-mp').value,
-    obs:document.getElementById('orc-obs').value.trim(),
-    validade:document.getElementById('orc-validade').value,
-    status:'pendente',
-    data:new Date().toLocaleDateString('pt-BR'),
-    ts:Date.now()
-  };
-  if(!DB.orcamentos)DB.orcamentos=[];
-  DB.orcamentos.unshift(orc);
-  saveDB();
-  closeModal('modal-orc');
-  notify('Orçamento salvo!');
-  renderOrcamentos();
-}
 
 function renderOrcamentos(){
   if(!DB.orcamentos)DB.orcamentos=[];
@@ -2746,6 +3281,7 @@ function renderOrcamentos(){
             <button class="btn btn-ghost btn-sm" onclick="verOrcamentoPDF(${o.id})" title="Gerar PDF">📄 PDF</button>
             <button class="btn btn-ghost btn-sm" style="color:var(--green);border-color:rgba(34,197,94,.3)" onclick="wppOrcamento(${o.id})" title="WhatsApp">📱 WPP</button>
             <button class="btn btn-ghost btn-sm" style="color:var(--blue);border-color:rgba(59,130,246,.3)" onclick="emailOrcamento(${o.id})" title="E-mail">✉ Email</button>
+            <button class="btn btn-ghost btn-sm" style="color:var(--accent);border-color:rgba(255,107,43,.3)" onclick="editarOrcamento(${o.id})" title="Editar">✏ Editar</button>
             <button class="btn btn-ghost btn-sm" style="color:var(--red);border-color:rgba(239,68,68,.3)" onclick="delOrcamento(${o.id})" title="Remover">✕</button>
           </div>
         </td>
@@ -2756,44 +3292,71 @@ function renderOrcamentos(){
 
 function delProd(id){DB.produtos=DB.produtos.filter(x=>x.id!==id);saveDB();renderProdutos();notify('Removido','red');}
 
-/* ── AUTOMAÇÃO: orçamento aprovado → fila de produção ── */
-function updateOrcStatus(id,status){
-  const o=DB.orcamentos.find(x=>x.id===id);if(!o)return;
-  const anterior=o.status;
-  o.status=status;
-  if(status==='aprovado'&&anterior!=='aprovado'){
-    if(!DB.fila)DB.fila=[];
-    const jaExiste=DB.fila.find(f=>f.orcamentoId===id);
-    let filaId=null;
-    if(!jaExiste){
-      filaId=Date.now();
-      DB.fila.unshift({
-        id:filaId,
-        orcamentoId:id,
-        produto:o.produtoNome+(o.qtd>1?' × '+o.qtd:''),
-        clienteId:o.clienteId||null,
-        clienteNome:o.clienteNome,
-        qtd:o.qtd,
-        prazo:'',
-        status:'aguardando',
-        transportadora:'',
-        rastreio:'',
-        obs:'Criado automaticamente do orçamento Nº '+String(o.id).slice(-6),
-        criado:new Date().toLocaleDateString('pt-BR'),
-        ts:filaId
-      });
-    } else {
-      filaId=jaExiste.id;
-    }
-    saveDB();
-    renderOrcamentos();
-    // Abrir modal de rastreio opcional
-    abrirRastreioOpcional(filaId);
-    return;
-  }
-  saveDB();
-  renderOrcamentos();
+function editarProduto(id){
+  const p=DB.produtos.find(x=>String(x.id)===String(id));
+  if(!p)return;
+  document.getElementById('ep-id').value=id;
+  document.getElementById('ep-nome').value=p.nome||'';
+  document.getElementById('ep-custo').value=(p.custoTotal||0).toFixed(2);
+  document.getElementById('ep-preco').value=(p.precoBase||0).toFixed(2);
+  document.getElementById('ep-markup').value=(p.markup||0).toFixed(1);
+  document.getElementById('ep-margem').value=(p.margem||0).toFixed(1)+'%';
+  document.getElementById('modal-edit-prod').classList.add('open');
 }
+
+function recalcEpMargem(){
+  const custo=parseFloat(document.getElementById('ep-custo').value)||0;
+  const preco=parseFloat(document.getElementById('ep-preco').value)||0;
+  const margem=preco>0?((preco-custo)/preco*100):0;
+  document.getElementById('ep-margem').value=margem.toFixed(1)+'%';
+}
+
+async function salvarEdicaoProduto(){
+  const id=document.getElementById('ep-id').value;
+  const nome=document.getElementById('ep-nome').value.trim()||'Produto sem nome';
+  const custo=parseFloat(document.getElementById('ep-custo').value)||0;
+  const preco=parseFloat(document.getElementById('ep-preco').value)||0;
+  const markup=parseFloat(document.getElementById('ep-markup').value)||0;
+  const margem=preco>0?((preco-custo)/preco*100):0;
+
+  const {error}=await _supa.from('products').update({
+    name:nome, cost_total:custo, price_base:preco, markup:markup, margin:margem
+  }).eq('id',id);
+  if(error){notify('Erro ao salvar: '+error.message,'red');return;}
+
+  DB.produtos=DB.produtos.map(p=>String(p.id)===String(id)?{...p,nome,custoTotal:custo,precoBase:preco,markup,margem}:p);
+  saveDB();
+  closeModal('modal-edit-prod');
+  renderProdutos();
+  notify('Produto atualizado!');
+}
+
+function editarOrcamento(id){
+  const o=DB.orcamentos.find(x=>x.id===id);
+  if(!o)return;
+  orcAtual=null;
+  const sc=document.getElementById('orc-cliente');
+  sc.innerHTML='<option value="">Sem cliente</option>'+(DB.clientes||[]).map(c=>`<option value="${c.id}">${c.nome}</option>`).join('');
+  const sp=document.getElementById('orc-produto');
+  sp.innerHTML='<option value="">Sem produto vinculado</option>'+(DB.produtos||[]).map(p=>`<option value="${p.id}">${p.nome} — R$${p.precoBase?p.precoBase.toFixed(2):'0.00'}</option>`).join('');
+  // preencher valores existentes
+  document.getElementById('orc-cliente').value=o.clienteId||'';
+  document.getElementById('orc-produto').value=o.produtoId||'';
+  document.getElementById('orc-qtd').value=o.qtd||1;
+  document.getElementById('orc-preco').value=(o.precoUnit||0).toFixed(2);
+  document.getElementById('orc-desc').value=o.desconto||0;
+  document.getElementById('orc-obs').value=o.obs||'';
+  if(o.validade) document.getElementById('orc-validade').value=o.validade;
+  const mpSel=document.getElementById('orc-mp');
+  if(o.marketplace){for(let i=0;i<mpSel.options.length;i++){if(mpSel.options[i].value===o.marketplace){mpSel.selectedIndex=i;break;}}}
+  calcOrcTotal();
+  // guardar id para atualizar em vez de inserir
+  document.getElementById('modal-orc').dataset.editId=id;
+  document.getElementById('modal-orc').querySelector('.modal-title').textContent='Editar orçamento';
+  document.getElementById('modal-orc').classList.add('open');
+}
+
+/* ── AUTOMAÇÃO: orçamento aprovado → fila de produção ── */
 
 function emailOrcamento(id){
   orcAtual=DB.orcamentos.find(x=>x.id===id);
@@ -2801,10 +3364,6 @@ function emailOrcamento(id){
   enviarEmail();
 }
 
-function delOrcamento(id){
-  DB.orcamentos=DB.orcamentos.filter(x=>x.id!==id);
-  saveDB();renderOrcamentos();notify('Removido','red');
-}
 
 function verOrcamentoPDF(id){
   const o=DB.orcamentos.find(x=>x.id===id);if(!o)return;
@@ -2992,28 +3551,7 @@ function openClienteModal(cli){
   document.getElementById('modal-cliente').classList.add('open');
 }
 
-function saveCliente(){
-  const id=document.getElementById('cli-id').value;
-  const cli={
-    id:id?parseInt(id):Date.now(),
-    nome:document.getElementById('cli-nome').value.trim()||'Cliente sem nome',
-    wpp:document.getElementById('cli-wpp').value.trim(),
-    insta:document.getElementById('cli-insta').value.trim(),
-    email:document.getElementById('cli-email').value.trim(),
-    obs:document.getElementById('cli-obs').value.trim(),
-    ts:Date.now()
-  };
-  if(!DB.clientes)DB.clientes=[];
-  if(id){DB.clientes=DB.clientes.map(c=>c.id===parseInt(id)?cli:c);}
-  else{DB.clientes.unshift(cli);}
-  saveDB();closeModal('modal-cliente');renderCRM();notify('Cliente salvo!');
-}
 
-function delCliente(id){
-  if(!confirm('Remover este cliente?'))return;
-  DB.clientes=DB.clientes.filter(c=>c.id!==id);
-  saveDB();renderCRM();notify('Removido','red');
-}
 
 function exportarClientesCSV(){
   if(!DB.clientes||!DB.clientes.length){notify('Nenhum cliente para exportar','red');return;}
@@ -3231,38 +3769,7 @@ function openEstoqueModal(item){
   document.getElementById('modal-estoque').classList.add('open');
 }
 
-function saveEstoque(){
-  const editId=document.getElementById('est-edit-id').value;
-  const filId=parseInt(document.getElementById('est-fil-id').value);
-  if(!filId){notify('Selecione um filamento','red');return;}
-  const fil=DB.filamentos.find(f=>f.id===filId);
-  const item={
-    id:editId?parseInt(editId):Date.now(),
-    filId,
-    nome:fil?fil.nome:'Filamento',
-    tipo:fil?fil.tipo:'',
-    qtd:parseInt(document.getElementById('est-qtd').value)||0,
-    min:parseInt(document.getElementById('est-min').value)||1,
-    obs:document.getElementById('est-obs').value.trim(),
-    atualizado:new Date().toLocaleDateString('pt-BR')
-  };
-  if(!DB.estoque)DB.estoque=[];
-  if(editId){DB.estoque=DB.estoque.map(x=>x.id===parseInt(editId)?item:x);}
-  else{
-    // Se já existe para esse filamento, atualiza qtd
-    const ex=DB.estoque.find(x=>x.filId===filId);
-    if(ex){ex.qtd+=item.qtd;ex.atualizado=item.atualizado;ex.obs=item.obs;}
-    else{DB.estoque.push(item);}
-  }
-  saveDB();closeModal('modal-estoque');renderEstoque();notify('Estoque atualizado!');
-}
 
-function ajustarQtdEstoque(id,delta){
-  const item=DB.estoque.find(x=>x.id===id);if(!item)return;
-  item.qtd=Math.max(0,item.qtd+delta);
-  item.atualizado=new Date().toLocaleDateString('pt-BR');
-  saveDB();renderEstoque();
-}
 
 function renderEstoque(){
   if(!DB.estoque)DB.estoque=[];
@@ -3314,11 +3821,6 @@ function renderEstoque(){
   }).join('')}</div>`;
 }
 
-function delEstoque(id){
-  if(!confirm('Remover este item do estoque?'))return;
-  DB.estoque=DB.estoque.filter(x=>x.id!==id);
-  saveDB();renderEstoque();notify('Removido','red');
-}
 
 /* ---
    MÓDULO 4 — FILA DE PRODUÇÃO
@@ -3363,59 +3865,8 @@ function openFilaModal(item){
   document.getElementById('modal-fila').classList.add('open');
 }
 
-function saveFila(){
-  const editId=document.getElementById('fila-edit-id').value;
-  const cliId=document.getElementById('fp-cliente').value;
-  const cli=DB.clientes.find(c=>c.id==cliId);
-  const item={
-    id:editId?parseInt(editId):Date.now(),
-    produto:document.getElementById('fp-produto').value.trim()||'Pedido sem nome',
-    clienteId:cliId||null,
-    clienteNome:cli?cli.nome:'—',
-    qtd:parseInt(document.getElementById('fp-qtd').value)||1,
-    prazo:document.getElementById('fp-prazo').value,
-    status:document.getElementById('fp-status').value,
-    obs:document.getElementById('fp-obs').value.trim(),
-    transportadora:document.getElementById('fp-transportadora').value,
-    rastreio:document.getElementById('fp-rastreio').value.trim(),
-    criado:new Date().toLocaleDateString('pt-BR'),
-    ts:Date.now()
-  };
-  if(!DB.fila)DB.fila=[];
-  if(editId){DB.fila=DB.fila.map(x=>x.id===parseInt(editId)?item:x);}
-  else{DB.fila.unshift(item);}
-  saveDB();closeModal('modal-fila');renderFila();notify('Pedido salvo!');
-}
 
-function avancarStatus(id){
-  const order=['aguardando','fatiando','imprimindo','pos_processo','pronto','ag_envio','enviado','entregue'];
-  const item=DB.fila.find(x=>x.id===id);if(!item)return;
-  const idx=order.indexOf(item.status);
-  if(idx<order.length-1){
-    const proximo=order[idx+1];
-    // Ao tentar avançar de "pronto" para "ag_envio", exigir forma de entrega
-    if(item.status==='pronto'&&proximo==='ag_envio'&&!item.transportadora){
-      abrirRastreioObrigatorio(id);
-      return;
-    }
-    item.status=proximo;
-    saveDB();
-    const filtro=document.getElementById('fila-status-filter');
-    if(filtro)filtro.value=item.status;
-    renderFila();
-    notify(FILA_STATUS[item.status].label+' — pedido avançado!');
-  }
-}
 
-function updateFilaStatus(id,status){
-  const item=DB.fila.find(x=>x.id===id);if(!item)return;
-  // Ao tentar marcar como "ag_envio" sem forma de entrega definida
-  if(status==='ag_envio'&&!item.transportadora){
-    abrirRastreioObrigatorio(id);
-    return;
-  }
-  item.status=status;saveDB();renderFila();notify('Status atualizado!');
-}
 
 function abrirRastreioObrigatorio(filaId){
   document.getElementById('rastreio-fila-id').value=filaId;
@@ -3452,11 +3903,6 @@ function pularRastreio(){
   closeModal('modal-rastreio');
 }
 
-function delFila(id){
-  if(!confirm('Remover este pedido da fila?'))return;
-  DB.fila=DB.fila.filter(x=>x.id!==id);
-  saveDB();renderFila();notify('Removido','red');
-}
 
 const TRANSPORTADORAS={
   correios:{nome:'Correios',url:'https://rastreamento.correios.com.br/app/index.php',qparam:'?objeto='},
@@ -3697,53 +4143,6 @@ function toggleRastreioOutro(){
   if(aviso) aviso.style.display=(!obrigatorio && val==='')?'block':'none';
 }
 
-function salvarRastreioRapido(){
-  const filaId=parseInt(document.getElementById('rastreio-fila-id').value);
-  const obrigatorio=document.getElementById('rastreio-obrigatorio').value==='1';
-  const item=DB.fila.find(x=>x.id===filaId);
-  if(!item){closeModal('modal-rastreio');return;}
-
-  const transp=document.getElementById('rastreio-transportadora').value;
-  const outro=document.getElementById('rastreio-outro-nome').value.trim();
-  const codigo=document.getElementById('rastreio-codigo').value.trim();
-  const semCodigo=['maos','retirada'];
-
-  // Validação: forma de entrega obrigatória
-  if(!transp){
-    notify('Selecione a forma de entrega para continuar.','red');return;
-  }
-  // Validação: "Outro" precisa de nome
-  if(transp==='outro'&&!outro){
-    notify('Informe o nome da transportadora.','red');return;
-  }
-  // Validação: transportadoras com rastreio precisam de código (exceto modo opcional)
-  if(obrigatorio && !semCodigo.includes(transp) && transp!=='outro' && !codigo){
-    notify('Informe o código de rastreio para continuar.','red');return;
-  }
-  // Também valida no modo obrigatório com "Outro"
-  if(obrigatorio && transp==='outro' && !codigo){
-    notify('Informe o código de rastreio.','red');return;
-  }
-
-  item.transportadora=transp==='outro'?('outro:'+outro):transp;
-  item.rastreio=codigo;
-
-  if(obrigatorio){
-    item.status='ag_envio';
-    const filtro=document.getElementById('fila-status-filter');
-    if(filtro)filtro.value='ag_envio';
-  }
-  saveDB();
-  closeModal('modal-rastreio');
-  if(obrigatorio){
-    renderFila();
-    notify('📦 Entregue! Forma de entrega registrada.');
-  } else if(codigo||semCodigo.includes(transp)){
-    notify('✅ Aprovado! Entrega cadastrada: '+(semCodigo.includes(transp)?transp==='maos'?'Entrega em mãos':'Retirada no local':codigo));
-  } else {
-    notify('✅ Orçamento aprovado! Pedido na fila de produção.');
-  }
-}
 
 function aplicarBandeira(tipo,adicional){
   const base=DB.config.kwhBase||(parseFloat(document.getElementById('cfg-kwh').value)||0.85);
@@ -3820,4 +4219,3 @@ function setCrmView(m){
 </script>
 
 
-</body></html>
