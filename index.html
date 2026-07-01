@@ -2490,7 +2490,7 @@ function renderProdutos(){
         <td style="font-weight:600">R$ ${(p.precoBase||0).toFixed(2)}</td>
         <td><span class="badge ${mc}">${(p.margem||0).toFixed(1)}%</span></td>
         <td style="color:var(--text3)">${p.data}</td>
-        <td><button class="btn btn-danger btn-sm" onclick="delProd('${p.id}')">✕</button></td>
+        <td><div style="display:flex;gap:5px"><button class="btn btn-ghost btn-sm" onclick="editarProduto('${p.id}')" title="Editar">✏</button><button class="btn btn-danger btn-sm" onclick="delProd('${p.id}')">✕</button></div></td>
       </tr>`;}).join('');
   } else {
     const mc2=(m)=>m>30?'var(--green)':m>15?'var(--yellow)':'var(--red)';
