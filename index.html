@@ -3234,9 +3234,12 @@ function openOrcModal(){
 }
 
 function preencherOrcProduto(){
-  const pid=parseInt(document.getElementById('orc-produto').value);
-  const p=DB.produtos.find(x=>x.id===pid);
-  if(p){document.getElementById('orc-preco').value=(p.precoBase||0).toFixed(2);calcOrcTotal();}
+  const pid=document.getElementById('orc-produto').value;
+  const p=DB.produtos.find(x=>String(x.id)===String(pid));
+  if(p){
+    document.getElementById('orc-preco').value=(p.precoBase||0).toFixed(2);
+    calcOrcTotal();
+  }
 }
 
 function calcOrcTotal(){
