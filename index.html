@@ -1565,15 +1565,15 @@ async function loadSupabaseData(){
   const uid = _currentUser.id;
 
   const [
-    { data: produtos },
-    { data: filamentos },
-    { data: impressoras },
-    { data: clientes },
-    { data: orcamentos },
-    { data: fila },
-    { data: estoque },
-    { data: concorrentes },
-    { data: config },
+    { data: produtos,    error: e1 },
+    { data: filamentos,  error: e2 },
+    { data: impressoras, error: e3 },
+    { data: clientes,    error: e4 },
+    { data: orcamentos,  error: e5 },
+    { data: fila,        error: e6 },
+    { data: estoque,     error: e7 },
+    { data: concorrentes,error: e8 },
+    { data: config,      error: e9 },
   ] = await Promise.all([
     _supa.from('products').select('*').eq('user_id', uid).order('created_at', { ascending: false }),
     _supa.from('filaments').select('*').eq('user_id', uid).order('nome'),
@@ -1585,6 +1585,9 @@ async function loadSupabaseData(){
     _supa.from('competitors').select('*').eq('user_id', uid).order('created_at', { ascending: false }),
     _supa.from('user_config').select('*').eq('user_id', uid).single(),
   ]);
+  // Log de erros de carregamento para diagnóstico
+  const _loadErros = {products:e1,filaments:e2,printers:e3,clientes:e4,orcamentos:e5,fila_producao:e6,estoque:e7,competitors:e8,user_config:e9};
+  Object.entries(_loadErros).forEach(([t,e])=>{ if(e) console.error('RLS/load error em',t,':',e.message); });
 
   // Mapear produtos do Supabase para formato do DB
   DB.produtos = (produtos || []).map(p => ({
@@ -1627,6 +1630,7 @@ async function loadSupabaseData(){
   DB.orcamentos = (orcamentos || []).map(o=>({
     id: o.id, clienteId: o.cliente_id, clienteNome: o.cliente_nome||'Cliente não informado',
     clienteWpp: o.cliente_wpp||'', produtoNome: o.produto_nome||'',
+    produtoId: o.produto_id||null,
     qtd: o.qtd||1, preco: o.preco||0, desc: o.desconto||0,
     total: o.total||0, marketplace: o.marketplace||'', obs: o.obs||'',
     validade: o.validade||'', status: o.status||'pendente',
@@ -1674,7 +1678,8 @@ async function salvar(){
   const r = lastCalc;
   const uid = _currentUser.id;
 
-  const _insertData = {
+  // Tentar insert completo; se falhar por coluna inexistente, tentar versão mínima
+  const _insertCompleto = {
     user_id: uid, name: nome,
     filament_name: fil?fil.nome:'—',
     cost_total: parseFloat(r.total.toFixed(2)),
@@ -1687,7 +1692,18 @@ async function salvar(){
     supplies: parseFloat((r.ins||0).toFixed(2)),
     labor_hour: parseFloat((parseFloat(document.getElementById('c-hora').value)||0).toFixed(2)),
   };
-  const { data, error } = await _supa.from('products').insert(_insertData).select().single();
+  let { data, error } = await _supa.from('products').insert(_insertCompleto).select().single();
+
+  // Se erro de coluna inexistente, tentar só colunas básicas
+  if(error && (error.message.includes('column') || error.message.includes('schema cache'))){
+    console.warn('Insert completo falhou, tentando versão básica:', error.message);
+    const _insertBasico = { user_id: uid, name: nome, filament_name: fil?fil.nome:'—',
+      cost_total: parseFloat(r.total.toFixed(2)), price_base: parseFloat(r.base.toFixed(2)),
+      margin: parseFloat((r.base>0?((r.base-r.total)/r.base*100):0).toFixed(2)),
+      markup: parseFloat((r.markup*100).toFixed(2)) };
+    const res2 = await _supa.from('products').insert(_insertBasico).select().single();
+    data = res2.data; error = res2.error;
+  }
 
   if(error){ notify('Erro ao salvar: '+error.message,'red'); console.error('salvar produto',error); return; }
 
@@ -1789,7 +1805,7 @@ async function saveOrcamento(){
     cliente_id: cliId||null,
     cliente_nome: cli?cli.nome:'Cliente não informado',
     cliente_wpp: cli?cli.wpp:'',
-    produto_nome: prodNome, qtd, preco, desconto: desc, total,
+    produto_nome: prodNome, produto_id: prodId||null, qtd, preco, desconto: desc, total,
     marketplace: document.getElementById('orc-mp').value,
     obs: document.getElementById('orc-obs').value.trim(),
     validade: document.getElementById('orc-validade').value,
@@ -3347,9 +3363,15 @@ function editarOrcamento(id){
   const sp=document.getElementById('orc-produto');
   sp.innerHTML='<option value="">Sem produto vinculado</option>'+(DB.produtos||[]).map(p=>`<option value="${p.id}">${p.nome} — R$${p.precoBase?p.precoBase.toFixed(2):'0.00'}</option>`).join('');
   document.getElementById('orc-cliente').value=o.clienteId||'';
-  document.getElementById('orc-produto').value=o.produtoId||'';
+  // Buscar produto por id ou por nome
+  const _prodEncontrado = o.produtoId
+    ? DB.produtos.find(p=>String(p.id)===String(o.produtoId))
+    : DB.produtos.find(p=>p.nome===o.produtoNome);
+  document.getElementById('orc-produto').value=_prodEncontrado?_prodEncontrado.id:'';
   document.getElementById('orc-qtd').value=o.qtd||1;
-  document.getElementById('orc-preco').value=(o.preco||0).toFixed(2);
+  // Preencher preço: do orçamento salvo, ou do produto se existir
+  const _precoOrc = o.preco&&o.preco>0 ? o.preco : (_prodEncontrado?((_prodEncontrado.precoBase||0)):0);
+  document.getElementById('orc-preco').value=parseFloat(_precoOrc).toFixed(2);
   document.getElementById('orc-desc').value=o.desc||0;
   document.getElementById('orc-obs').value=o.obs||'';
   if(o.validade)document.getElementById('orc-validade').value=o.validade;
