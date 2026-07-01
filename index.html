@@ -1200,7 +1200,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
     <input type="hidden" id="ep-id">
     <div class="form-grid">
       <div class="field full"><label>Nome do produto</label><input type="text" id="ep-nome" placeholder="Nome do produto"></div>
-      <div class="field"><label>Custo total (R$)</label><input type="number" id="ep-custo" step="0.01" min="0"></div>
+      <div class="field"><label>Custo total (R$)</label><input type="number" id="ep-custo" step="0.01" min="0" oninput="recalcEpMargem()"></div>
       <div class="field"><label>Preço base (R$)</label><input type="number" id="ep-preco" step="0.01" min="0" oninput="recalcEpMargem()"></div>
       <div class="field"><label>Markup (%)</label><input type="number" id="ep-markup" step="0.1" min="0"></div>
       <div class="field"><label>Margem (%)</label><input type="text" id="ep-margem" readonly style="opacity:.7"></div>
@@ -1774,14 +1774,14 @@ async function saveOrcamento(){
   const uid = _currentUser.id;
   const editId = document.getElementById('modal-orc').dataset.editId||null;
   const cliId = document.getElementById('orc-cliente').value;
-  const cli = DB.clientes.find(c=>c.id==cliId);
-  const prodId = parseInt(document.getElementById('orc-produto').value);
-  const prod = DB.produtos.find(p=>p.id===prodId||p._supaid===prodId);
+  const cli = DB.clientes.find(c=>String(c.id)===String(cliId));
+  const prodId = document.getElementById('orc-produto').value;
+  const prod = DB.produtos.find(p=>String(p.id)===String(prodId));
   const qtd = parseInt(document.getElementById('orc-qtd').value)||1;
   const preco = parseFloat(document.getElementById('orc-preco').value)||0;
   const desc = parseFloat(document.getElementById('orc-desc').value)||0;
   const total = qtd*preco*(1-desc/100);
-  const prodNome = prod?prod.nome:(document.getElementById('orc-produto').options[document.getElementById('orc-produto').selectedIndex].text);
+  const prodNome = prod?prod.nome:(document.getElementById('orc-produto').options[document.getElementById('orc-produto').selectedIndex]?.text||'Produto não informado');
   const payload = {
     cliente_id: cliId||null,
     cliente_nome: cli?cli.nome:'Cliente não informado',
@@ -1795,10 +1795,9 @@ async function saveOrcamento(){
   if(editId){
     const {error}=await _supa.from('orcamentos').update(payload).eq('id',editId);
     if(error){notify('Erro: '+error.message,'red');return;}
-    DB.orcamentos=DB.orcamentos.map(o=>o.id==editId?{...o,
-      clienteId:cliId,clienteNome:cli?cli.nome:'Cliente não informado',
-      clienteWpp:cli?cli.wpp:'',produtoId:prodId,produtoNome:prodNome,
-      qtd,precoUnit:preco,desconto:desc,total,
+    DB.orcamentos=DB.orcamentos.map(o=>String(o.id)===String(editId)?{...o,
+      clienteId:cliId,clienteNome:payload.cliente_nome,clienteWpp:payload.cliente_wpp,
+      produtoId:prodId,produtoNome:prodNome,qtd,preco,desc,total,
       marketplace:payload.marketplace,obs:payload.obs,validade:payload.validade}:o);
     delete document.getElementById('modal-orc').dataset.editId;
     document.getElementById('modal-orc').querySelector('.modal-title').textContent='Novo orçamento';
@@ -1815,9 +1814,9 @@ async function saveOrcamento(){
   if(error){ notify('Erro: '+error.message,'red'); return; }
 
   DB.orcamentos.unshift({
-    id: data.id, clienteId: cliId, clienteNome: cli?cli.nome:'Cliente não informado',
-    clienteWpp: cli?cli.wpp:'', produtoId: prodId, produtoNome: prodNome,
-    qtd, precoUnit: preco, desconto: desc, total,
+    id: data.id, clienteId: cliId, clienteNome: payload.cliente_nome,
+    clienteWpp: payload.cliente_wpp, produtoId: prodId, produtoNome: prodNome,
+    qtd, preco, desc, total,
     marketplace: data.marketplace, obs: data.obs,
     validade: data.validade, status: 'pendente',
     data: data.data, ts: new Date(data.created_at).getTime()
@@ -1827,7 +1826,7 @@ async function saveOrcamento(){
 
 /* ── ATUALIZAR STATUS ORÇAMENTO ──────────────────────── */
 async function updateOrcStatus(id, status){
-  const o = DB.orcamentos.find(x=>x.id===id); if(!o) return;
+  const o = DB.orcamentos.find(x=>String(x.id)===String(id)); if(!o) return;
   const anterior = o.status;
   o.status = status;
 
@@ -1873,6 +1872,7 @@ async function updateOrcStatus(id, status){
 }
 
 async function delOrcamento(id){
+  id=String(id);
   if(!confirm('Remover orçamento?')) return;
   await _supa.from('orcamentos').delete().eq('id', id);
   DB.orcamentos = DB.orcamentos.filter(x=>x.id!==id);
@@ -2468,7 +2468,7 @@ function renderProdutos(){
         <td style="font-weight:600">R$ ${(p.precoBase||0).toFixed(2)}</td>
         <td><span class="badge ${mc}">${(p.margem||0).toFixed(1)}%</span></td>
         <td style="color:var(--text3)">${p.data}</td>
-        <td><div style="display:flex;gap:5px"><button class="btn btn-ghost btn-sm" onclick="editarProduto('${p.id}')" title="Editar">✏</button><button class="btn btn-danger btn-sm" onclick="delProd('${p.id}')">✕</button></div></td>
+        <td><button class="btn btn-danger btn-sm" onclick="delProd('${p.id}')">✕</button></td>
       </tr>`;}).join('');
   } else {
     const mc2=(m)=>m>30?'var(--green)':m>15?'var(--yellow)':'var(--red)';
@@ -2487,7 +2487,7 @@ function renderProdutos(){
           <div style="color:var(--text3)">Data</div><div>${p.data}</div>
         </div>
         <div style="display:flex;gap:6px;justify-content:flex-end">
-          <button class="btn btn-ghost btn-sm" onclick="criarOrcamentoProduto(${p.id})">📄 Orçar</button>
+          <button class="btn btn-ghost btn-sm" onclick="criarOrcamentoProduto('${p.id}')">📄 Orçar</button>
           <button class="btn btn-ghost btn-sm" onclick="editarProduto('${p.id}')" title="Editar">✏</button>
           <button class="btn btn-danger btn-sm" onclick="delProd('${p.id}')">✕</button>
         </div>
@@ -2495,7 +2495,7 @@ function renderProdutos(){
   }
 }
 function criarOrcamentoProduto(id){
-  const p=DB.produtos.find(x=>x.id===id);if(!p)return;
+  const p=DB.produtos.find(x=>String(x.id)===String(id));if(!p)return;
   if(!DB.orcamentos)DB.orcamentos=[];
   showPage('orcamentos');
   setTimeout(()=>{
@@ -3118,7 +3118,7 @@ function renderBioStatus(){
   const el=document.getElementById('bio-status-card');
   if(!el)return;
   if(location.protocol!=='https:'){
-    el.innerHTML='<div style="color:var(--yellow);font-size:13px">⚠️ Biometria requer conexão HTTPS segura. Acesse via https://moneyflow3d.com.br</div>';
+    el.innerHTML='<div style="color:var(--yellow);font-size:13px">⚠️ Biometria requer HTTPS. O certificado SSL do domínio precisa estar ativo. Acesse via https://moneyflow3d.com.br com certificado válido.</div>';
     return;
   }
   if(!window.PublicKeyCredential){
@@ -3142,13 +3142,12 @@ function renderBioStatus(){
           <div style="font-weight:500">🔐 Biometria não configurada</div>
           <div style="font-size:12px;color:var(--text3);margin-top:3px">Ative para entrar com Face ID / impressão digital</div>
         </div>
-        <button class="btn btn-primary btn-sm" onclick="ativarBiometriaConfig(this)">Ativar agora</button>
+        <button class="btn btn-primary btn-sm" id="btn-ativar-bio" onclick="ativarBiometriaConfig(this)">Ativar agora</button>
       </div>`;
   }
 }
 
 async function ativarBiometriaConfig(btn){
-  if(location.protocol!=='https:'){notify('Biometria requer HTTPS. Acesse via https://moneyflow3d.com.br','red');return;}
   if(!window.PublicKeyCredential){notify('Navegador não suporta biometria.','red');return;}
   const orig=btn.textContent;
   btn.textContent='⏳ Aguardando...';btn.disabled=true;
@@ -3168,8 +3167,7 @@ async function ativarBiometriaConfig(btn){
     renderBioStatus();
   }catch(e){
     btn.textContent=orig;btn.disabled=false;
-    const el=document.getElementById('bio-status-card');
-    if(el){const d=el.querySelector('div');if(d){const err=document.createElement('div');err.style.cssText='color:var(--red);font-size:12px;margin-top:8px';err.textContent='Erro: '+e.message;d.appendChild(err);}}
+    notify('Erro ao ativar: '+e.message,'red');
   }
 }
 
@@ -3271,18 +3269,18 @@ function renderOrcamentos(){
         <td style="padding:12px 14px;font-size:13px;color:var(--text2)">${o.produtoNome} × ${o.qtd}</td>
         <td style="padding:12px 14px;font-size:13px;font-weight:700;color:var(--accent)">R$ ${o.total.toFixed(2).replace('.',',')}</td>
         <td style="padding:12px 14px">
-          <select onchange="updateOrcStatus(${o.id},this.value)" style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:4px 8px;color:${statusCores[o.status]||'var(--text)'};font-size:12px;outline:none">
+          <select onchange="updateOrcStatus('${o.id}',this.value)" style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:4px 8px;color:${statusCores[o.status]||'var(--text)'};font-size:12px;outline:none">
             ${['pendente','aprovado','recusado'].map(s=>`<option value="${s}" ${o.status===s?'selected':''}>${statusLabel[s]}</option>`).join('')}
           </select>
         </td>
         <td style="padding:12px 14px;font-size:12px;color:var(--text3)">${o.data}</td>
         <td style="padding:12px 14px">
           <div style="display:flex;gap:6px;flex-wrap:wrap">
-            <button class="btn btn-ghost btn-sm" onclick="verOrcamentoPDF(${o.id})" title="Gerar PDF">📄 PDF</button>
-            <button class="btn btn-ghost btn-sm" style="color:var(--green);border-color:rgba(34,197,94,.3)" onclick="wppOrcamento(${o.id})" title="WhatsApp">📱 WPP</button>
-            <button class="btn btn-ghost btn-sm" style="color:var(--blue);border-color:rgba(59,130,246,.3)" onclick="emailOrcamento(${o.id})" title="E-mail">✉ Email</button>
-            <button class="btn btn-ghost btn-sm" style="color:var(--accent);border-color:rgba(255,107,43,.3)" onclick="editarOrcamento(${o.id})" title="Editar">✏ Editar</button>
-            <button class="btn btn-ghost btn-sm" style="color:var(--red);border-color:rgba(239,68,68,.3)" onclick="delOrcamento(${o.id})" title="Remover">✕</button>
+            <button class="btn btn-ghost btn-sm" onclick="verOrcamentoPDF('${o.id}')" title="Gerar PDF">📄 PDF</button>
+            <button class="btn btn-ghost btn-sm" style="color:var(--green);border-color:rgba(34,197,94,.3)" onclick="wppOrcamento('${o.id}')" title="WhatsApp">📱 WPP</button>
+            <button class="btn btn-ghost btn-sm" style="color:var(--blue);border-color:rgba(59,130,246,.3)" onclick="emailOrcamento('${o.id}')" title="E-mail">✉ Email</button>
+            <button class="btn btn-ghost btn-sm" style="color:var(--accent);border-color:rgba(255,107,43,.3)" onclick="editarOrcamento('${o.id}')" title="Editar">✏ Editar</button>
+            <button class="btn btn-ghost btn-sm" style="color:var(--red);border-color:rgba(239,68,68,.3)" onclick="delOrcamento('${o.id}')" title="Remover">✕</button>
           </div>
         </td>
       </tr>`).join('')}
@@ -3290,7 +3288,7 @@ function renderOrcamentos(){
   </table></div>`;
 }
 
-function delProd(id){DB.produtos=DB.produtos.filter(x=>x.id!==id);saveDB();renderProdutos();notify('Removido','red');}
+function delProd(id){DB.produtos=DB.produtos.filter(x=>String(x.id)!==String(id));saveDB();renderProdutos();notify('Removido','red');}
 
 function editarProduto(id){
   const p=DB.produtos.find(x=>String(x.id)===String(id));
@@ -3318,12 +3316,10 @@ async function salvarEdicaoProduto(){
   const preco=parseFloat(document.getElementById('ep-preco').value)||0;
   const markup=parseFloat(document.getElementById('ep-markup').value)||0;
   const margem=preco>0?((preco-custo)/preco*100):0;
-
   const {error}=await _supa.from('products').update({
     name:nome, cost_total:custo, price_base:preco, markup:markup, margin:margem
   }).eq('id',id);
   if(error){notify('Erro ao salvar: '+error.message,'red');return;}
-
   DB.produtos=DB.produtos.map(p=>String(p.id)===String(id)?{...p,nome,custoTotal:custo,precoBase:preco,markup,margem}:p);
   saveDB();
   closeModal('modal-edit-prod');
@@ -3332,41 +3328,40 @@ async function salvarEdicaoProduto(){
 }
 
 function editarOrcamento(id){
-  const o=DB.orcamentos.find(x=>x.id===id);
+  const o=DB.orcamentos.find(x=>String(x.id)===String(id));
   if(!o)return;
   orcAtual=null;
   const sc=document.getElementById('orc-cliente');
   sc.innerHTML='<option value="">Sem cliente</option>'+(DB.clientes||[]).map(c=>`<option value="${c.id}">${c.nome}</option>`).join('');
   const sp=document.getElementById('orc-produto');
   sp.innerHTML='<option value="">Sem produto vinculado</option>'+(DB.produtos||[]).map(p=>`<option value="${p.id}">${p.nome} — R$${p.precoBase?p.precoBase.toFixed(2):'0.00'}</option>`).join('');
-  // preencher valores existentes
   document.getElementById('orc-cliente').value=o.clienteId||'';
   document.getElementById('orc-produto').value=o.produtoId||'';
   document.getElementById('orc-qtd').value=o.qtd||1;
-  document.getElementById('orc-preco').value=(o.precoUnit||0).toFixed(2);
-  document.getElementById('orc-desc').value=o.desconto||0;
+  document.getElementById('orc-preco').value=(o.preco||0).toFixed(2);
+  document.getElementById('orc-desc').value=o.desc||0;
   document.getElementById('orc-obs').value=o.obs||'';
-  if(o.validade) document.getElementById('orc-validade').value=o.validade;
+  if(o.validade)document.getElementById('orc-validade').value=o.validade;
   const mpSel=document.getElementById('orc-mp');
   if(o.marketplace){for(let i=0;i<mpSel.options.length;i++){if(mpSel.options[i].value===o.marketplace){mpSel.selectedIndex=i;break;}}}
   calcOrcTotal();
-  // guardar id para atualizar em vez de inserir
   document.getElementById('modal-orc').dataset.editId=id;
   document.getElementById('modal-orc').querySelector('.modal-title').textContent='Editar orçamento';
   document.getElementById('modal-orc').classList.add('open');
 }
 
+
 /* ── AUTOMAÇÃO: orçamento aprovado → fila de produção ── */
 
 function emailOrcamento(id){
-  orcAtual=DB.orcamentos.find(x=>x.id===id);
+  orcAtual=DB.orcamentos.find(x=>String(x.id)===String(id));
   if(!orcAtual)return;
   enviarEmail();
 }
 
 
 function verOrcamentoPDF(id){
-  const o=DB.orcamentos.find(x=>x.id===id);if(!o)return;
+  const o=DB.orcamentos.find(x=>String(x.id)===String(id));if(!o)return;
   orcAtual=o;
   const s=JSON.parse(localStorage.getItem('p3d_settings')||'{}');
   const empresa=s.empresa||'MoneyFlow 3D';
@@ -3504,7 +3499,7 @@ function exportarPDF(){
 }
 
 function wppOrcamento(id){
-  const o=DB.orcamentos.find(x=>x.id===id)||orcAtual;if(!o)return;
+  const o=DB.orcamentos.find(x=>String(x.id)===String(id))||orcAtual;if(!o)return;
   verOrcamentoPDF(o.id);
   setTimeout(()=>compartilharWhatsApp(),200);
 }
@@ -4076,7 +4071,7 @@ function renderPedidos(){
         <td style="padding:11px 14px;color:var(--text2)">${o.produtoNome} × ${o.qtd}</td>
         <td style="padding:11px 14px;font-weight:700;color:var(--accent);text-align:right">R$ ${o.total.toFixed(2).replace('.',',')}</td>
         <td style="padding:11px 14px;text-align:center">
-          <select onchange="updateOrcStatus(${o.id},this.value);setTimeout(renderPedidos,100)" style="background:${statusBg[o.status]||'var(--bg3)'};border:1px solid ${statusCores[o.status]||'var(--border)'};border-radius:20px;padding:3px 10px;color:${statusCores[o.status]||'var(--text)'};font-size:11px;font-weight:700;outline:none;cursor:pointer">
+          <select onchange="updateOrcStatus('${o.id}',this.value);setTimeout(renderPedidos,100)" style="background:${statusBg[o.status]||'var(--bg3)'};border:1px solid ${statusCores[o.status]||'var(--border)'};border-radius:20px;padding:3px 10px;color:${statusCores[o.status]||'var(--text)'};font-size:11px;font-weight:700;outline:none;cursor:pointer">
             ${['pendente','aprovado','recusado'].map(s=>`<option value="${s}" ${o.status===s?'selected':''}>${statusLabel[s]}</option>`).join('')}
           </select>
         </td>
@@ -4084,9 +4079,9 @@ function renderPedidos(){
         <td style="padding:11px 14px;font-size:12px;color:var(--text3)">${o.data}</td>
         <td style="padding:11px 14px"><span style="font-size:11px;font-weight:700;color:${filaStatus.cor}">${filaStatus.label}</span></td>
         <td style="padding:11px 14px"><div style="display:flex;gap:4px">
-          <button class="btn btn-ghost btn-sm" onclick="verOrcamentoPDF(${o.id})" title="PDF">📄</button>
-          <button class="btn btn-ghost btn-sm" style="color:var(--green)" onclick="wppOrcamento(${o.id})" title="WhatsApp">📱</button>
-          <button class="btn btn-ghost btn-sm" style="color:var(--blue)" onclick="emailOrcamento(${o.id})" title="Email">✉</button>
+          <button class="btn btn-ghost btn-sm" onclick="verOrcamentoPDF('${o.id}')" title="PDF">📄</button>
+          <button class="btn btn-ghost btn-sm" style="color:var(--green)" onclick="wppOrcamento('${o.id}')" title="WhatsApp">📱</button>
+          <button class="btn btn-ghost btn-sm" style="color:var(--blue)" onclick="emailOrcamento('${o.id}')" title="Email">✉</button>
           ${pedidoFila?`<button class="btn btn-ghost btn-sm" style="color:var(--accent)" onclick="showPage('fila')" title="Ver na fila">🖨</button>`:''}
         </div></td>
       </tr>`;
