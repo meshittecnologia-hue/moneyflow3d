@@ -3060,6 +3060,8 @@ async function doLogout(){
   document.getElementById('login-email').value='';
   document.getElementById('login-pw').value='';
   document.getElementById('login-err').textContent='';
+  checkBioAvailable();
+  if(!localStorage.getItem('p3d_cred')) setTimeout(()=>document.getElementById('login-email').focus(), 150);
 }
 
 async function registrarBiometria(){
@@ -4205,10 +4207,12 @@ function setCrmView(m){
     // Sessão local mas sem Supabase — limpar
     sessionStorage.removeItem('p3d_ok');
     document.getElementById('login-overlay').style.display='flex';
-    setTimeout(()=>document.getElementById('login-email').focus(), 150);
+    checkBioAvailable();
+    if(!localStorage.getItem('p3d_cred')) setTimeout(()=>document.getElementById('login-email').focus(), 150);
   } else {
     document.getElementById('login-overlay').style.display='flex';
-    setTimeout(()=>document.getElementById('login-email').focus(), 150);
+    checkBioAvailable();
+    if(!localStorage.getItem('p3d_cred')) setTimeout(()=>document.getElementById('login-email').focus(), 150);
   }
 })();
 </script>
