@@ -354,7 +354,7 @@
           <div class="card"><div class="card-label">Total Usuários</div><div class="card-value blue" id="d-total">—</div><div class="card-delta">cadastrados</div></div>
           <div class="card"><div class="card-label">Assinantes Ativos</div><div class="card-value green" id="d-active">—</div><div class="card-delta">planos pagos</div></div>
           <div class="card"><div class="card-label">MRR Estimado</div><div class="card-value accent" id="d-mrr">—</div><div class="card-delta">receita mensal recorrente</div></div>
-          <div class="card"><div class="card-label">Plano Free</div><div class="card-value yellow" id="d-free">—</div><div class="card-delta">usuários gratuitos</div></div>
+          <div class="card"><div class="card-label">Sem plano</div><div class="card-value yellow" id="d-free">—</div><div class="card-delta">acesso bloqueado</div></div>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
           <div class="table-wrap">
@@ -380,10 +380,8 @@
           <input class="search-input" id="user-search" placeholder="Buscar por nome ou e-mail..." oninput="filterUsers()">
           <select class="filter-select" id="user-plan-filter" onchange="filterUsers()">
             <option value="">Todos os planos</option>
-            <option value="free">Hobby / Grátis</option>
-            <option value="maker">Pro Mensal</option>
-            <option value="pro">Pro Anual</option>
-            <option value="annual_maker">Anual (legado)</option>
+            <option value="free">Sem plano / Expirado</option>
+            <option value="pro">Pro — R$ 18/mês</option>
             <option value="interno">⚙ Interno/Staff</option>
           </select>
           <select class="filter-select" id="user-role-filter" onchange="filterUsers()">
@@ -609,9 +607,8 @@
     <div class="form-group">
       <label class="form-label">Plano</label>
       <select class="form-select" id="new-user-plan" onchange="newUserPlanChanged()">
-        <option value="free">Hobby — Grátis</option>
-        <option value="maker">Pro Mensal — R$11,99/mês</option>
-        <option value="pro">Pro Anual — R$9,99/mês</option>
+        <option value="free">Sem plano (acesso bloqueado)</option>
+        <option value="pro">Pro — R$ 18/mês (Oferta Fundador)</option>
         <option value="interno">⚙ Interno/Staff — acesso total sem cobrança</option>
       </select>
     </div>
@@ -680,10 +677,9 @@
     <div class="form-group">
       <label class="form-label">Plano</label>
       <select class="form-select" id="edit-user-plan" onchange="editPlanChanged()">
-        <option value="free">Hobby — Grátis</option>
-        <option value="maker">Pro Mensal — R$11,99/mês</option>
-        <option value="pro">Pro Anual — R$9,99/mês</option>
-        <option value="annual_maker">Anual Maker (legado)</option>
+        <option value="free">Sem plano (acesso bloqueado)</option>
+        <option value="pro">Pro — R$ 18/mês (Oferta Fundador)</option>
+        <option value="annual_maker">Legado (não usar para novos)</option>
         <option value="interno">⚙ Interno/Staff — acesso total sem cobrança</option>
       </select>
     </div>
@@ -768,11 +764,10 @@
     <div class="form-group">
       <label class="form-label">Plano</label>
       <select class="form-select" id="sub-plan" onchange="subPlanChanged()">
-        <option value="free">Hobby — Grátis</option>
-        <option value="maker">Pro Mensal — R$11,99/mês</option>
-        <option value="pro">Pro Anual — R$9,99/mês (R$119,88/ano)</option>
-        <option value="annual_maker">Anual Maker — R$159/ano (legado)</option>
-        <option value="interno">⚙ Interno/Staff — acesso total sem cobrança</option>
+        <option value="free">Sem plano</option>
+        <option value="pro">Pro — R$ 18/mês (Oferta Fundador)</option>
+        <option value="annual_maker">Legado (não usar para novos)</option>
+        <option value="interno">⚙ Interno/Staff — sem cobrança</option>
       </select>
     </div>
     <div class="form-group">
@@ -869,10 +864,12 @@ async function doLogin() {
 }
 
 async function doLogout() {
-  await sb.auth.signOut();
+  // Não faz signOut — mantém sessão para biometria automática no próximo acesso
   currentAdmin = null;
   document.getElementById('app').style.display = 'none';
   document.getElementById('login-screen').style.display = 'flex';
+  // Recarrega para acionar boot com biometria
+  location.reload();
 }
 
 async function checkSession() {
@@ -1624,13 +1621,45 @@ document.querySelectorAll('.modal-overlay').forEach(o => {
 // ============================================================
 // INICIALIZAR
 // ============================================================
-checkSession();
-
-// Mostrar botão de biometria se disponível
-if (window.PublicKeyCredential && localStorage.getItem('admin_bio_cred')) {
-  document.getElementById('bio-admin-section').style.display = 'block';
-  setTimeout(loginAdminBio, 600);
-}
+(async () => {
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) {
+    const { data: profile } = await sb.from('profiles').select('*').eq('id', session.user.id).single();
+    if (profile && profile.role === 'admin') {
+      // Sessão válida — verificar biometria
+      const hasCred = window.PublicKeyCredential && localStorage.getItem('admin_bio_cred');
+      if (hasCred) {
+        // Mostrar botão e disparar biometria automática
+        document.getElementById('bio-admin-section').style.display = 'block';
+        setTimeout(async () => {
+          try {
+            await loginAdminBio();
+          } catch(e) {
+            // Se biometria falhar, entra direto com sessão
+            currentAdmin = profile;
+            initApp();
+          }
+        }, 400);
+      } else {
+        // Sem biometria — entra direto com sessão
+        currentAdmin = profile;
+        initApp();
+      }
+    } else {
+      // Sessão existe mas não é admin — mostrar login
+      if (window.PublicKeyCredential && localStorage.getItem('admin_bio_cred')) {
+        document.getElementById('bio-admin-section').style.display = 'block';
+        setTimeout(loginAdminBio, 600);
+      }
+    }
+  } else {
+    // Sem sessão — mostrar botão biometria se cadastrada
+    if (window.PublicKeyCredential && localStorage.getItem('admin_bio_cred')) {
+      document.getElementById('bio-admin-section').style.display = 'block';
+      setTimeout(loginAdminBio, 600);
+    }
+  }
+})();
 </script>
 </body>
 </html>
