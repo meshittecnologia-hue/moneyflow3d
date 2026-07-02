@@ -1626,34 +1626,31 @@ document.querySelectorAll('.modal-overlay').forEach(o => {
   if (session) {
     const { data: profile } = await sb.from('profiles').select('*').eq('id', session.user.id).single();
     if (profile && profile.role === 'admin') {
-      // Sessão válida — verificar biometria
       const hasCred = window.PublicKeyCredential && localStorage.getItem('admin_bio_cred');
       if (hasCred) {
-        // Mostrar botão e disparar biometria automática
         document.getElementById('bio-admin-section').style.display = 'block';
         setTimeout(async () => {
           try {
+            // Tenta biometria — loginAdminBio já seta currentAdmin e chama initApp
             await loginAdminBio();
+            // Se chegou aqui sem entrar, entra direto
+            if (!currentAdmin) { currentAdmin = profile; initApp(); }
           } catch(e) {
-            // Se biometria falhar, entra direto com sessão
             currentAdmin = profile;
             initApp();
           }
         }, 400);
       } else {
-        // Sem biometria — entra direto com sessão
         currentAdmin = profile;
         initApp();
       }
     } else {
-      // Sessão existe mas não é admin — mostrar login
       if (window.PublicKeyCredential && localStorage.getItem('admin_bio_cred')) {
         document.getElementById('bio-admin-section').style.display = 'block';
         setTimeout(loginAdminBio, 600);
       }
     }
   } else {
-    // Sem sessão — mostrar botão biometria se cadastrada
     if (window.PublicKeyCredential && localStorage.getItem('admin_bio_cred')) {
       document.getElementById('bio-admin-section').style.display = 'block';
       setTimeout(loginAdminBio, 600);
