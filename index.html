@@ -1194,6 +1194,60 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   </div>
 </div>
 
+<!-- MODAL UPGRADE -->
+<div class="modal-overlay" id="modal-upgrade">
+  <div class="modal" style="max-width:440px;text-align:center">
+    <div style="font-size:40px;margin-bottom:12px">🚀</div>
+    <div class="modal-title" id="upgrade-titulo">Módulo Pro</div>
+    <p id="upgrade-msg" style="color:var(--text2);font-size:14px;line-height:1.6;margin:12px 0 20px"></p>
+    <div style="background:var(--bg3);border-radius:10px;padding:16px;margin-bottom:20px;text-align:left">
+      <div style="font-size:12px;color:var(--text3);margin-bottom:8px;text-transform:uppercase;font-weight:700">MoneyFlow 3D Pro inclui</div>
+      <div style="font-size:13px;color:var(--text);display:flex;flex-direction:column;gap:5px">
+        <span>✅ CRM de clientes ilimitados</span>
+        <span>✅ Orçamentos com PDF profissional</span>
+        <span>✅ Fila de produção completa</span>
+        <span>✅ Estoque e filamentos</span>
+        <span>✅ Comparar concorrentes</span>
+        <span>✅ Relatórios avançados</span>
+        <span>✅ Compartilhar via WhatsApp</span>
+      </div>
+    </div>
+    <div style="font-size:24px;font-weight:700;color:var(--accent);margin-bottom:4px">R$ 18<span style="font-size:14px;font-weight:400;color:var(--text2)">/mês</span></div>
+    <div style="font-size:12px;color:var(--text3);margin-bottom:20px">Cancele quando quiser · 7 dias de garantia</div>
+    <div class="modal-footer" style="justify-content:center;gap:10px">
+      <button class="btn btn-ghost" onclick="closeModal('modal-upgrade')">Agora não</button>
+      <a href="https://pay.kiwify.com.br/moneyflow3d" target="_blank" class="btn btn-primary" style="text-decoration:none">Assinar agora →</a>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL UPGRADE -->
+<div class="modal-overlay" id="modal-upgrade">
+  <div class="modal" style="max-width:440px;text-align:center">
+    <div style="font-size:40px;margin-bottom:12px">🚀</div>
+    <div class="modal-title" id="upgrade-titulo">Módulo Pro</div>
+    <p id="upgrade-msg" style="color:var(--text2);font-size:14px;line-height:1.6;margin:12px 0 20px"></p>
+    <div style="background:var(--bg3);border-radius:10px;padding:16px;margin-bottom:20px;text-align:left">
+      <div style="font-size:12px;color:var(--text3);margin-bottom:8px;text-transform:uppercase;font-weight:700">MoneyFlow 3D Pro inclui</div>
+      <div style="font-size:13px;color:var(--text);display:flex;flex-direction:column;gap:5px">
+        <span>✅ CRM de clientes ilimitados</span>
+        <span>✅ Orçamentos com PDF profissional</span>
+        <span>✅ Fila de produção completa</span>
+        <span>✅ Estoque e filamentos</span>
+        <span>✅ Comparar concorrentes</span>
+        <span>✅ Relatórios avançados</span>
+        <span>✅ Compartilhar via WhatsApp</span>
+      </div>
+    </div>
+    <div style="font-size:24px;font-weight:700;color:var(--accent);margin-bottom:4px">R$ 18<span style="font-size:14px;font-weight:400;color:var(--text2)">/mês</span></div>
+    <div style="font-size:12px;color:var(--text3);margin-bottom:20px">Cancele quando quiser · 7 dias de garantia</div>
+    <div class="modal-footer" style="justify-content:center;gap:10px">
+      <button class="btn btn-ghost" onclick="closeModal('modal-upgrade')">Agora não</button>
+      <a href="https://pay.kiwify.com.br/moneyflow3d" target="_blank" class="btn btn-primary" style="text-decoration:none">Assinar agora →</a>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL EDITAR PRODUTO -->
 <div class="modal-overlay" id="modal-edit-prod">
   <div class="modal" style="max-width:480px">
@@ -2125,9 +2179,100 @@ async function verificarAcesso(){
   if(!profile){ notify('Perfil não encontrado. Contate o administrador.','red'); return; }
   if(profile.is_blocked){ notify('Conta suspensa. Contate o administrador.','red'); await doLogout(); return; }
 
-  // Exibir email do usuário na topbar
+  // Exibir email na topbar
   const emailEl = document.getElementById('topbar-email');
   if(emailEl) emailEl.textContent = _currentUser.email;
+
+  // Aplicar bloqueio de módulos por plano
+  aplicarBloqueioPlano(profile);
+}
+
+/* ── CONTROLE DE ACESSO POR PLANO ─────────────────────── */
+const PLANOS_PRO = ['pro','maker','interno','annual_maker'];
+
+function temAcesso(profile){
+  if(!profile) return false;
+  const plano = profile.plan || 'free';
+  if(PLANOS_PRO.includes(plano)) return true;
+  // Trial: verifica created_at + 7 dias
+  if(profile.created_at){
+    const criado = new Date(profile.created_at);
+    const expira = new Date(criado.getTime() + 7*24*60*60*1000);
+    if(new Date() < expira) return true;
+  }
+  return false;
+}
+
+function diasRestantesTrial(profile){
+  if(!profile || !profile.created_at) return 0;
+  const plano = profile.plan || 'free';
+  if(PLANOS_PRO.includes(plano)) return 999;
+  const criado = new Date(profile.created_at);
+  const expira = new Date(criado.getTime() + 7*24*60*60*1000);
+  const diff = Math.ceil((expira - new Date()) / (1000*60*60*24));
+  return Math.max(0, diff);
+}
+
+function aplicarBloqueioPlano(profile){
+  const pro = temAcesso(profile);
+  const dias = diasRestantesTrial(profile);
+  const plano = profile?.plan || 'free';
+
+  // Módulos bloqueados para plano free/trial expirado
+  const modulosBloqueados = ['crm','orcamentos','pedidos','fila','comparar','relatorio'];
+
+  modulosBloqueados.forEach(mod => {
+    const nav = document.getElementById('nav-'+mod);
+    if(!nav) return;
+    if(pro){
+      nav.style.opacity = '';
+      nav.onclick = function(){ showPage(mod); };
+      // remover badge de cadeado se existir
+      const badge = nav.querySelector('.plan-lock');
+      if(badge) badge.remove();
+    } else {
+      nav.style.opacity = '0.5';
+      // adicionar cadeado se não existir
+      if(!nav.querySelector('.plan-lock')){
+        const lock = document.createElement('span');
+        lock.className = 'plan-lock';
+        lock.textContent = '🔒';
+        lock.style.cssText = 'margin-left:auto;font-size:11px';
+        nav.appendChild(lock);
+      }
+      nav.onclick = function(e){ e.stopPropagation(); abrirModalUpgrade(); };
+    }
+  });
+
+  // Mostrar banner de trial se ainda ativo
+  const banner = document.getElementById('trial-banner');
+  if(banner){
+    if(!pro && dias > 0){
+      banner.style.display = 'flex';
+      const el = document.getElementById('trial-dias');
+      if(el) el.textContent = dias === 1 ? '1 dia' : dias+' dias';
+    } else if(!pro && dias === 0){
+      // Trial expirado
+      banner.style.display = 'flex';
+      banner.style.background = 'var(--red)';
+      banner.innerHTML = '<span>⚠️ Seu trial expirou. <strong>Assine o MoneyFlow 3D Pro por R$ 18/mês</strong> para continuar usando todos os módulos.</span><a href="https://pay.kiwify.com.br/moneyflow3d" target="_blank" style="color:#fff;font-weight:700;text-decoration:underline;white-space:nowrap;margin-left:12px">Assinar agora →</a>';
+    } else {
+      banner.style.display = 'none';
+    }
+  }
+}
+
+function abrirModalUpgrade(){
+  const dias = diasRestantesTrial(_userProfile);
+  const expirou = dias === 0;
+  const m = document.getElementById('modal-upgrade');
+  if(m){
+    document.getElementById('upgrade-titulo').textContent = expirou ? 'Trial expirado' : 'Módulo Pro';
+    document.getElementById('upgrade-msg').textContent = expirou
+      ? 'Seu trial de 7 dias expirou. Assine o MoneyFlow 3D Pro para continuar usando CRM, Orçamentos, Fila de Produção e todos os módulos.'
+      : 'Este módulo está disponível no plano Pro. Assine por R$ 18/mês e desbloqueie CRM, Orçamentos, Fila de Produção, Relatórios e muito mais.';
+    m.classList.add('open');
+  }
 }
 
 /* ── INIT APP ────────────────────────────────────────── */
