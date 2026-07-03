@@ -1387,26 +1387,9 @@ function toggleSemEmail() {
   // Função legada — elementos removidos do modal novo
 }
 
-function openAddUserModal() {
-  document.getElementById('new-user-email').value = '';
-  document.getElementById('new-user-name').value = '';
-  document.getElementById('new-user-plan').value = 'free';
-  document.getElementById('new-user-role').value = 'user';
-  document.getElementById('new-user-senha').value = '';
-  document.getElementById('new-user-senha').type = 'password';
-  document.getElementById('btn-ver-senha').textContent = '👁';
-  document.getElementById('senha-strength').textContent = '';
-  document.getElementById('senha-gerada-wrap').style.display = 'none';
-  document.getElementById('senha-section').style.display = 'none';
-  document.getElementById('info-modo-convite').style.display = 'block';
-  setModoUsuario('convite');
-  applyPlanModules('new-mod-', 'free');
-  openModal('modal-add-user');
-}
-
 const RESEND_KEY = 're_AQqrfUwZ_2idKHdJKcNZBJr9B7ACLHRHn';
 
-let modoUsuario = 'convite'; // 'convite' ou 'direto'
+let modoUsuario = 'convite';
 
 function setModoUsuario(modo) {
   modoUsuario = modo;
@@ -1415,7 +1398,6 @@ function setModoUsuario(modo) {
   const senhaSection = document.getElementById('senha-section');
   const infoConvite = document.getElementById('info-modo-convite');
   const btnCriar = document.getElementById('btn-criar-usuario');
-
   if (modo === 'convite') {
     btnConvite.style.background = 'var(--accent)';
     btnConvite.style.color = '#fff';
@@ -1434,6 +1416,27 @@ function setModoUsuario(modo) {
     btnCriar.textContent = '✅ Criar usuário';
   }
 }
+
+function openAddUserModal() {
+  document.getElementById('new-user-email').value = '';
+  document.getElementById('new-user-name').value = '';
+  document.getElementById('new-user-plan').value = 'free';
+  document.getElementById('new-user-role').value = 'user';
+  document.getElementById('new-user-senha').value = '';
+  document.getElementById('new-user-senha').type = 'password';
+  document.getElementById('btn-ver-senha').textContent = '👁';
+  document.getElementById('senha-strength').textContent = '';
+  document.getElementById('senha-gerada-wrap').style.display = 'none';
+  document.getElementById('senha-section').style.display = 'none';
+  document.getElementById('info-modo-convite').style.display = 'block';
+  setModoUsuario('convite');
+  applyPlanModules('new-mod-', 'free');
+  openModal('modal-add-user');
+}
+
+
+
+
 
 async function addUserManual() {
   const name  = document.getElementById('new-user-name').value.trim();
