@@ -1384,21 +1384,7 @@ async function confirmarExcluirUser(id, nome) {
 }
 
 function toggleSemEmail() {
-  const semEmail = document.getElementById('toggle-sem-email').checked;
-  const emailInput = document.getElementById('new-user-email');
-  const wrap = document.getElementById('sem-email-wrap');
-  if (semEmail) {
-    emailInput.disabled = true;
-    emailInput.style.opacity = '0.4';
-    emailInput.value = '';
-    emailInput.placeholder = 'Será gerado automaticamente';
-    wrap.style.display = 'block';
-  } else {
-    emailInput.disabled = false;
-    emailInput.style.opacity = '1';
-    emailInput.placeholder = 'email@exemplo.com';
-    wrap.style.display = 'none';
-  }
+  // Função legada — elementos removidos do modal novo
 }
 
 function openAddUserModal() {
