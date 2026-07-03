@@ -1421,6 +1421,8 @@ function openAddUserModal() {
   openModal('modal-add-user');
 }
 
+const RESEND_KEY = 're_AQqrfUwZ_2idKHdJKcNZBJr9B7ACLHRHn';
+
 let modoUsuario = 'convite'; // 'convite' ou 'direto'
 
 function setModoUsuario(modo) {
@@ -1460,27 +1462,84 @@ async function addUserManual() {
   if (!email) { showToast('E-mail obrigatório', 'error'); return; }
 
   if (modoUsuario === 'convite') {
-    // Enviar convite via Admin API — usuário define a própria senha pelo link
-    const res = await fetch(`${SUPABASE_URL}/auth/v1/invite`, {
+    // 1. Criar usuário via Admin API com senha temporária
+    const senhaTemp = 'Temp_' + Math.random().toString(36).slice(2,10) + '!1A';
+    const resCreate = await fetch(`${SUPABASE_URL}/auth/v1/admin/users`, {
       method: 'POST',
       headers: {
         'apikey': SUPABASE_SERVICE,
         'Authorization': `Bearer ${SUPABASE_SERVICE}`,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ email, data: { full_name: name } })
+      body: JSON.stringify({ email, password: senhaTemp, email_confirm: true, user_metadata: { full_name: name } })
     });
-    const result = await res.json();
-    if (!res.ok || result.error) {
-      showToast('Erro ao enviar convite: ' + (result.message || result.msg || result.error?.message || res.status), 'error');
+    const created = await resCreate.json();
+    if (!resCreate.ok || created.error) {
+      showToast('Erro ao criar: ' + (created.message || created.error?.message || resCreate.status), 'error');
       return;
     }
-    const userId = result.id;
-    if (userId) {
-      await sb.from('profiles').update({ name, plan, role, modules: mods, updated_at: new Date() }).eq('id', userId);
-      await sb.from('admin_logs').insert({ admin_id: currentAdmin.id, action: 'invite_user', target_user: userId, details: { plan, role } });
+    const userId = created.id;
+
+    // 2. Gerar link de recuperação de senha (usuário define nova senha)
+    const resLink = await fetch(`${SUPABASE_URL}/auth/v1/admin/generate_link`, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_SERVICE,
+        'Authorization': `Bearer ${SUPABASE_SERVICE}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ type: 'recovery', email })
+    });
+    const linkData = await resLink.json();
+    const actionLink = linkData?.action_link || linkData?.properties?.action_link || '';
+
+    // 3. Enviar email via Resend diretamente
+    const nomeDisplay = name || email.split('@')[0];
+    const htmlEmail = `
+      <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#0f0f0f;color:#f0f0f0;border-radius:12px;overflow:hidden">
+        <div style="background:#ff6b2b;padding:24px;text-align:center">
+          <h1 style="margin:0;color:#fff;font-size:24px">⬡ MoneyFlow 3D</h1>
+          <p style="margin:6px 0 0;color:rgba(255,255,255,.8);font-size:14px">Precificação Inteligente para Makers</p>
+        </div>
+        <div style="padding:32px">
+          <h2 style="color:#ff6b2b;margin-top:0">Você foi convidado!</h2>
+          <p style="color:#ccc;line-height:1.6">Olá <strong style="color:#fff">${nomeDisplay}</strong>,</p>
+          <p style="color:#ccc;line-height:1.6">Você recebeu acesso ao <strong style="color:#fff">MoneyFlow 3D</strong> — o sistema completo de precificação e gestão para makers de impressão 3D FDM.</p>
+          <p style="color:#ccc;line-height:1.6">Clique no botão abaixo para definir sua senha e acessar o sistema:</p>
+          <div style="text-align:center;margin:32px 0">
+            <a href="${actionLink}" style="background:#ff6b2b;color:#fff;padding:14px 32px;border-radius:8px;text-decoration:none;font-weight:700;font-size:16px;display:inline-block">Acessar MoneyFlow 3D →</a>
+          </div>
+          <p style="color:#666;font-size:12px;text-align:center">Link válido por 24 horas. Se não solicitou este acesso, ignore este email.</p>
+        </div>
+        <div style="background:#1a1a1a;padding:16px;text-align:center">
+          <p style="color:#555;font-size:11px;margin:0">MoneyFlow 3D · MeshIT Tecnologia · <a href="https://moneyflow3d.com.br" style="color:#ff6b2b;text-decoration:none">moneyflow3d.com.br</a></p>
+        </div>
+      </div>`;
+
+    const resEmail = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${RESEND_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        from: 'MoneyFlow 3D <noreply@moneyflow3d.com.br>',
+        to: [email],
+        subject: 'Você foi convidado para o MoneyFlow 3D',
+        html: htmlEmail
+      })
+    });
+
+    const emailResult = await resEmail.json();
+    if (!resEmail.ok || emailResult.error) {
+      showToast('Usuário criado mas erro ao enviar email: ' + (emailResult.message || emailResult.error?.message), 'error');
+    } else {
+      showToast('Convite enviado para ' + email + '!', 'success');
     }
-    showToast('Convite enviado para ' + email + ' via Resend!', 'success');
+
+    // 4. Atualizar profile
+    await sb.from('profiles').update({ name, plan, role, modules: mods, updated_at: new Date() }).eq('id', userId);
+    await sb.from('admin_logs').insert({ admin_id: currentAdmin.id, action: 'invite_user', target_user: userId, details: { plan, role } });
 
   } else {
     // Criar com senha imediata via Admin API
