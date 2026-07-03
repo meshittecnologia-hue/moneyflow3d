@@ -1402,13 +1402,7 @@ function toggleSemEmail() {
 }
 
 function openAddUserModal() {
-  const emailInput = document.getElementById('new-user-email');
-  emailInput.value = '';
-  emailInput.disabled = false;
-  emailInput.style.opacity = '1';
-  emailInput.placeholder = 'email@exemplo.com';
-  document.getElementById('toggle-sem-email').checked = false;
-  document.getElementById('sem-email-wrap').style.display = 'none';
+  document.getElementById('new-user-email').value = '';
   document.getElementById('new-user-name').value = '';
   document.getElementById('new-user-plan').value = 'free';
   document.getElementById('new-user-role').value = 'user';
@@ -1417,6 +1411,9 @@ function openAddUserModal() {
   document.getElementById('btn-ver-senha').textContent = '👁';
   document.getElementById('senha-strength').textContent = '';
   document.getElementById('senha-gerada-wrap').style.display = 'none';
+  document.getElementById('senha-section').style.display = 'none';
+  document.getElementById('info-modo-convite').style.display = 'block';
+  setModoUsuario('convite');
   applyPlanModules('new-mod-', 'free');
   openModal('modal-add-user');
 }
