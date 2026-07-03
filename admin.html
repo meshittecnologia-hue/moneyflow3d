@@ -626,18 +626,16 @@
 <div class="modal-overlay" id="modal-add-user">
   <div class="modal" style="max-width:500px">
     <div class="modal-title">➕ Adicionar usuário</div>
+
+    <!-- Modo de criação -->
+    <div style="display:flex;gap:8px;margin-bottom:16px;background:var(--bg3);border-radius:8px;padding:4px">
+      <button id="btn-modo-convite" onclick="setModoUsuario('convite')" style="flex:1;padding:7px;border-radius:6px;border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:600;cursor:pointer">📧 Enviar convite por email</button>
+      <button id="btn-modo-direto" onclick="setModoUsuario('direto')" style="flex:1;padding:7px;border-radius:6px;border:none;background:transparent;color:var(--text2);font-size:12px;cursor:pointer">🔑 Criar com senha</button>
+    </div>
+
     <div class="form-group">
-      <label class="form-label" style="display:flex;justify-content:space-between;align-items:center">
-        <span>E-mail</span>
-        <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text3);cursor:pointer;font-weight:400">
-          <input type="checkbox" id="toggle-sem-email" onchange="toggleSemEmail()" style="width:14px;height:14px;cursor:pointer">
-          <span>Sem e-mail / acesso direto</span>
-        </label>
-      </label>
+      <label class="form-label">E-mail</label>
       <input class="form-input" id="new-user-email" type="email" placeholder="email@exemplo.com">
-      <div id="sem-email-wrap" style="display:none;margin-top:8px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--text3)">
-        ℹ️ Um e-mail temporário será gerado automaticamente. O usuário acessa somente por senha ou biometria — sem recuperação por e-mail.
-      </div>
     </div>
     <div class="form-group">
       <label class="form-label">Nome</label>
@@ -672,30 +670,40 @@
         <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" id="new-mod-ilimitado"> Projetos e impressoras ilimitados</label>
       </div>
     </div>
-    <div id="new-user-info" style="background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.3);border-radius:8px;padding:10px 14px;font-size:12px;color:#22c55e;margin-top:4px">
-      ✅ Usuário criado com acesso imediato. Compartilhe o email e senha diretamente com ele.
+
+    <!-- Info modo convite -->
+    <div id="info-modo-convite" style="background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.3);border-radius:8px;padding:10px 14px;font-size:12px;color:#60a5fa;margin-top:4px">
+      📧 Um email de convite será enviado via Resend. O usuário clica no link e define a própria senha.
     </div>
-    <div class="form-group" style="margin-top:14px">
-      <label class="form-label" style="display:flex;justify-content:space-between;align-items:center">
-        <span>Senha inicial</span>
-        <button type="button" onclick="gerarSenha()" style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:3px 10px;font-size:11px;color:var(--accent);cursor:pointer;font-weight:600">⚡ Gerar automática</button>
-      </label>
-      <div style="position:relative">
-        <input class="form-input" id="new-user-senha" type="password" placeholder="Mínimo 8 caracteres" style="padding-right:40px" oninput="validarForcaSenha(this.value)">
-        <button type="button" onclick="toggleSenhaVisivel()" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text3);font-size:16px" id="btn-ver-senha">👁</button>
-      </div>
-      <div id="senha-strength" style="margin-top:6px;font-size:11px;height:16px"></div>
-      <div id="senha-gerada-wrap" style="display:none;margin-top:8px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 12px">
-        <div style="font-size:11px;color:var(--text3);margin-bottom:4px">Senha gerada — copie antes de salvar:</div>
-        <div style="display:flex;align-items:center;gap:8px">
-          <code id="senha-gerada-txt" style="flex:1;font-size:13px;color:var(--green);letter-spacing:.05em;word-break:break-all"></code>
-          <button type="button" onclick="copiarSenha()" style="background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:11px;color:var(--text2);cursor:pointer;white-space:nowrap">📋 Copiar</button>
+
+    <!-- Senha (modo direto) -->
+    <div id="senha-section" style="display:none;margin-top:14px">
+      <div class="form-group">
+        <label class="form-label" style="display:flex;justify-content:space-between;align-items:center">
+          <span>Senha inicial</span>
+          <button type="button" onclick="gerarSenha()" style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:3px 10px;font-size:11px;color:var(--accent);cursor:pointer;font-weight:600">⚡ Gerar automática</button>
+        </label>
+        <div style="position:relative">
+          <input class="form-input" id="new-user-senha" type="password" placeholder="Mínimo 8 caracteres" style="padding-right:40px" oninput="validarForcaSenha(this.value)">
+          <button type="button" onclick="toggleSenhaVisivel()" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text3);font-size:16px" id="btn-ver-senha">👁</button>
+        </div>
+        <div id="senha-strength" style="margin-top:6px;font-size:11px;height:16px"></div>
+        <div id="senha-gerada-wrap" style="display:none;margin-top:8px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 12px">
+          <div style="font-size:11px;color:var(--text3);margin-bottom:4px">Senha gerada — copie antes de salvar:</div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <code id="senha-gerada-txt" style="flex:1;font-size:13px;color:var(--green);letter-spacing:.05em;word-break:break-all"></code>
+            <button type="button" onclick="copiarSenha()" style="background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:11px;color:var(--text2);cursor:pointer;white-space:nowrap">📋 Copiar</button>
+          </div>
         </div>
       </div>
+      <div style="background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.3);border-radius:8px;padding:10px 14px;font-size:12px;color:#22c55e">
+        ✅ Usuário criado com acesso imediato. Compartilhe o email e senha diretamente com ele.
+      </div>
     </div>
-    <div class="modal-actions">
+
+    <div class="modal-actions" style="margin-top:16px">
       <button class="btn btn-ghost" onclick="closeModal('modal-add-user')">Cancelar</button>
-      <button class="btn btn-primary" onclick="addUserManual()">Criar usuário</button>
+      <button class="btn btn-primary" id="btn-criar-usuario" onclick="addUserManual()">📧 Enviar convite</button>
     </div>
   </div>
 </div>
@@ -1413,59 +1421,93 @@ function openAddUserModal() {
   openModal('modal-add-user');
 }
 
+let modoUsuario = 'convite'; // 'convite' ou 'direto'
+
+function setModoUsuario(modo) {
+  modoUsuario = modo;
+  const btnConvite = document.getElementById('btn-modo-convite');
+  const btnDireto = document.getElementById('btn-modo-direto');
+  const senhaSection = document.getElementById('senha-section');
+  const infoConvite = document.getElementById('info-modo-convite');
+  const btnCriar = document.getElementById('btn-criar-usuario');
+
+  if (modo === 'convite') {
+    btnConvite.style.background = 'var(--accent)';
+    btnConvite.style.color = '#fff';
+    btnDireto.style.background = 'transparent';
+    btnDireto.style.color = 'var(--text2)';
+    senhaSection.style.display = 'none';
+    infoConvite.style.display = 'block';
+    btnCriar.textContent = '📧 Enviar convite';
+  } else {
+    btnDireto.style.background = 'var(--accent)';
+    btnDireto.style.color = '#fff';
+    btnConvite.style.background = 'transparent';
+    btnConvite.style.color = 'var(--text2)';
+    senhaSection.style.display = 'block';
+    infoConvite.style.display = 'none';
+    btnCriar.textContent = '✅ Criar usuário';
+  }
+}
+
 async function addUserManual() {
-  const semEmail = document.getElementById('toggle-sem-email').checked;
   const name  = document.getElementById('new-user-name').value.trim();
   const plan  = document.getElementById('new-user-plan').value;
   const role  = document.getElementById('new-user-role').value;
-  const senha = document.getElementById('new-user-senha').value;
   const mods  = getCheckedModules('new-mod-');
+  const email = document.getElementById('new-user-email').value.trim();
 
-  const email = semEmail
-    ? `user_${Date.now()}@moneyflow3d.interno`
-    : document.getElementById('new-user-email').value.trim();
+  if (!email) { showToast('E-mail obrigatório', 'error'); return; }
 
-  if (!semEmail && !email) { showToast('E-mail obrigatório', 'error'); return; }
-  if (!senha) { showToast('Defina uma senha ou gere automaticamente', 'error'); return; }
-  if (!validarForcaSenha(senha)) { showToast('Senha não atende aos critérios de segurança', 'error'); return; }
+  if (modoUsuario === 'convite') {
+    // Enviar convite via Admin API — usuário define a própria senha pelo link
+    const res = await fetch(`${SUPABASE_URL}/auth/v1/invite`, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_SERVICE,
+        'Authorization': `Bearer ${SUPABASE_SERVICE}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ email, data: { full_name: name } })
+    });
+    const result = await res.json();
+    if (!res.ok || result.error) {
+      showToast('Erro ao enviar convite: ' + (result.message || result.msg || result.error?.message || res.status), 'error');
+      return;
+    }
+    const userId = result.id;
+    if (userId) {
+      await sb.from('profiles').update({ name, plan, role, modules: mods, updated_at: new Date() }).eq('id', userId);
+      await sb.from('admin_logs').insert({ admin_id: currentAdmin.id, action: 'invite_user', target_user: userId, details: { plan, role } });
+    }
+    showToast('Convite enviado para ' + email + ' via Resend!', 'success');
 
-  // Criar via Admin API (service_role) — não afeta a sessão do admin
-  const res = await fetch(`${SUPABASE_URL}/auth/v1/admin/users`, {
-    method: 'POST',
-    headers: {
-      'apikey': SUPABASE_SERVICE,
-      'Authorization': `Bearer ${SUPABASE_SERVICE}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      email,
-      password: senha,
-      email_confirm: true, // confirma automaticamente sem enviar email
-      user_metadata: { full_name: name }
-    })
-  });
+  } else {
+    // Criar com senha imediata via Admin API
+    const senha = document.getElementById('new-user-senha').value;
+    if (!senha) { showToast('Defina uma senha ou gere automaticamente', 'error'); return; }
+    if (!validarForcaSenha(senha)) { showToast('Senha não atende aos critérios de segurança', 'error'); return; }
 
-  const result = await res.json();
-  if (!res.ok || result.error) {
-    showToast('Erro ao criar: ' + (result.message || result.error?.message || res.status), 'error');
-    return;
+    const res = await fetch(`${SUPABASE_URL}/auth/v1/admin/users`, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_SERVICE,
+        'Authorization': `Bearer ${SUPABASE_SERVICE}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ email, password: senha, email_confirm: true, user_metadata: { full_name: name } })
+    });
+    const result = await res.json();
+    if (!res.ok || result.error) {
+      showToast('Erro ao criar: ' + (result.message || result.error?.message || res.status), 'error');
+      return;
+    }
+    const userId = result.id;
+    await sb.from('profiles').update({ name, plan, role, modules: mods, updated_at: new Date() }).eq('id', userId);
+    await sb.from('admin_logs').insert({ admin_id: currentAdmin.id, action: 'create_user', target_user: userId, details: { plan, role, mods } });
+    showToast('Usuário criado! Compartilhe o email e senha.', 'success');
   }
 
-  const userId = result.id;
-
-  // Atualizar profile com plano, role e módulos
-  await sb.from('profiles').update({
-    name, plan, role, modules: mods, updated_at: new Date()
-  }).eq('id', userId);
-
-  await sb.from('admin_logs').insert({
-    admin_id: currentAdmin.id,
-    action: 'create_user',
-    target_user: userId,
-    details: { plan, role, mods, sem_email: semEmail }
-  });
-
-  showToast('Usuário criado com sucesso! Compartilhe o email e senha.', 'success');
   closeModal('modal-add-user');
   loadUsers();
 }
