@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MoneyFlow 3D — Transforme sua impressora em uma máquina de lucro</title>
+<meta name="description" content="Software profissional de precificação e gestão para makers de impressão 3D FDM. Calcule custos, defina preços e aumente seu lucro. R$18/mês na oferta fundador.">
+<style>
+  :root {
+    --bg: #0C0C0E;
+    --surface: #13131A;
+    --surface2: #1C1C26;
+    --border: #2A2A38;
+    --orange: #E8601C;
+    --orange2: #FF7A35;
+    --orange-glow: rgba(232,96,28,0.15);
+    --green: #22C55E;
+    --text1: #F0EEF5;
+    --text2: #9A98A8;
+    --text3: #5A5870;
+    --radius: 12px;
+    --radius-lg: 20px;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { background: var(--bg); color: var(--text1); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; line-height: 1.6; overflow-x: hidden; }
+
+  /* TYPOGRAPHY */
+  .eyebrow { font-size: 11px; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; color: var(--orange); }
+  .display { font-size: clamp(2.2rem, 6vw, 4rem); font-weight: 800; line-height: 1.1; letter-spacing: -0.02em; }
+  .display em { font-style: normal; color: var(--orange); }
+  h2 { font-size: clamp(1.6rem, 4vw, 2.4rem); font-weight: 800; line-height: 1.15; letter-spacing: -0.02em; }
+  h2 em { font-style: normal; color: var(--orange); }
+  h3 { font-size: 1.1rem; font-weight: 700; }
+  p { color: var(--text2); }
+  a { color: inherit; text-decoration: none; }
+
+  /* LAYOUT */
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+  .wrap-sm { max-width: 720px; margin: 0 auto; padding: 0 24px; }
+  section { padding: 96px 0; }
+
+  /* NAV */
+  nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; background: rgba(12,12,14,0.85); backdrop-filter: blur(16px); border-bottom: 1px solid var(--border); }
+  .nav-inner { display: flex; align-items: center; justify-content: space-between; height: 64px; }
+  .logo { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 1.1rem; }
+  .logo-icon { width: 32px; height: 32px; background: var(--orange); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+  .nav-cta { background: var(--orange); color: #fff; font-weight: 700; font-size: 0.875rem; padding: 10px 20px; border-radius: 8px; cursor: pointer; border: none; transition: background 0.2s; }
+  .nav-cta:hover { background: var(--orange2); }
+
+  /* HERO */
+  #hero { padding-top: 140px; padding-bottom: 80px; position: relative; overflow: hidden; }
+  #hero::before { content: ''; position: absolute; top: -200px; left: 50%; transform: translateX(-50%); width: 800px; height: 800px; background: radial-gradient(ellipse, rgba(232,96,28,0.12) 0%, transparent 70%); pointer-events: none; }
+  .hero-badge { display: inline-flex; align-items: center; gap: 8px; background: var(--surface); border: 1px solid var(--border); border-radius: 100px; padding: 6px 14px; font-size: 12px; font-weight: 600; color: var(--text2); margin-bottom: 24px; }
+  .hero-badge span { background: var(--orange); color: #fff; border-radius: 100px; padding: 2px 8px; font-size: 11px; }
+  .hero-headline { margin-bottom: 20px; }
+  .hero-sub { font-size: 1.15rem; color: var(--text2); max-width: 560px; margin-bottom: 36px; line-height: 1.7; }
+  .hero-actions { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 48px; }
+  .btn-primary { display: inline-flex; align-items: center; gap: 8px; background: var(--orange); color: #fff; font-weight: 800; font-size: 1rem; padding: 16px 32px; border-radius: 10px; border: none; cursor: pointer; transition: all 0.2s; text-decoration: none; }
+  .btn-primary:hover { background: var(--orange2); transform: translateY(-1px); box-shadow: 0 8px 32px rgba(232,96,28,0.35); }
+  .btn-secondary { display: inline-flex; align-items: center; gap: 8px; background: transparent; color: var(--text2); font-weight: 600; font-size: 0.95rem; padding: 16px 24px; border-radius: 10px; border: 1px solid var(--border); cursor: pointer; transition: all 0.2s; text-decoration: none; }
+  .btn-secondary:hover { border-color: var(--orange); color: var(--text1); }
+  .hero-trust { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+  .hero-trust-item { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text3); }
+  .hero-trust-item .dot { width: 6px; height: 6px; background: var(--green); border-radius: 50%; }
+
+  /* CALCULATOR DEMO */
+  .calc-demo { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; box-shadow: 0 32px 80px rgba(0,0,0,0.5); margin-top: 64px; }
+  .calc-demo-bar { background: var(--surface2); padding: 12px 16px; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--border); }
+  .calc-demo-dot { width: 12px; height: 12px; border-radius: 50%; }
+  .calc-demo-dot:nth-child(1) { background: #FF5F57; }
+  .calc-demo-dot:nth-child(2) { background: #FFBD2E; }
+  .calc-demo-dot:nth-child(3) { background: #28CA41; }
+  .calc-demo-url { flex: 1; text-align: center; font-size: 12px; color: var(--text3); }
+  .calc-demo-body { display: grid; grid-template-columns: 1fr 1fr; gap: 0; }
+  .calc-demo-left { padding: 24px; border-right: 1px solid var(--border); }
+  .calc-demo-right { padding: 24px; }
+  .calc-field { margin-bottom: 16px; }
+  .calc-label { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.1em; font-weight: 600; margin-bottom: 6px; }
+  .calc-input { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; color: var(--text1); font-size: 0.9rem; width: 100%; display: flex; justify-content: space-between; align-items: center; }
+  .calc-input .val { color: var(--text1); font-weight: 600; }
+  .result-card { background: var(--orange-glow); border: 1px solid rgba(232,96,28,0.3); border-radius: var(--radius); padding: 16px; margin-bottom: 12px; }
+  .result-label { font-size: 11px; color: var(--orange); text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700; margin-bottom: 4px; }
+  .result-value { font-size: 1.8rem; font-weight: 800; color: var(--text1); }
+  .result-value .animating { color: var(--orange); }
+  .result-sub { font-size: 12px; color: var(--text2); margin-top: 4px; }
+  .result-row { display: flex; justify-content: space-between; font-size: 13px; padding: 8px 0; border-bottom: 1px solid var(--border); color: var(--text2); }
+  .result-row:last-child { border: none; }
+  .result-row strong { color: var(--text1); }
+  .result-badge { display: inline-block; background: rgba(34,197,94,0.15); color: var(--green); font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 4px; margin-left: 8px; }
+
+  /* PAIN */
+  #pain { background: var(--surface); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 80px 0; }
+  .pain-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-top: 48px; }
+  .pain-card { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; display: flex; gap: 14px; align-items: flex-start; }
+  .pain-icon { font-size: 1.4rem; flex-shrink: 0; margin-top: 2px; }
+  .pain-text { font-size: 0.95rem; color: var(--text2); font-weight: 500; }
+
+  /* WHAT IS */
+  #what { text-align: center; }
+  .what-tagline { font-size: 1.2rem; color: var(--text2); max-width: 600px; margin: 16px auto 64px; line-height: 1.7; }
+  .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; text-align: left; }
+  .feature-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; transition: border-color 0.2s; }
+  .feature-card:hover { border-color: var(--orange); }
+  .feature-icon { font-size: 1.8rem; margin-bottom: 14px; }
+  .feature-card h3 { margin-bottom: 8px; color: var(--text1); }
+  .feature-card p { font-size: 0.9rem; }
+
+  /* VS */
+  #vs { background: var(--surface); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+  .vs-table { width: 100%; border-collapse: collapse; margin-top: 48px; }
+  .vs-table th { padding: 16px 20px; font-size: 0.875rem; font-weight: 700; text-align: center; background: var(--surface2); }
+  .vs-table th:first-child { text-align: left; }
+  .vs-table th.highlight { background: var(--orange-glow); border: 1px solid rgba(232,96,28,0.3); color: var(--orange); border-radius: 8px 8px 0 0; }
+  .vs-table td { padding: 14px 20px; font-size: 0.875rem; border-top: 1px solid var(--border); text-align: center; color: var(--text2); }
+  .vs-table td:first-child { text-align: left; color: var(--text1); font-weight: 500; }
+  .vs-table td.highlight { background: var(--orange-glow); border-left: 1px solid rgba(232,96,28,0.2); border-right: 1px solid rgba(232,96,28,0.2); }
+  .vs-table tr:last-child td.highlight { border-radius: 0 0 8px 8px; border-bottom: 1px solid rgba(232,96,28,0.3); }
+  .check { color: var(--green); font-size: 1.1rem; }
+  .cross { color: var(--text3); font-size: 1.1rem; }
+
+  /* HOW */
+  #how { text-align: center; }
+  .steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 32px; margin-top: 56px; position: relative; text-align: left; }
+  .step { position: relative; }
+  .step-num { width: 40px; height: 40px; background: var(--orange); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1rem; color: #fff; margin-bottom: 16px; }
+  .step h3 { margin-bottom: 8px; }
+  .step p { font-size: 0.9rem; }
+
+  /* PRICING */
+  #pricing { text-align: center; }
+  .pricing-sub { color: var(--text2); font-size: 1.1rem; margin: 12px auto 48px; max-width: 500px; }
+  .pricing-card { background: var(--surface); border: 2px solid var(--orange); border-radius: var(--radius-lg); padding: 48px; max-width: 520px; margin: 0 auto; position: relative; overflow: hidden; }
+  .pricing-card::before { content: ''; position: absolute; top: -80px; right: -80px; width: 250px; height: 250px; background: var(--orange-glow); border-radius: 50%; pointer-events: none; }
+  .pricing-badge { display: inline-block; background: var(--orange); color: #fff; font-size: 11px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; padding: 5px 14px; border-radius: 100px; margin-bottom: 24px; }
+  .pricing-name { font-size: 1.4rem; font-weight: 800; margin-bottom: 8px; }
+  .pricing-price { margin: 20px 0; }
+  .pricing-price .from { font-size: 0.85rem; color: var(--text3); text-decoration: line-through; }
+  .pricing-price .amount { font-size: 3.5rem; font-weight: 800; color: var(--orange); line-height: 1; }
+  .pricing-price .period { font-size: 1rem; color: var(--text2); }
+  .pricing-price .lock { display: block; font-size: 12px; color: var(--green); font-weight: 600; margin-top: 6px; }
+  .pricing-features { list-style: none; text-align: left; margin: 28px 0; display: flex; flex-direction: column; gap: 12px; }
+  .pricing-features li { display: flex; align-items: center; gap: 10px; font-size: 0.95rem; color: var(--text2); }
+  .pricing-features li .check { font-size: 1rem; }
+  .urgency { background: rgba(232,96,28,0.1); border: 1px solid rgba(232,96,28,0.3); border-radius: 8px; padding: 12px 16px; margin: 20px 0; font-size: 0.875rem; color: var(--orange); font-weight: 600; }
+  .slots { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 8px; }
+  .slot { width: 14px; height: 14px; border-radius: 3px; background: var(--orange); }
+  .slot.taken { background: var(--border); }
+
+  /* GUARANTEE */
+  #guarantee { text-align: center; }
+  .guarantee-box { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 48px; max-width: 600px; margin: 0 auto; display: flex; align-items: center; gap: 32px; text-align: left; }
+  .guarantee-seal { font-size: 5rem; flex-shrink: 0; }
+  .guarantee-box h3 { font-size: 1.4rem; margin-bottom: 12px; }
+  .guarantee-box p { font-size: 0.95rem; line-height: 1.7; }
+
+  /* FAQ */
+  #faq { background: var(--surface); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+  .faq-list { max-width: 680px; margin: 48px auto 0; display: flex; flex-direction: column; gap: 0; }
+  .faq-item { border-bottom: 1px solid var(--border); }
+  .faq-q { width: 100%; background: none; border: none; color: var(--text1); font-size: 0.95rem; font-weight: 600; padding: 20px 0; text-align: left; cursor: pointer; display: flex; justify-content: space-between; align-items: center; gap: 16px; }
+  .faq-q:hover { color: var(--orange); }
+  .faq-q .arrow { color: var(--text3); font-size: 1.2rem; transition: transform 0.2s; flex-shrink: 0; }
+  .faq-q.open .arrow { transform: rotate(180deg); color: var(--orange); }
+  .faq-a { display: none; padding-bottom: 20px; font-size: 0.9rem; color: var(--text2); line-height: 1.7; }
+  .faq-a.open { display: block; }
+
+  /* FINAL CTA */
+  #final { text-align: center; background: linear-gradient(135deg, var(--surface) 0%, var(--bg) 100%); border-top: 1px solid var(--border); }
+  .final-inner { max-width: 600px; margin: 0 auto; }
+  .final-inner h2 { margin-bottom: 16px; }
+  .final-inner p { margin-bottom: 36px; font-size: 1.05rem; }
+
+  /* FOOTER */
+  footer { background: var(--surface2); border-top: 1px solid var(--border); padding: 32px 0; }
+  .footer-inner { display: flex; align-items: center; justify-content: space-between; flex-wrap: gap; font-size: 13px; color: var(--text3); gap: 16px; flex-wrap: wrap; }
+
+  /* ANIMATIONS */
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+  .animate { animation: fadeUp 0.6s ease forwards; }
+  .pulse { animation: pulse 2s infinite; }
+
+  /* MOBILE */
+  @media (max-width: 768px) {
+    section { padding: 64px 0; }
+    .calc-demo-body { grid-template-columns: 1fr; }
+    .calc-demo-left { border-right: none; border-bottom: 1px solid var(--border); }
+    .vs-table { font-size: 0.8rem; }
+    .vs-table th, .vs-table td { padding: 10px 12px; }
+    .guarantee-box { flex-direction: column; text-align: center; }
+    .guarantee-seal { font-size: 4rem; }
+    .hero-actions { flex-direction: column; align-items: flex-start; }
+    .btn-primary, .btn-secondary { width: 100%; justify-content: center; }
+  }
+
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="wrap nav-inner">
+    <div class="logo">
+      <div class="logo-icon">⬡</div>
+      MoneyFlow 3D
+    </div>
+    <a href="https://pay.kiwify.com.br/bRJAryH" class="nav-cta">Garantir vaga →</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section id="hero">
+  <div class="wrap">
+    <div class="hero-badge">
+      <div class="dot pulse"></div>
+      <span>OFERTA FUNDADOR</span>
+      50 primeiras vagas · R$18/mês para sempre
+    </div>
+    <h1 class="display hero-headline">
+      Sua impressora 3D<br>
+      merece um <em>software</em>,<br>
+      não uma planilha.
+    </h1>
+    <p class="hero-sub">
+      MoneyFlow 3D calcula seus custos reais, define preços com margem garantida e organiza seu negócio — tudo no navegador, sem instalar nada, de qualquer lugar.
+    </p>
+    <div class="hero-actions">
+      <a href="https://pay.kiwify.com.br/bRJAryH" class="btn-primary">Quero minha vaga por R$18/mês →</a>
+      <a href="#how" class="btn-secondary">Ver como funciona</a>
+    </div>
+    <div class="hero-trust">
+      <div class="hero-trust-item"><div class="dot"></div> Funciona no celular e no PC</div>
+      <div class="hero-trust-item"><div class="dot"></div> 7 dias de garantia</div>
+      <div class="hero-trust-item"><div class="dot"></div> Sem cartão para testar</div>
+    </div>
+
+    <!-- DEMO MOCKUP -->
+    <div class="calc-demo">
+      <div class="calc-demo-bar">
+        <div class="calc-demo-dot"></div>
+        <div class="calc-demo-dot"></div>
+        <div class="calc-demo-dot"></div>
+        <div class="calc-demo-url">moneyflow3d.com.br</div>
+      </div>
+      <div class="calc-demo-body">
+        <div class="calc-demo-left">
+          <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;font-weight:700;margin-bottom:16px">Calculadora de Custos</div>
+          <div class="calc-field">
+            <div class="calc-label">Filamento</div>
+            <div class="calc-input"><span>PLA Premium 1kg</span><span class="val">R$89</span></div>
+          </div>
+          <div class="calc-field">
+            <div class="calc-label">Tempo de impressão</div>
+            <div class="calc-input"><span>3h 45min</span><span class="val" id="demo-time">3.75h</span></div>
+          </div>
+          <div class="calc-field">
+            <div class="calc-label">Gramas utilizados</div>
+            <div class="calc-input"><span>Bambu Lab X1C</span><span class="val">48g</span></div>
+          </div>
+          <div class="calc-field">
+            <div class="calc-label">Marketplace</div>
+            <div class="calc-input"><span>Shopee</span><span class="val">−16%</span></div>
+          </div>
+          <div class="calc-field">
+            <div class="calc-label">Markup desejado</div>
+            <div class="calc-input"><span>Margem</span><span class="val">40%</span></div>
+          </div>
+        </div>
+        <div class="calc-demo-right">
+          <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;font-weight:700;margin-bottom:16px">Resultado em tempo real</div>
+          <div class="result-card">
+            <div class="result-label">Preço sugerido</div>
+            <div class="result-value">R$ <span id="demo-price">47,90</span></div>
+            <div class="result-sub">Margem real após taxas: <strong style="color:var(--green)" id="demo-margin">38,4%</strong></div>
+          </div>
+          <div class="result-row"><span>Custo filamento</span><strong>R$ 4,27</strong></div>
+          <div class="result-row"><span>Custo máquina</span><strong>R$ 2,81</strong></div>
+          <div class="result-row"><span>Mão de obra</span><strong>R$ 5,00</strong></div>
+          <div class="result-row"><span>Taxa marketplace</span><strong>R$ 7,66</strong></div>
+          <div class="result-row"><span>Custo total</span><strong>R$ 19,74</strong></div>
+          <div class="result-row"><span>Lucro líquido</span><strong style="color:var(--green)">R$ 28,16 <span class="result-badge">✓</span></strong></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PAIN -->
+<section id="pain">
+  <div class="wrap">
+    <div class="wrap-sm" style="text-align:center">
+      <div class="eyebrow">O problema real</div>
+      <h2 style="margin:12px 0">Você ainda está fazendo <em>isso</em>?</h2>
+      <p>A maioria dos makers perde dinheiro sem saber. Não por falta de esforço — por falta de ferramenta certa.</p>
+    </div>
+    <div class="pain-grid">
+      <div class="pain-card"><div class="pain-icon">🎲</div><div class="pain-text">Chuta o preço e torce pra não sair no prejuízo</div></div>
+      <div class="pain-card"><div class="pain-icon">📊</div><div class="pain-text">Usa planilha desatualizada que não calcula taxa do marketplace direito</div></div>
+      <div class="pain-card"><div class="pain-icon">😤</div><div class="pain-text">Cliente pede desconto e você não sabe até onde pode ir sem perder margem</div></div>
+      <div class="pain-card"><div class="pain-icon">🌙</div><div class="pain-text">Trabalha horas, vende bastante, mas no fim do mês o saldo não aparece</div></div>
+      <div class="pain-card"><div class="pain-icon">🔄</div><div class="pain-text">Recalcula o mesmo produto toda vez porque não salvou o histórico</div></div>
+      <div class="pain-card"><div class="pain-icon">📱</div><div class="pain-text">Não consegue calcular na hora quando o cliente pergunta o preço pelo WhatsApp</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- WHAT IS -->
+<section id="what">
+  <div class="wrap">
+    <div class="eyebrow">A solução</div>
+    <h2 style="margin:12px 0 0">MoneyFlow 3D é um <em>sistema</em></h2>
+    <p class="what-tagline">Não é uma planilha. Não é um curso. É um software profissional que roda no navegador — como o Canva, só que para makers de impressão 3D.</p>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">🧮</div>
+        <h3>Calculadora completa</h3>
+        <p>Filamento, energia, depreciação da máquina, mão de obra, taxas de marketplace — tudo calculado automaticamente com a fórmula certa.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🏪</div>
+        <h3>Taxas dos marketplaces</h3>
+        <p>Shopee, Mercado Livre, Amazon, WhatsApp — as taxas já estão configuradas. Você escolhe o canal e o preço se ajusta na hora.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📦</div>
+        <h3>Catálogo de produtos</h3>
+        <p>Salve todos os seus produtos com preços, margens e custos. Consulte qualquer um na hora que o cliente perguntar.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🖨️</div>
+        <h3>Multi-impressoras</h3>
+        <p>Tem mais de uma máquina? Cadastre todas com investimento, consumo de energia e taxa de falha. O custo por hora é calculado para cada uma.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🎨</div>
+        <h3>Gestão de filamentos</h3>
+        <p>Cadastre seu estoque de filamentos com preço e peso. O sistema calcula o custo real de material por peça automaticamente.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📄</div>
+        <h3>Exportação PDF</h3>
+        <p>Gere orçamentos profissionais em PDF com logo da sua marca para enviar para clientes no WhatsApp ou por e-mail.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- VS -->
+<section id="vs">
+  <div class="wrap">
+    <div style="text-align:center">
+      <div class="eyebrow">Comparativo</div>
+      <h2 style="margin:12px 0">Por que software e não planilha?</h2>
+    </div>
+    <div style="overflow-x:auto;">
+      <table class="vs-table">
+        <thead>
+          <tr>
+            <th style="width:35%">Recurso</th>
+            <th>Planilha comum</th>
+            <th class="highlight">MoneyFlow 3D</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Funciona no celular</td><td><span class="cross">✕</span></td><td class="highlight"><span class="check">✓</span></td></tr>
+          <tr><td>Taxas de marketplace atualizadas</td><td><span class="cross">Manual</span></td><td class="highlight"><span class="check">Automático</span></td></tr>
+          <tr><td>Salva histórico de produtos</td><td><span class="cross">Trabalhoso</span></td><td class="highlight"><span class="check">✓ Direto na nuvem</span></td></tr>
+          <tr><td>Multi-impressoras</td><td><span class="cross">✕</span></td><td class="highlight"><span class="check">✓</span></td></tr>
+          <tr><td>Exporta orçamento em PDF</td><td><span class="cross">✕</span></td><td class="highlight"><span class="check">✓ Com sua logo</span></td></tr>
+          <tr><td>Atualizado automaticamente</td><td><span class="cross">✕ Você que atualiza</span></td><td class="highlight"><span class="check">✓ Todo mês</span></td></tr>
+          <tr><td>Acesso de qualquer dispositivo</td><td><span class="cross">✕</span></td><td class="highlight"><span class="check">✓</span></td></tr>
+          <tr><td>Suporte contínuo</td><td><span class="cross">✕</span></td><td class="highlight"><span class="check">✓</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- HOW -->
+<section id="how">
+  <div class="wrap">
+    <div class="eyebrow">Como funciona</div>
+    <h2 style="margin:12px 0">Três passos para parar<br>de trabalhar de graça</h2>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <h3>Configure sua máquina</h3>
+        <p>Cadastre sua impressora com investimento, consumo e tempo de uso diário. MoneyFlow 3D calcula o custo por hora automaticamente.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <h3>Calcule qualquer produto</h3>
+        <p>Selecione o filamento, coloque gramas e tempo. O sistema mostra preço, margem e lucro líquido já descontando as taxas do marketplace escolhido.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <h3>Salve e gerencie</h3>
+        <p>Seu catálogo fica salvo na nuvem. Consulte pelo celular quando precisar, exporte em PDF para enviar orçamentos profissionais.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section id="pricing">
+  <div class="wrap">
+    <div class="eyebrow">Oferta fundador</div>
+    <h2 style="margin:12px 0">Menos que um carretel.<br><em>Para sempre.</em></h2>
+    <p class="pricing-sub">Os primeiros 50 assinantes travam o preço de fundador. Quando as vagas acabarem, o valor sobe para R$36/mês.</p>
+    <div class="pricing-card">
+      <div class="pricing-badge">🔥 FUNDADOR — VAGAS LIMITADAS</div>
+      <div class="pricing-name">MoneyFlow 3D Pro</div>
+      <div class="pricing-price">
+        <div class="from">De R$36/mês</div>
+        <span class="amount">R$18</span><span class="period">/mês</span>
+        <span class="lock">🔒 Preço travado para sempre na oferta fundador</span>
+      </div>
+      <ul class="pricing-features">
+        <li><span class="check">✓</span> Calculadora de custos completa</li>
+        <li><span class="check">✓</span> Taxas de Shopee, Mercado Livre, Amazon e WhatsApp</li>
+        <li><span class="check">✓</span> Catálogo ilimitado de produtos</li>
+        <li><span class="check">✓</span> Múltiplas impressoras e filamentos</li>
+        <li><span class="check">✓</span> Exportação de orçamento em PDF</li>
+        <li><span class="check">✓</span> Funciona no celular e no computador</li>
+        <li><span class="check">✓</span> Atualizações automáticas sem custo extra</li>
+        <li><span class="check">✓</span> Suporte via e-mail</li>
+      </ul>
+      <div class="urgency">
+        ⚡ Vagas restantes na oferta fundador:
+        <div class="slots" style="margin-top:10px">
+          <div class="slot taken"></div><div class="slot taken"></div><div class="slot taken"></div><div class="slot taken"></div><div class="slot taken"></div>
+          <div class="slot taken"></div><div class="slot taken"></div><div class="slot taken"></div><div class="slot taken"></div><div class="slot taken"></div>
+          <div class="slot"></div><div class="slot"></div><div class="slot"></div><div class="slot"></div><div class="slot"></div>
+          <div class="slot"></div><div class="slot"></div><div class="slot"></div><div class="slot"></div><div class="slot"></div>
+          <div class="slot" style="opacity:.4"></div><div class="slot" style="opacity:.4"></div><div class="slot" style="opacity:.4"></div><div class="slot" style="opacity:.4"></div><div class="slot" style="opacity:.4"></div>
+        </div>
+        <div style="font-size:11px;margin-top:8px;color:var(--text2);font-weight:400">10 já preenchidas · 15 disponíveis · 25 a confirmar</div>
+      </div>
+      <a href="https://pay.kiwify.com.br/bRJAryH" class="btn-primary" style="width:100%;justify-content:center;font-size:1.05rem;padding:18px;">Garantir minha vaga por R$18/mês →</a>
+      <p style="font-size:12px;color:var(--text3);margin-top:12px;text-align:center">Compra segura · Cancele quando quiser · 7 dias de garantia</p>
+    </div>
+  </div>
+</section>
+
+<!-- ROADMAP -->
+<section id="roadmap" style="background:var(--surface);border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
+  <div class="wrap">
+    <div style="text-align:center;margin-bottom:48px">
+      <div class="eyebrow">Roadmap</div>
+      <h2 style="margin:12px 0">Isso é só o começo.<br><em>Veja o que vem.</em></h2>
+      <p style="max-width:520px;margin:0 auto;font-size:1rem">Assinantes Pro recebem cada atualização automaticamente. Uma novidade por mês, sem pagar a mais.</p>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:14px;max-width:860px;margin:0 auto">
+
+      <!-- Fase 1 -->
+      <div style="border:1px solid rgba(34,197,94,.3);border-radius:14px;overflow:hidden">
+        <div style="background:rgba(34,197,94,.08);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="background:#22c55e;color:#fff;font-size:10px;font-weight:800;padding:4px 10px;border-radius:20px;letter-spacing:.04em">✓ DISPONÍVEL AGORA</span>
+            <span style="font-weight:700;font-size:14px;color:var(--text1)">Calculadora & Gestão Completa</span>
+          </div>
+          <span style="font-size:11px;color:var(--text2)">v1.0 · Jul 2026</span>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:0">
+          <div style="padding:12px 20px;border-top:1px solid rgba(34,197,94,.15);display:flex;gap:8px;align-items:flex-start"><span>🧮</span><div><div style="font-size:13px;font-weight:600;color:var(--text1);margin-bottom:2px">Calculadora de custos</div><div style="font-size:12px;color:var(--text2)">Filamento, energia, máquina, MO e taxas</div></div></div>
+          <div style="padding:12px 20px;border-top:1px solid rgba(34,197,94,.15);display:flex;gap:8px;align-items:flex-start"><span>📦</span><div><div style="font-size:13px;font-weight:600;color:var(--text1);margin-bottom:2px">Catálogo & PDF</div><div style="font-size:12px;color:var(--text2)">Orçamentos com sua logo em segundos</div></div></div>
+          <div style="padding:12px 20px;border-top:1px solid rgba(34,197,94,.15);display:flex;gap:8px;align-items:flex-start"><span>🏭</span><div><div style="font-size:13px;font-weight:600;color:var(--text1);margin-bottom:2px">Fila de produção</div><div style="font-size:12px;color:var(--text2)">8 etapas da impressão à entrega</div></div></div>
+          <div style="padding:12px 20px;border-top:1px solid rgba(34,197,94,.15);display:flex;gap:8px;align-items:flex-start"><span>👥</span><div><div style="font-size:13px;font-weight:600;color:var(--text1);margin-bottom:2px">CRM de clientes</div><div style="font-size:12px;color:var(--text2)">Histórico, métricas e importação CSV</div></div></div>
+        </div>
+      </div>
+
+      <!-- Fase 2 -->
+      <div style="border:1px solid var(--border);border-radius:14px;overflow:hidden">
+        <div style="background:var(--surface2);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;border-bottom:1px solid var(--border)">
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="background:var(--orange);color:#fff;font-size:10px;font-weight:800;padding:4px 10px;border-radius:20px;letter-spacing:.04em">→ EM BREVE</span>
+            <span style="font-weight:700;font-size:14px;color:var(--text1)">Atualizações Mensais</span>
+          </div>
+          <span style="font-size:11px;color:var(--text2)">Ago–Nov 2026</span>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;padding:16px 20px">
+          <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px"><div style="font-size:10px;font-weight:700;color:var(--orange);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Agosto</div><div style="font-size:13px;font-weight:600;color:var(--text1);margin-bottom:2px">Relatórios avançados</div><div style="font-size:11px;color:var(--text2)">Lucro real por período e ranking</div></div>
+          <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px"><div style="font-size:10px;font-weight:700;color:var(--orange);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Setembro</div><div style="font-size:13px;font-weight:600;color:var(--text1);margin-bottom:2px">Sincronização na nuvem</div><div style="font-size:11px;color:var(--text2)">Acesse de qualquer dispositivo</div></div>
+          <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px"><div style="font-size:10px;font-weight:700;color:var(--orange);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Outubro</div><div style="font-size:13px;font-weight:600;color:var(--text1);margin-bottom:2px">Simulação em lote</div><div style="font-size:11px;color:var(--text2)">Custo de múltiplas peças</div></div>
+          <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px"><div style="font-size:10px;font-weight:700;color:var(--orange);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Novembro</div><div style="font-size:13px;font-weight:600;color:var(--text1);margin-bottom:2px">Login com Google</div><div style="font-size:11px;color:var(--text2)">Acesse sem senha</div></div>
+        </div>
+      </div>
+
+      <!-- Fase 3 e 4 lado a lado -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px">
+        <div style="border:1px solid var(--border);border-radius:14px;overflow:hidden">
+          <div style="background:rgba(168,85,247,.1);padding:14px 20px;border-bottom:1px solid rgba(168,85,247,.2)">
+            <span style="background:#a855f7;color:#fff;font-size:10px;font-weight:800;padding:4px 10px;border-radius:20px;letter-spacing:.04em;display:inline-block;margin-bottom:8px">PLANEJADA · Q4 2026</span>
+            <div style="font-weight:700;font-size:14px;color:var(--text1)">IA & Expansão</div>
+          </div>
+          <div style="padding:14px 20px;display:flex;flex-direction:column;gap:10px">
+            <div style="display:flex;gap:8px;font-size:12px"><span>🤖</span><div><strong style="color:var(--text1)">IA na plataforma</strong> — sugestões de preço e análise de margem</div></div>
+            <div style="display:flex;gap:8px;font-size:12px"><span>💬</span><div><strong style="color:var(--text1)">Assistente via WhatsApp</strong> — consulte seu catálogo sem abrir o app</div></div>
+            <div style="display:flex;gap:8px;font-size:12px"><span>🔗</span><div><strong style="color:var(--text1)">Integração com marketplaces</strong> — pedidos entram direto na fila</div></div>
+          </div>
+        </div>
+        <div style="border:1px solid var(--border);border-radius:14px;overflow:hidden">
+          <div style="background:var(--surface2);padding:14px 20px;border-bottom:1px solid var(--border)">
+            <span style="background:var(--bg);color:var(--text2);font-size:10px;font-weight:800;padding:4px 10px;border-radius:20px;letter-spacing:.04em;border:1px solid var(--border);display:inline-block;margin-bottom:8px">PLANEJADA · Q1 2027</span>
+            <div style="font-weight:700;font-size:14px;color:var(--text1)">App Mobile APK</div>
+          </div>
+          <div style="padding:14px 20px;display:flex;flex-direction:column;gap:10px">
+            <div style="display:flex;gap:8px;font-size:12px"><span>📱</span><div><strong style="color:var(--text1)">App Android nativo</strong> — gestão completa no celular</div></div>
+            <div style="display:flex;gap:8px;font-size:12px"><span>🖨️</span><div><strong style="color:var(--text1)">Integração Bambu Lab</strong> — status da impressora em tempo real</div></div>
+            <div style="display:flex;gap:8px;font-size:12px"><span>🔔</span><div><strong style="color:var(--text1)">Notificações push</strong> — impressão concluída, pedido aprovado</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Nota -->
+      <div style="background:var(--orange-glow);border:1px solid rgba(232,96,28,.25);border-radius:10px;padding:14px 18px;font-size:13px;color:var(--text2);line-height:1.6;text-align:center">
+        <strong style="color:var(--text1)">Assinantes fundadores recebem tudo isso sem pagar a mais.</strong> O roadmap evolui com o feedback de quem usa — sua opinião define as próximas prioridades.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- GUARANTEE -->
+<section id="guarantee">
+  <div class="wrap">
+    <div class="guarantee-box">
+      <div class="guarantee-seal">🛡️</div>
+      <div>
+        <h3>Garantia de 7 dias</h3>
+        <p>Acesse o MoneyFlow 3D, configure sua impressora, calcule seus produtos. Se em 7 dias você não ver valor na ferramenta, devolvemos 100% do valor sem perguntas. Sem burocracia.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section id="faq">
+  <div class="wrap">
+    <div style="text-align:center;margin-bottom:0">
+      <div class="eyebrow">Perguntas frequentes</div>
+      <h2 style="margin:12px 0">Tirei minhas dúvidas?</h2>
+    </div>
+    <div class="faq-list">
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">Precisa instalar alguma coisa? <span class="arrow">▾</span></button>
+        <div class="faq-a">Não. MoneyFlow 3D roda direto no navegador — Chrome, Safari, Firefox. Funciona no celular Android, iPhone, tablet, notebook ou PC. Sem download, sem instalação.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">A oferta fundador é realmente para sempre? <span class="arrow">▾</span></button>
+        <div class="faq-a">Sim. Os primeiros 50 assinantes pagam R$18/mês enquanto mantiverem a assinatura ativa. Se o preço aumentar no futuro, o valor de vocês fica travado. Isso é um compromisso nosso com os primeiros apoiadores.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">Funciona para qualquer impressora? <span class="arrow">▾</span></button>
+        <div class="faq-a">Sim. Você cadastra qualquer impressora FDM — Bambu Lab, Creality, Prusa, Ender, Anycubic, Artillery, ou qualquer outra. O sistema usa os dados que você informa (investimento, watts, horas de uso) para calcular o custo por hora real da sua máquina.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">Posso cancelar a assinatura a qualquer momento? <span class="arrow">▾</span></button>
+        <div class="faq-a">Sim. Cancele quando quiser, sem fidelidade e sem multa. Se cancelar dentro dos primeiros 7 dias, devolvo o valor integralmente.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">Quais marketplaces estão disponíveis? <span class="arrow">▾</span></button>
+        <div class="faq-a">Shopee, Mercado Livre, Amazon e venda direta (WhatsApp/site próprio) já estão configurados com as taxas atuais. Novos canais são adicionados nas atualizações mensais.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FINAL CTA -->
+<section id="final">
+  <div class="wrap">
+    <div class="final-inner">
+      <div class="eyebrow" style="margin-bottom:16px">Última chance</div>
+      <h2>Chega de trabalhar<br><em>de graça.</em></h2>
+      <p>Você imprime, entrega, e o cliente fica feliz. O dinheiro tem que aparecer no final do mês também.</p>
+      <a href="https://pay.kiwify.com.br/bRJAryH" class="btn-primary" style="font-size:1.05rem;padding:18px 36px;">Quero minha vaga por R$18/mês →</a>
+      <p style="margin-top:16px;font-size:13px;color:var(--text3)">7 dias de garantia · Cancele quando quiser · Oferta fundador limitada</p>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="wrap footer-inner">
+    <div style="display:flex;align-items:center;gap:8px;font-weight:700;color:var(--text2)"><div style="width:20px;height:20px;background:var(--orange);border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:10px;">⬡</div> MoneyFlow 3D</div>
+    <span>© 2026 MeshIT Tecnologia</span>
+    <span>meshit.tecnologia@gmail.com</span>
+  </div>
+</footer>
+
+<script>
+function toggleFaq(btn) {
+  const answer = btn.nextElementSibling;
+  btn.classList.toggle('open');
+  answer.classList.toggle('open');
+}
+
+// Animação do demo
+const prices = ['47,90', '62,40', '31,20', '89,00', '47,90'];
+const margins = ['38,4%', '41,2%', '35,8%', '43,1%', '38,4%'];
+let idx = 0;
+setInterval(() => {
+  idx = (idx + 1) % prices.length;
+  const el = document.getElementById('demo-price');
+  const mel = document.getElementById('demo-margin');
+  if (el) { el.style.transition = 'opacity 0.3s'; el.style.opacity = 0; setTimeout(() => { el.textContent = prices[idx]; el.style.opacity = 1; }, 300); }
+  if (mel) { mel.style.transition = 'opacity 0.3s'; mel.style.opacity = 0; setTimeout(() => { mel.textContent = margins[idx]; mel.style.opacity = 1; }, 300); }
+}, 3000);
+</script>
+</body>
+</html>

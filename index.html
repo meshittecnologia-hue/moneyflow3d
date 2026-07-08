@@ -378,6 +378,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
       <div class="nav-item" id="nav-importar" onclick="showPage('importar')"><span class="nav-icon">⬆</span>Importar dados</div>
       <div class="nav-section">Sistema</div>
       <div class="nav-item" id="nav-settings" onclick="showPage(&#39;settings&#39;)"><span class="nav-icon">⚙</span>Configurações</div>
+      <div class="nav-item" id="nav-roadmap" onclick="showPage('roadmap')" style="color:var(--accent)"><span class="nav-icon">🗺</span>O que vem por aí</div>
       <div style="padding:16px 8px 8px">
         <button class="theme-btn" onclick="toggleTheme()" id="theme-btn" style="width:100%;justify-content:center">🌙 Tema Claro</button>
       </div>
@@ -1531,6 +1532,124 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 
 <div class="notif green" id="notif">💡 Ative a biometria em Configurações para entrar mais rápido!</div>
 
+<!-- PAGE: ROADMAP -->
+<div class="panel" id="page-roadmap">
+  <div class="page-header">
+    <div><div class="page-title">O que vem por aí</div><div class="page-sub">Novidades planejadas para o MoneyFlow 3D</div></div>
+  </div>
+  <div style="max-width:780px;padding-bottom:40px">
+
+    <!-- badge cadência -->
+    <div style="display:inline-flex;align-items:center;gap:7px;background:rgba(34,197,94,.12);color:var(--green);font-size:11px;font-weight:600;padding:6px 12px;border-radius:20px;margin-bottom:24px;border:1px solid rgba(34,197,94,.25)">
+      📅 1 atualização por mês — assinantes Pro recebem tudo automaticamente
+    </div>
+
+    <!-- FASE 1 -->
+    <div style="border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:16px">
+      <div style="background:rgba(34,197,94,.1);border-bottom:1px solid rgba(34,197,94,.25);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="background:var(--green);color:#fff;font-size:10px;font-weight:700;padding:3px 8px;border-radius:5px">✓ Em produção</span>
+          <span style="font-weight:600;font-size:13px">Fase 1 — Calculadora & Gestão Completa</span>
+        </div>
+        <span style="font-size:11px;color:var(--text2)">v1.0 · Jul 2026</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1.6fr">
+        <div style="padding:10px 14px;font-weight:500;font-size:12px;border-bottom:1px solid var(--border);border-right:1px solid var(--border)">🧮 Calculadora de custos</div>
+        <div style="padding:10px 14px;font-size:12px;color:var(--text2);border-bottom:1px solid var(--border)">Fórmula completa: filamento, energia, máquina, MO e taxas de marketplace</div>
+        <div style="padding:10px 14px;font-weight:500;font-size:12px;border-bottom:1px solid var(--border);border-right:1px solid var(--border)">📦 Catálogo & Produtos</div>
+        <div style="padding:10px 14px;font-size:12px;color:var(--text2);border-bottom:1px solid var(--border)">Salve produtos com preço e margem. Exporte orçamentos em PDF com sua logo</div>
+        <div style="padding:10px 14px;font-weight:500;font-size:12px;border-bottom:1px solid var(--border);border-right:1px solid var(--border)">👥 CRM de clientes</div>
+        <div style="padding:10px 14px;font-size:12px;color:var(--text2);border-bottom:1px solid var(--border)">Histórico completo por cliente, métricas e importação CSV</div>
+        <div style="padding:10px 14px;font-weight:500;font-size:12px;border-right:1px solid var(--border)">🏭 Fila de produção</div>
+        <div style="padding:10px 14px;font-size:12px;color:var(--text2)">8 etapas da impressão à entrega com rastreio e notificação WhatsApp</div>
+      </div>
+    </div>
+
+    <!-- FASE 2 -->
+    <div style="border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:16px">
+      <div style="background:rgba(59,130,246,.1);border-bottom:1px solid rgba(59,130,246,.2);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="background:var(--blue);color:#fff;font-size:10px;font-weight:700;padding:3px 8px;border-radius:5px">→ Em breve</span>
+          <span style="font-weight:600;font-size:13px">Fase 2 — Atualizações Mensais</span>
+        </div>
+        <span style="font-size:11px;color:var(--text2)">Ago–Nov 2026</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px;padding:12px">
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--rsm);padding:10px 12px">
+          <div style="font-size:10px;font-weight:600;color:var(--blue);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px">Agosto</div>
+          <div style="font-size:12px;font-weight:600;margin-bottom:2px">Relatórios avançados</div>
+          <div style="font-size:11px;color:var(--text2)">Lucro real por período e ranking de produtos</div>
+        </div>
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--rsm);padding:10px 12px">
+          <div style="font-size:10px;font-weight:600;color:var(--blue);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px">Setembro</div>
+          <div style="font-size:12px;font-weight:600;margin-bottom:2px">Sincronização na nuvem</div>
+          <div style="font-size:11px;color:var(--text2)">Acesse de qualquer dispositivo sem perder dados</div>
+        </div>
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--rsm);padding:10px 12px">
+          <div style="font-size:10px;font-weight:600;color:var(--blue);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px">Outubro</div>
+          <div style="font-size:12px;font-weight:600;margin-bottom:2px">Simulação em lote</div>
+          <div style="font-size:11px;color:var(--text2)">Custo de múltiplas peças com setup dividido</div>
+        </div>
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--rsm);padding:10px 12px">
+          <div style="font-size:10px;font-weight:600;color:var(--blue);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px">Novembro</div>
+          <div style="font-size:12px;font-weight:600;margin-bottom:2px">Login com Google</div>
+          <div style="font-size:11px;color:var(--text2)">Acesse sem senha, direto com sua conta Google</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FASE 3 -->
+    <div style="border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:16px">
+      <div style="background:rgba(168,85,247,.1);border-bottom:1px solid rgba(168,85,247,.2);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="background:#a855f7;color:#fff;font-size:10px;font-weight:700;padding:3px 8px;border-radius:5px">Planejada</span>
+          <span style="font-weight:600;font-size:13px">Fase 3 — Inteligência Artificial & Expansão</span>
+        </div>
+        <span style="font-size:11px;color:var(--text2)">Q4 2026</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1.6fr">
+        <div style="padding:10px 14px;font-weight:500;font-size:12px;border-bottom:1px solid var(--border);border-right:1px solid var(--border)">🤖 IA na plataforma</div>
+        <div style="padding:10px 14px;font-size:12px;color:var(--text2);border-bottom:1px solid var(--border)">Assistente integrado para sugestões de precificação, análise de margem e insights do negócio</div>
+        <div style="padding:10px 14px;font-weight:500;font-size:12px;border-bottom:1px solid var(--border);border-right:1px solid var(--border)">💬 Assistente via WhatsApp</div>
+        <div style="padding:10px 14px;font-size:12px;color:var(--text2);border-bottom:1px solid var(--border)">Consulte seu catálogo e receba sugestões de margem diretamente pelo WhatsApp</div>
+        <div style="padding:10px 14px;font-weight:500;font-size:12px;border-bottom:1px solid var(--border);border-right:1px solid var(--border)">📊 Gestão de vendas avançada</div>
+        <div style="padding:10px 14px;font-size:12px;color:var(--text2);border-bottom:1px solid var(--border)">Dashboard com metas, funil de conversão e comparativo mensal de receita</div>
+        <div style="padding:10px 14px;font-weight:500;font-size:12px;border-bottom:1px solid var(--border);border-right:1px solid var(--border)">🔗 Integração com marketplaces</div>
+        <div style="padding:10px 14px;font-size:12px;color:var(--text2);border-bottom:1px solid var(--border)">Sincronização direta de pedidos, preços e estoque com Shopee, ML e Amazon</div>
+        <div style="padding:10px 14px;font-weight:500;font-size:12px;border-right:1px solid var(--border)">⚡ Pedidos automáticos na fila</div>
+        <div style="padding:10px 14px;font-size:12px;color:var(--text2)">Pedidos aprovados nos marketplaces entram direto na fila de produção</div>
+      </div>
+    </div>
+
+    <!-- FASE 4 -->
+    <div style="border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:20px">
+      <div style="background:var(--bg2);border-bottom:1px solid var(--border);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="background:var(--bg3);color:var(--text2);font-size:10px;font-weight:700;padding:3px 8px;border-radius:5px;border:1px solid var(--border)">Planejada</span>
+          <span style="font-weight:600;font-size:13px">Fase 4 — App Mobile APK de Gestão</span>
+        </div>
+        <span style="font-size:11px;color:var(--text2)">Q1 2027</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1.6fr">
+        <div style="padding:10px 14px;font-weight:500;font-size:12px;border-bottom:1px solid var(--border);border-right:1px solid var(--border)">📱 App Android nativo</div>
+        <div style="padding:10px 14px;font-size:12px;color:var(--text2);border-bottom:1px solid var(--border)">APK completo para gestão da impressora — fila, status, pedidos e alertas</div>
+        <div style="padding:10px 14px;font-weight:500;font-size:12px;border-bottom:1px solid var(--border);border-right:1px solid var(--border)">🖨️ Impressão em tempo real</div>
+        <div style="padding:10px 14px;font-size:12px;color:var(--text2);border-bottom:1px solid var(--border)">Status ao vivo via integração Bambu Lab / OrcaSlicer API</div>
+        <div style="padding:10px 14px;font-weight:500;font-size:12px;border-bottom:1px solid var(--border);border-right:1px solid var(--border)">🔔 Notificações push</div>
+        <div style="padding:10px 14px;font-size:12px;color:var(--text2);border-bottom:1px solid var(--border)">Alertas automáticos: impressão concluída, pedido aprovado, estoque baixo</div>
+        <div style="padding:10px 14px;font-weight:500;font-size:12px;border-right:1px solid var(--border)">📶 Modo offline</div>
+        <div style="padding:10px 14px;font-size:12px;color:var(--text2)">Funcionalidades básicas sem internet, sincroniza ao reconectar</div>
+      </div>
+    </div>
+
+    <!-- Nota -->
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--rsm);padding:12px 14px;display:flex;gap:10px;align-items:flex-start">
+      <span style="font-size:16px;flex-shrink:0">ℹ️</span>
+      <div style="font-size:12px;color:var(--text2);line-height:1.6"><strong style="color:var(--text)">Você está dentro antes de todo mundo.</strong> Como assinante Pro, recebe cada atualização automaticamente sem pagar a mais. O roadmap evolui com o feedback de quem usa — sua opinião conta.</div>
+    </div>
+  </div>
+</div>
+
 <script>
 const MPs=[
   {id:'shopee_fg',  name:'Shopee Frete Grátis',fee:0.14},
@@ -2323,7 +2442,7 @@ function closeSidebar(){
 }
 
 /* ── NAVIGATION ─────────────────────────────────────── */
-const PAGE_TITLES={dashboard:'Dashboard',calc:'Nova precificação',produtos:'Produtos',pedidos:'Painel de pedidos',comparar:'Comparar',relatorio:'Relatório',config:'Máquina & custos',filamentos:'Filamentos & estoque',importar:'Importar dados',settings:'Configurações',orcamentos:'Orçamentos',crm:'Clientes (CRM)',fila:'Fila de produção'};
+const PAGE_TITLES={dashboard:'Dashboard',calc:'Nova precificação',produtos:'Produtos',pedidos:'Painel de pedidos',comparar:'Comparar',relatorio:'Relatório',config:'Máquina & custos',filamentos:'Filamentos & estoque',importar:'Importar dados',settings:'Configurações',orcamentos:'Orçamentos',crm:'Clientes (CRM)',fila:'Fila de produção',roadmap:'O que vem por aí'};
 function showPage(p){
   document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(x=>x.classList.remove('active'));
