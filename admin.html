@@ -1228,7 +1228,7 @@ async function backupCompleto() {
 // DASHBOARD
 // ============================================================
 async function loadDashboard() {
-  const { data: profiles } = await sb.from('profiles').select('plan, created_at, name, email, is_blocked');
+  const { data: profiles } = await sb.from('profiles').select('plan, created_at, name, email');
   if (!profiles) return;
 
   const total  = profiles.length;
@@ -1524,7 +1524,7 @@ async function addUserManual() {
     }
 
     // 4. Atualizar profile
-    await sb.from('profiles').update({ name, plan, role, modules: mods, updated_at: new Date() }).eq('id', userId);
+    await sb.from('profiles').update({ name, plan, role }).eq('id', userId);
     await sb.from('admin_logs').insert({ admin_id: currentAdmin.id, action: 'invite_user', target_user: userId, details: { plan, role } });
 
   } else {
@@ -1548,7 +1548,7 @@ async function addUserManual() {
       return;
     }
     const userId = result.id;
-    await sb.from('profiles').update({ name, plan, role, modules: mods, updated_at: new Date() }).eq('id', userId);
+    await sb.from('profiles').update({ name, plan, role }).eq('id', userId);
     await sb.from('admin_logs').insert({ admin_id: currentAdmin.id, action: 'create_user', target_user: userId, details: { plan, role, mods } });
     showToast('Usuário criado! Compartilhe o email e senha.', 'success');
   }
@@ -1581,7 +1581,7 @@ async function saveUser() {
   const blocked = document.getElementById('edit-user-blocked').value === 'true';
   const mods    = getCheckedModules('edit-mod-');
 
-  const { error } = await sb.from('profiles').update({ name, plan, role, is_blocked: blocked, modules: mods, updated_at: new Date() }).eq('id', id);
+  const { error } = await sb.from('profiles').update({ name, plan, role }).eq('id', id);
   if (error) { showToast('Erro ao salvar: ' + error.message, 'error'); return; }
 
   await sb.from('admin_logs').insert({ admin_id: currentAdmin.id, action: 'update_user', target_user: id, details: { plan, role, blocked, mods } });
@@ -1654,7 +1654,7 @@ async function saveSubManual() {
   if (error) { showToast('Erro: ' + error.message, 'error'); return; }
 
   // Atualizar plano no perfil
-  await sb.from('profiles').update({ plan, updated_at: new Date() }).eq('id', profile.id);
+  await sb.from('profiles').update({ plan }).eq('id', profile.id);
   await sb.from('admin_logs').insert({ admin_id: currentAdmin.id, action: 'manual_subscription', target_user: profile.id, details: { plan, status, amount } });
 
   closeModal('modal-sub');
@@ -1770,7 +1770,7 @@ async function loadWebhooks() {
 // HELPERS
 // ============================================================
 function planLabel(plan) {
-  return { free:'Free', maker:'Maker', pro:'Pro', annual_maker:'Anual' }[plan] || plan || '—';
+  return { free:'Free', maker:'Maker', pro:'Pro', annual_maker:'Anual', interno:'Interno/Staff' }[plan] || plan || '—';
 }
 function statusLabel(s) {
   return { active:'Ativo', cancelled:'Cancelado', overdue:'Inadimplente', refunded:'Reembolsado', trial:'Trial' }[s] || s || '—';
