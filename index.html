@@ -1316,14 +1316,28 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
           <option value="">Selecione ou crie no CRM</option>
         </select>
       </div>
-      <div class="field full"><label>Produto</label>
+      <div class="field full"><label>Preencher a partir de produto salvo</label>
         <select id="orc-produto" onchange="preencherOrcProduto()" style="width:100%">
-          <option value="">Selecione um produto salvo</option>
+          <option value="">Selecionar produto salvo (opcional)</option>
         </select>
       </div>
-      <div class="field"><label>Quantidade</label><input type="number" id="orc-qtd" value="1" min="1" oninput="calcOrcTotal()"></div>
-      <div class="field"><label>Preço unitário (R$)</label><input type="number" id="orc-preco" value="0" step="0.01" oninput="calcOrcTotal()"></div>
-      <div class="field"><label>Desconto (%)</label><input type="number" id="orc-desc" value="0" min="0" max="100" oninput="calcOrcTotal()"></div>
+      <div class="field full">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <label style="margin-bottom:0">Itens do orçamento</label>
+          <button type="button" onclick="addOrcItem()" class="btn btn-ghost btn-sm" style="font-size:12px">+ Adicionar item</button>
+        </div>
+        <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--rsm);padding:8px;margin-bottom:6px">
+          <div style="display:grid;grid-template-columns:1fr 56px 90px 70px 28px;gap:4px;margin-bottom:6px;padding:0 4px">
+            <span style="font-size:10px;color:var(--text2);font-weight:600">PRODUTO/SERVIÇO</span>
+            <span style="font-size:10px;color:var(--text2);font-weight:600;text-align:center">QTD</span>
+            <span style="font-size:10px;color:var(--text2);font-weight:600;text-align:right">PREÇO UNIT.</span>
+            <span style="font-size:10px;color:var(--text2);font-weight:600;text-align:right">SUBTOTAL</span>
+            <span></span>
+          </div>
+          <div id="orc-itens-container"></div>
+        </div>
+      </div>
+      <div class="field"><label>Desconto geral (%)</label><input type="number" id="orc-desc" value="0" min="0" max="100" oninput="calcOrcTotal()"></div>
       <div class="field"><label>Total</label><input type="text" id="orc-total" readonly style="opacity:.7"></div>
       <div class="field full"><label>Marketplace / Canal</label>
         <select id="orc-mp" style="width:100%">
@@ -1721,16 +1735,21 @@ async function loadSupabaseData(){
   }));
 
   // Orçamentos
-  DB.orcamentos = (orcamentos || []).map(o=>({
-    id: o.id, clienteId: o.cliente_id, clienteNome: o.cliente_nome||'Cliente não informado',
-    clienteWpp: o.cliente_wpp||'', produtoNome: o.produto_nome||'',
-    produtoId: o.produto_id||null,
-    qtd: o.qtd||1, preco: o.preco||0, desc: o.desconto||0,
-    total: o.total||0, marketplace: o.marketplace||'', obs: o.obs||'',
-    validade: o.validade||'', status: o.status||'pendente',
-    data: o.data||new Date(o.created_at).toLocaleDateString('pt-BR'),
-    ts: new Date(o.created_at).getTime()
-  }));
+  DB.orcamentos = (orcamentos || []).map(o=>{
+    let itens=null;
+    if(o.itens){try{itens=typeof o.itens==='string'?JSON.parse(o.itens):o.itens;}catch{itens=null;}}
+    if(!itens){itens=[{nome:o.produto_nome||'Item',qtd:o.qtd||1,preco:o.preco||0}];}
+    return {
+      id: o.id, clienteId: o.cliente_id, clienteNome: o.cliente_nome||'Cliente não informado',
+      clienteWpp: o.cliente_wpp||'', produtoNome: o.produto_nome||'',
+      produtoId: o.produto_id||null, itens,
+      qtd: o.qtd||1, preco: o.preco||0, desc: o.desconto||0,
+      total: o.total||0, marketplace: o.marketplace||'', obs: o.obs||'',
+      validade: o.validade||'', status: o.status||'pendente',
+      data: o.data||new Date(o.created_at).toLocaleDateString('pt-BR'),
+      ts: new Date(o.created_at).getTime()
+    };
+  });
 
   // Fila
   DB.fila = (fila || []).map(f=>({
@@ -1888,51 +1907,65 @@ async function saveOrcamento(){
   const editId = document.getElementById('modal-orc').dataset.editId||null;
   const cliId = document.getElementById('orc-cliente').value;
   const cli = DB.clientes.find(c=>String(c.id)===String(cliId));
-  const prodId = document.getElementById('orc-produto').value;
-  const prod = DB.produtos.find(p=>String(p.id)===String(prodId));
-  const qtd = parseInt(document.getElementById('orc-qtd').value)||1;
-  const preco = parseFloat(document.getElementById('orc-preco').value)||0;
   const desc = parseFloat(document.getElementById('orc-desc').value)||0;
-  const total = qtd*preco*(1-desc/100);
-  const prodNome = prod?prod.nome:(document.getElementById('orc-produto').options[document.getElementById('orc-produto').selectedIndex]?.text||'Produto não informado');
+
+  const itens = getOrcItens().filter(i=>i.nome&&i.preco>0);
+  if(!itens.length){ notify('Adicione pelo menos um item com nome e preço','red'); return; }
+
+  const subtotal = itens.reduce((s,i)=>s+i.qtd*i.preco, 0);
+  const total = subtotal*(1-desc/100);
+  const prodNome = itens.map(i=>i.qtd>1?`${i.qtd}x ${i.nome}`:i.nome).join(', ');
+  const qtdTotal = itens.reduce((s,i)=>s+i.qtd, 0);
+
   const payload = {
     cliente_id: cliId||null,
     cliente_nome: cli?cli.nome:'Cliente não informado',
     cliente_wpp: cli?cli.wpp:'',
-    produto_nome: prodNome, produto_id: prodId||null, qtd, preco, desconto: desc, total,
+    produto_nome: prodNome,
+    produto_id: null,
+    qtd: qtdTotal,
+    preco: itens[0].preco,
+    desconto: desc,
+    total,
     marketplace: document.getElementById('orc-mp').value,
     obs: document.getElementById('orc-obs').value.trim(),
     validade: document.getElementById('orc-validade').value,
   };
 
   if(editId){
-    const {error}=await _supa.from('orcamentos').update(payload).eq('id',editId);
+    let upPayload = {...payload, itens: JSON.stringify(itens)};
+    let {error}=await _supa.from('orcamentos').update(upPayload).eq('id',editId);
+    if(error&&error.message&&error.message.includes('itens')){
+      ({error}=await _supa.from('orcamentos').update(payload).eq('id',editId));
+    }
     if(error){notify('Erro: '+error.message,'red');return;}
     DB.orcamentos=DB.orcamentos.map(o=>String(o.id)===String(editId)?{...o,
       clienteId:cliId,clienteNome:payload.cliente_nome,clienteWpp:payload.cliente_wpp,
-      produtoId:prodId,produtoNome:prodNome,qtd,preco,desc,total,
-      marketplace:payload.marketplace,obs:payload.obs,validade:payload.validade}:o);
+      produtoId:null,produtoNome:prodNome,qtd:qtdTotal,preco:itens[0].preco,desc,total,
+      itens,marketplace:payload.marketplace,obs:payload.obs,validade:payload.validade}:o);
     delete document.getElementById('modal-orc').dataset.editId;
     document.getElementById('modal-orc').querySelector('.modal-title').textContent='Novo orçamento';
     closeModal('modal-orc');notify('Orçamento atualizado!');renderOrcamentos();
     return;
   }
 
-  const { data, error } = await _supa.from('orcamentos').insert({
-    user_id: uid, ...payload,
-    status: 'pendente',
-    data: new Date().toLocaleDateString('pt-BR'),
-  }).select().single();
-
+  let insPayload = {user_id:uid,...payload,status:'pendente',itens:JSON.stringify(itens)};
+  let { data, error } = await _supa.from('orcamentos').insert(insPayload).select().single();
+  if(error&&error.message&&error.message.includes('itens')){
+    ({data,error}=await _supa.from('orcamentos').insert({user_id:uid,...payload,status:'pendente'}).select().single());
+  }
   if(error){ notify('Erro: '+error.message,'red'); return; }
 
   DB.orcamentos.unshift({
     id: data.id, clienteId: cliId, clienteNome: payload.cliente_nome,
-    clienteWpp: payload.cliente_wpp, produtoId: prodId, produtoNome: prodNome,
-    qtd, preco, desc, total,
-    marketplace: data.marketplace, obs: data.obs,
-    validade: data.validade, status: 'pendente',
-    data: data.data, ts: new Date(data.created_at).getTime()
+    clienteWpp: payload.cliente_wpp, produtoId: null, produtoNome: prodNome,
+    qtd: qtdTotal, preco: itens[0].preco, desc, total, itens,
+    marketplace: data.marketplace||payload.marketplace,
+    obs: data.obs||payload.obs,
+    validade: data.validade||payload.validade,
+    status: 'pendente',
+    data: new Date(data.created_at).toLocaleDateString('pt-BR'),
+    ts: new Date(data.created_at).getTime()
   });
   closeModal('modal-orc'); notify('Orçamento salvo!'); renderOrcamentos();
 }
@@ -2706,8 +2739,11 @@ function criarOrcamentoProduto(id){
   showPage('orcamentos');
   setTimeout(()=>{
     openOrcModal();
-    document.getElementById('orc-produto').value=id;
-    document.getElementById('orc-preco').value=(p.precoBase||0).toFixed(2);
+    if(p){
+      const container=document.getElementById('orc-itens-container');
+      container.innerHTML='';
+      addOrcItem(p.nome,1,p.precoBase||0);
+    }
     calcOrcTotal();
   },100);
 }
@@ -3495,20 +3531,40 @@ function loadSettingsPage(){
    MÓDULO 1 — ORÇAMENTOS com PDF + WhatsApp
    --- */
 
+function addOrcItem(nome='', qtd=1, preco=0){
+  const container=document.getElementById('orc-itens-container');
+  const row=document.createElement('div');
+  row.className='orc-item-row';
+  row.style.cssText='display:grid;grid-template-columns:1fr 56px 90px 70px 28px;gap:4px;align-items:center;margin-bottom:6px';
+  row.innerHTML=`<input class="orc-item-nome" value="${nome.replace(/"/g,'&quot;')}" placeholder="Nome do item" style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--rsm);padding:6px 8px;color:var(--text);font-size:12px;width:100%" oninput="calcOrcTotal()">`
+    +`<input type="number" class="orc-item-qtd" value="${qtd}" min="1" style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--rsm);padding:6px 6px;color:var(--text);font-size:12px;width:100%;text-align:center" oninput="calcOrcTotal()">`
+    +`<input type="number" class="orc-item-preco" value="${preco||''}" placeholder="0.00" step="0.01" min="0" style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--rsm);padding:6px 8px;color:var(--text);font-size:12px;width:100%;text-align:right" oninput="calcOrcTotal()">`
+    +`<span class="orc-item-sub" style="font-size:12px;color:var(--text2);text-align:right">—</span>`
+    +`<button type="button" onclick="this.closest('.orc-item-row').remove();calcOrcTotal()" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:15px;padding:0;line-height:1;width:28px;text-align:center">✕</button>`;
+  container.appendChild(row);
+  calcOrcTotal();
+}
+
+function getOrcItens(){
+  return Array.from(document.querySelectorAll('.orc-item-row')).map(row=>({
+    nome:(row.querySelector('.orc-item-nome').value||'').trim()||'Item',
+    qtd:parseInt(row.querySelector('.orc-item-qtd').value)||1,
+    preco:parseFloat(row.querySelector('.orc-item-preco').value)||0
+  }));
+}
+
 function openOrcModal(){
   if(!DB.orcamentos)DB.orcamentos=[];
   orcAtual=null;
-  // popular selects
   const sc=document.getElementById('orc-cliente');
   sc.innerHTML='<option value="">Sem cliente</option>'+(DB.clientes||[]).map(c=>`<option value="${c.id}">${c.nome}</option>`).join('');
   const sp=document.getElementById('orc-produto');
-  sp.innerHTML='<option value="">Sem produto vinculado</option>'+(DB.produtos||[]).map(p=>`<option value="${p.id}">${p.nome} — R$${p.precoBase?p.precoBase.toFixed(2):'0.00'}</option>`).join('');
-  document.getElementById('orc-qtd').value=1;
-  document.getElementById('orc-preco').value='0.00';
+  sp.innerHTML='<option value="">Selecionar produto salvo (opcional)</option>'+(DB.produtos||[]).map(p=>`<option value="${p.id}">${p.nome} — R$${p.precoBase?p.precoBase.toFixed(2):'0.00'}</option>`).join('');
+  document.getElementById('orc-itens-container').innerHTML='';
+  addOrcItem();
   document.getElementById('orc-desc').value=0;
   document.getElementById('orc-total').value='R$ 0,00';
   document.getElementById('orc-obs').value='';
-  // validade padrão: 7 dias
   const v=new Date();v.setDate(v.getDate()+7);
   document.getElementById('orc-validade').value=v.toISOString().slice(0,10);
   document.getElementById('modal-orc').classList.add('open');
@@ -3517,17 +3573,32 @@ function openOrcModal(){
 function preencherOrcProduto(){
   const pid=document.getElementById('orc-produto').value;
   const p=DB.produtos.find(x=>String(x.id)===String(pid));
-  if(p){
-    document.getElementById('orc-preco').value=(p.precoBase||0).toFixed(2);
-    calcOrcTotal();
+  if(!p)return;
+  const container=document.getElementById('orc-itens-container');
+  const rows=container.querySelectorAll('.orc-item-row');
+  const lastRow=rows[rows.length-1];
+  if(lastRow){
+    const nomeIn=lastRow.querySelector('.orc-item-nome');
+    const precoIn=lastRow.querySelector('.orc-item-preco');
+    if(!nomeIn.value.trim()&&!precoIn.value){
+      nomeIn.value=p.nome;
+      precoIn.value=(p.precoBase||0).toFixed(2);
+      calcOrcTotal();return;
+    }
   }
+  addOrcItem(p.nome,1,p.precoBase||0);
 }
 
 function calcOrcTotal(){
-  const qtd=parseFloat(document.getElementById('orc-qtd').value)||1;
-  const preco=parseFloat(document.getElementById('orc-preco').value)||0;
+  const itens=getOrcItens();
   const desc=parseFloat(document.getElementById('orc-desc').value)||0;
-  const total=qtd*preco*(1-desc/100);
+  const subtotal=itens.reduce((s,i)=>s+i.qtd*i.preco,0);
+  const total=subtotal*(1-desc/100);
+  document.querySelectorAll('.orc-item-row').forEach(row=>{
+    const qtd=parseInt(row.querySelector('.orc-item-qtd').value)||1;
+    const preco=parseFloat(row.querySelector('.orc-item-preco').value)||0;
+    row.querySelector('.orc-item-sub').textContent='R$'+(qtd*preco).toFixed(2).replace('.',',');
+  });
   document.getElementById('orc-total').value='R$ '+total.toFixed(2).replace('.',',');
   return total;
 }
@@ -3626,17 +3697,15 @@ function editarOrcamento(id){
   const sc=document.getElementById('orc-cliente');
   sc.innerHTML='<option value="">Sem cliente</option>'+(DB.clientes||[]).map(c=>`<option value="${c.id}">${c.nome}</option>`).join('');
   const sp=document.getElementById('orc-produto');
-  sp.innerHTML='<option value="">Sem produto vinculado</option>'+(DB.produtos||[]).map(p=>`<option value="${p.id}">${p.nome} — R$${p.precoBase?p.precoBase.toFixed(2):'0.00'}</option>`).join('');
+  sp.innerHTML='<option value="">Selecionar produto salvo (opcional)</option>'+(DB.produtos||[]).map(p=>`<option value="${p.id}">${p.nome} — R$${p.precoBase?p.precoBase.toFixed(2):'0.00'}</option>`).join('');
   document.getElementById('orc-cliente').value=o.clienteId||'';
-  // Buscar produto por id ou por nome
-  const _prodEncontrado = o.produtoId
-    ? DB.produtos.find(p=>String(p.id)===String(o.produtoId))
-    : DB.produtos.find(p=>p.nome===o.produtoNome);
-  document.getElementById('orc-produto').value=_prodEncontrado?_prodEncontrado.id:'';
-  document.getElementById('orc-qtd').value=o.qtd||1;
-  // Preencher preço: do orçamento salvo, ou do produto se existir
-  const _precoOrc = o.preco&&o.preco>0 ? o.preco : (_prodEncontrado?((_prodEncontrado.precoBase||0)):0);
-  document.getElementById('orc-preco').value=parseFloat(_precoOrc).toFixed(2);
+  // Carregar itens no container
+  document.getElementById('orc-itens-container').innerHTML='';
+  if(o.itens&&o.itens.length){
+    o.itens.forEach(item=>addOrcItem(item.nome,item.qtd,item.preco));
+  } else {
+    addOrcItem(o.produtoNome||'',o.qtd||1,o.preco||0);
+  }
   document.getElementById('orc-desc').value=o.desc||0;
   document.getElementById('orc-obs').value=o.obs||'';
   if(o.validade)document.getElementById('orc-validade').value=o.validade;
@@ -3689,19 +3758,18 @@ function verOrcamentoPDF(id){
           <th style="padding:8px 12px;text-align:left;font-size:12px;border:1px solid #ddd">Produto / Serviço</th>
           <th style="padding:8px 12px;text-align:center;font-size:12px;border:1px solid #ddd">Qtd</th>
           <th style="padding:8px 12px;text-align:right;font-size:12px;border:1px solid #ddd">Preço unit.</th>
-          <th style="padding:8px 12px;text-align:right;font-size:12px;border:1px solid #ddd">Desconto</th>
-          <th style="padding:8px 12px;text-align:right;font-size:12px;border:1px solid #ddd">Total</th>
+          <th style="padding:8px 12px;text-align:right;font-size:12px;border:1px solid #ddd">Subtotal</th>
         </tr></thead>
-        <tbody><tr>
-          <td style="padding:10px 12px;border:1px solid #ddd;font-weight:600">${o.produtoNome}</td>
-          <td style="padding:10px 12px;border:1px solid #ddd;text-align:center">${o.qtd}</td>
-          <td style="padding:10px 12px;border:1px solid #ddd;text-align:right">R$ ${o.preco.toFixed(2).replace('.',',')}</td>
-          <td style="padding:10px 12px;border:1px solid #ddd;text-align:right">${o.desc>0?o.desc+'%':'—'}</td>
-          <td style="padding:10px 12px;border:1px solid #ddd;text-align:right;font-weight:700">R$ ${o.total.toFixed(2).replace('.',',')}</td>
-        </tr></tbody>
+        <tbody>${(o.itens&&o.itens.length?o.itens:[{nome:o.produtoNome,qtd:o.qtd,preco:o.preco}]).map(item=>`<tr>
+          <td style="padding:10px 12px;border:1px solid #ddd;font-weight:600">${item.nome}</td>
+          <td style="padding:10px 12px;border:1px solid #ddd;text-align:center">${item.qtd}</td>
+          <td style="padding:10px 12px;border:1px solid #ddd;text-align:right">R$ ${(item.preco||0).toFixed(2).replace('.',',')}</td>
+          <td style="padding:10px 12px;border:1px solid #ddd;text-align:right">R$ ${((item.qtd||1)*(item.preco||0)).toFixed(2).replace('.',',')}</td>
+        </tr>`).join('')}</tbody>
       </table>
       <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
         <div style="text-align:right">
+          ${o.desc>0?`<div style="font-size:12px;color:#888">Subtotal: R$ ${(o.total/(1-o.desc/100)).toFixed(2).replace('.',',')} — Desconto ${o.desc}%</div>`:''}
           <div style="font-size:12px;color:#888">Canal de venda: ${o.marketplace}</div>
           <div style="font-size:20px;font-weight:800;color:#f97316">Total: R$ ${o.total.toFixed(2).replace('.',',')}</div>
         </div>
@@ -3807,7 +3875,8 @@ function compartilharWhatsApp(){
   const s=JSON.parse(localStorage.getItem('p3d_settings')||'{}');
   const empresa=s.empresa||'MoneyFlow 3D';
   const valStr=o.validade?new Date(o.validade).toLocaleDateString('pt-BR'):'—';
-  const msg=`*ORÇAMENTO — ${empresa}*\n\nOlá ${o.clienteNome}! 👋\n\n📦 *Produto:* ${o.produtoNome}\n📊 *Quantidade:* ${o.qtd}\n💰 *Valor:* R$ ${o.total.toFixed(2).replace('.',',')}\n${o.desc>0?`🏷 *Desconto:* ${o.desc}%\n`:''}\n🛒 *Canal:* ${o.marketplace}\n📅 *Válido até:* ${valStr}\n${o.obs?`\n📝 *Obs:* ${o.obs}\n`:''}\n_Gerado por ${s.sysname||'MoneyFlow 3D'}_`;
+  const itensMsg=(o.itens&&o.itens.length?o.itens:[{nome:o.produtoNome,qtd:o.qtd,preco:o.preco}]).map(i=>`• ${i.nome} x${i.qtd} — R$ ${((i.qtd||1)*(i.preco||0)).toFixed(2).replace('.',',')}`).join('\n');
+  const msg=`*ORÇAMENTO — ${empresa}*\n\nOlá ${o.clienteNome}! 👋\n\n📦 *Itens:*\n${itensMsg}\n${o.desc>0?`🏷 *Desconto:* ${o.desc}%\n`:''}\n💰 *TOTAL: R$ ${o.total.toFixed(2).replace('.',',')}*\n\n🛒 *Canal:* ${o.marketplace}\n📅 *Válido até:* ${valStr}\n${o.obs?`\n📝 *Obs:* ${o.obs}\n`:''}\n_Gerado por ${s.sysname||'MoneyFlow 3D'}_`;
   const num=o.clienteWpp?o.clienteWpp.replace(/\D/g,''):'';
   const url=`https://wa.me/${num?'55'+num:''}?text=${encodeURIComponent(msg)}`;
   window.open(url,'_blank');
