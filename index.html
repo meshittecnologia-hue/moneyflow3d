@@ -1085,7 +1085,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
           </div>
 
           <!-- DADOS -->
-          <div class="card">
+          <div class="card" id="backup-dados-card">
             <div class="card-title">💾 Backup &amp; dados</div>
             <div style="display:flex;gap:8px;flex-wrap:wrap">
               <button class="btn btn-ghost" onclick="exportarDados()">⬇ Exportar tudo (JSON)</button>
@@ -2256,6 +2256,12 @@ async function verificarAcesso(){
 
   // Aplicar bloqueio de módulos por plano
   aplicarBloqueioPlano(profile);
+
+  // Backup JSON: somente admins
+  const backupCard = document.getElementById('backup-dados-card');
+  if(backupCard){
+    backupCard.style.display = (profile.role === 'admin') ? '' : 'none';
+  }
 }
 
 /* ── CONTROLE DE ACESSO POR PLANO ─────────────────────── */
