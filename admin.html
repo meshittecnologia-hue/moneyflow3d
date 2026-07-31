@@ -1581,8 +1581,9 @@ async function saveUser() {
   const blocked = document.getElementById('edit-user-blocked').value === 'true';
   const mods    = getCheckedModules('edit-mod-');
 
-  const { error } = await sb.from('profiles').update({ name, plan, role }).eq('id', id);
+  const { data: updData, error } = await sb.from('profiles').update({ name, plan, role, is_blocked: blocked, modules: mods, updated_at: new Date() }).eq('id', id).select('id');
   if (error) { showToast('Erro ao salvar: ' + error.message, 'error'); return; }
+  if (!updData || updData.length === 0) { showToast('Sem permissão para atualizar este usuário', 'error'); return; }
 
   await sb.from('admin_logs').insert({ admin_id: currentAdmin.id, action: 'update_user', target_user: id, details: { plan, role, blocked, mods } });
   closeModal('modal-user');
