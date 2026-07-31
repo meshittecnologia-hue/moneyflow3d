@@ -3381,14 +3381,9 @@ async function doResetSenha(){
 }
 
 async function doLogout(){
-  // Não faz signOut do Supabase — mantém sessão para auto-login na próxima abertura
-  // Apenas limpa a sessão local para forçar reconfirmação (biométrica ou senha)
+  // Encerrar sessão no Supabase para evitar auto-login no reload
+  try { await _supa.auth.signOut(); } catch(e) { console.warn('signOut error:', e); }
   sessionStorage.removeItem('p3d_ok');
-  document.getElementById('login-overlay').style.display='flex';
-  document.getElementById('login-email').value='';
-  document.getElementById('login-pw').value='';
-  document.getElementById('login-err').textContent='';
-  // Recarregar para acionar o fluxo de boot (biometria automática se cadastrada)
   location.reload();
 }
 
