@@ -3360,7 +3360,7 @@ async function enviarResetSenha(){
 
   // Enviar via Edge Function (usa Resend REST — sem SMTP)
   try {
-    const r = await fetch('https://fqthlewarcqvmqojmzzs.supabase.co/functions/v1/send-recovery', {
+    const r = await fetch('https://fqthlewarcqvmqojmzzs.supabase.co/functions/v1/webhook-kiwify?_action=send_recovery', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + _supa.supabaseKey },
       body: JSON.stringify({ email })
