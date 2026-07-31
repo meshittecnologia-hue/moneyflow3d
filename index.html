@@ -3354,18 +3354,28 @@ function toggleEsqueciSenha(){
 
 async function enviarResetSenha(){
   const email = document.getElementById('esqueci-email').value.trim();
-  const msg = document.getElementById('esqueci-msg');
-  msg.style.color='var(--text2)';
-  msg.textContent='Enviando...';
+  const msg   = document.getElementById('esqueci-msg');
+  msg.style.color='var(--text2)'; msg.textContent='Enviando...';
   if(!email){ msg.style.color='var(--red)'; msg.textContent='Informe seu email.'; return; }
-  const { error } = await _supa.auth.resetPasswordForEmail(email, {
-    redirectTo: 'https://moneyflow3d.com.br'
-  });
-  if(error){ msg.style.color='var(--red)'; msg.textContent='Erro ao enviar. Verifique o email.'; return; }
-  msg.style.color='var(--green)';
-  msg.textContent='Link enviado! Verifique seu email.';
-}
 
+  // Enviar via Edge Function (usa Resend REST — sem SMTP)
+  try {
+    const r = await fetch('https://fqthlewarcqvmqojmzzs.supabase.co/functions/v1/send-recovery', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + _supa.supabaseKey },
+      body: JSON.stringify({ email })
+    });
+    const d = await r.json();
+    if(r.ok && d.sent){
+      msg.style.color='var(--green)'; msg.textContent='Link enviado! Verifique seu email.'; return;
+    }
+  } catch(e){ console.warn('edge fn failed:', e); }
+
+  // Fallback Supabase SMTP
+  const { error } = await _supa.auth.resetPasswordForEmail(email, { redirectTo: 'https://moneyflow3d.com.br' });
+  if(error){ msg.style.color='var(--red)'; msg.textContent='Erro ao enviar. Verifique o email.'; return; }
+  msg.style.color='var(--green)'; msg.textContent='Link enviado! Verifique seu email.';
+}
 async function doResetSenha(){
   const pw = document.getElementById('reset-pw').value;
   const pw2 = document.getElementById('reset-pw2').value;
