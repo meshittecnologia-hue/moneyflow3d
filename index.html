@@ -2291,29 +2291,44 @@ function diasRestantesTrial(profile){
 }
 
 function aplicarBloqueioPlano(profile){
-  const pro = temAcesso(profile);
-  const dias = diasRestantesTrial(profile);
   const plano = profile?.plan || 'free';
+  const isInterno = plano === 'interno';
+  const dias = diasRestantesTrial(profile);
 
-  // Módulos bloqueados para plano free/trial expirado
-  const modulosBloqueados = ['crm','orcamentos','pedidos','fila','comparar','relatorio'];
+  // profile.modules configurado pelo admin tem prioridade sobre o plano
+  const adminMods = Array.isArray(profile?.modules) && profile.modules.length > 0
+    ? profile.modules : null;
 
-  modulosBloqueados.forEach(mod => {
-    const nav = document.getElementById('nav-'+mod);
+  // nav ID → módulo necessário para acesso
+  const NAV_MOD = {
+    'crm':       'crm',
+    'orcamentos':'pdf',
+    'pedidos':   'crm',
+    'fila':      'fila',
+    'comparar':  'calc',
+    'relatorio': 'relatorio',
+  };
+
+  const getAcesso = (slug) => {
+    if(isInterno) return true;
+    if(adminMods) return adminMods.includes(slug);
+    return temAcesso(profile);
+  };
+
+  Object.entries(NAV_MOD).forEach(([navId, slug]) => {
+    const nav = document.getElementById('nav-'+navId);
     if(!nav) return;
-    if(pro){
+    if(getAcesso(slug)){
       nav.style.opacity = '';
-      nav.onclick = function(){ showPage(mod); };
-      // remover badge de cadeado se existir
+      nav.onclick = function(){ showPage(navId); };
       const badge = nav.querySelector('.plan-lock');
       if(badge) badge.remove();
     } else {
       nav.style.opacity = '0.5';
-      // adicionar cadeado se não existir
       if(!nav.querySelector('.plan-lock')){
         const lock = document.createElement('span');
         lock.className = 'plan-lock';
-        lock.textContent = '🔒';
+        lock.textContent = '\u{1F512}';
         lock.style.cssText = 'margin-left:auto;font-size:11px';
         nav.appendChild(lock);
       }
@@ -2321,7 +2336,7 @@ function aplicarBloqueioPlano(profile){
     }
   });
 
-  // Mostrar banner de trial se ainda ativo
+  const pro = isInterno || adminMods !== null || temAcesso(profile);
   const banner = document.getElementById('trial-banner');
   if(banner){
     if(!pro && dias > 0){
@@ -2329,16 +2344,14 @@ function aplicarBloqueioPlano(profile){
       const el = document.getElementById('trial-dias');
       if(el) el.textContent = dias === 1 ? '1 dia' : dias+' dias';
     } else if(!pro && dias === 0){
-      // Trial expirado
       banner.style.display = 'flex';
       banner.style.background = 'var(--red)';
-      banner.innerHTML = '<span>⚠️ Seu trial expirou. <strong>Assine o MoneyFlow 3D Pro por R$ 23,50/mês</strong> para continuar usando todos os módulos.</span><a href="https://pay.kiwify.com.br/8epGftp" target="_blank" style="color:#fff;font-weight:700;text-decoration:underline;white-space:nowrap;margin-left:12px">Assinar agora →</a>';
+      banner.innerHTML = '<span>Seu trial expirou. Assine o MoneyFlow 3D Pro por R$ 23,50/mes para continuar.</span><a href="https://pay.kiwify.com.br/8epGftp" target="_blank" style="color:#fff;font-weight:700;text-decoration:underline;white-space:nowrap;margin-left:12px">Assinar agora</a>';
     } else {
       banner.style.display = 'none';
     }
   }
 }
-
 function abrirModalUpgrade(){
   const dias = diasRestantesTrial(_userProfile);
   const expirou = dias === 0;
