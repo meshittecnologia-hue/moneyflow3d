@@ -758,8 +758,9 @@
         <option value="true">🚫 Bloqueado — suspender acesso</option>
       </select>
     </div>
-    <div class="modal-actions">
+    <div class="modal-actions" style="flex-wrap:wrap;gap:8px">
       <button class="btn btn-ghost" onclick="closeModal('modal-user')">Cancelar</button>
+      <button class="btn btn-ghost" onclick="enviarRecoveryEmail()" style="border-color:var(--accent);color:var(--accent)" title="Gerar link e enviar por email">📧 Enviar link de senha</button>
       <button class="btn btn-primary" onclick="saveUser()">Salvar</button>
     </div>
   </div>
@@ -1590,6 +1591,38 @@ async function saveUser() {
   showToast('Usuário atualizado com sucesso', 'success');
   loadUsers();
   loadDashboard();
+}
+
+// ============================================================
+// RECOVERY DE SENHA (via Resend REST API — bypass SMTP)
+// ============================================================
+async function enviarRecoveryEmail() {
+  const email = document.getElementById('edit-user-email').value.trim();
+  const name  = document.getElementById('edit-user-name').value.trim();
+  if (!email) { showToast('Email do usuário não encontrado', 'error'); return; }
+  showToast('Gerando link de recuperação...', 'info');
+  const resLink = await fetch(`${SUPABASE_URL}/auth/v1/admin/generate_link`, {
+    method: 'POST',
+    headers: { 'apikey': SUPABASE_SERVICE, 'Authorization': `Bearer ${SUPABASE_SERVICE}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ type: 'recovery', email, options: { redirectTo: 'https://moneyflow3d.com.br' } })
+  });
+  const linkData = await resLink.json();
+  const actionLink = linkData?.action_link || linkData?.properties?.action_link || '';
+  if (!actionLink) { showToast('Erro ao gerar link: ' + (linkData?.msg || resLink.status), 'error'); return; }
+  const nomeDisplay = name || email.split('@')[0];
+  const htmlEmail = `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#0f0f0f;color:#f0f0f0;border-radius:12px;overflow:hidden"><div style="background:#ff6b2b;padding:24px;text-align:center"><h1 style="margin:0;color:#fff">⬡ MoneyFlow 3D</h1></div><div style="padding:32px"><h2 style="color:#ff6b2b">Redefinir sua senha</h2><p>Olá <strong>${nomeDisplay}</strong>,</p><p>Clique para criar uma nova senha:</p><div style="text-align:center;margin:32px 0"><a href="${actionLink}" style="background:#ff6b2b;color:#fff;padding:14px 32px;border-radius:8px;text-decoration:none;font-weight:700">Redefinir senha →</a></div><p style="color:#666;font-size:12px">Link válido por 24 horas.</p></div><div style="background:#1a1a1a;padding:16px;text-align:center"><p style="color:#555;font-size:11px;margin:0">MoneyFlow 3D · MeshIT Tecnologia</p></div></div>`;
+  const resEmail = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${RESEND_KEY}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ from: 'MoneyFlow 3D <noreply@moneyflow3d.com.br>', to: [email], subject: 'Redefinição de senha — MoneyFlow 3D', html: htmlEmail })
+  });
+  const emailResult = await resEmail.json();
+  if (!resEmail.ok || emailResult.error) {
+    showToast('Erro ao enviar email: ' + (emailResult.message || emailResult.name || resEmail.status), 'error');
+  } else {
+    showToast('Link de recuperação enviado para ' + email + '!', 'success');
+    await sb.from('admin_logs').insert({ admin_id: currentAdmin.id, action: 'send_recovery_email', target_user: document.getElementById('edit-user-id').value, details: { email } });
+  }
 }
 
 // ============================================================
