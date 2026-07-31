@@ -2310,8 +2310,8 @@ function aplicarBloqueioPlano(profile){
   };
 
   const getAcesso = (slug) => {
-    if(isInterno) return true;
-    if(adminMods) return adminMods.includes(slug);
+    if(adminMods) return adminMods.includes(slug); // admin config tem prioridade total
+    if(isInterno) return true;                     // interno sem config específica: tudo
     return temAcesso(profile);
   };
 
@@ -2336,7 +2336,7 @@ function aplicarBloqueioPlano(profile){
     }
   });
 
-  const pro = isInterno || adminMods !== null || temAcesso(profile);
+  const pro = (adminMods && adminMods.length > 0) || isInterno || temAcesso(profile);
   const banner = document.getElementById('trial-banner');
   if(banner){
     if(!pro && dias > 0){
