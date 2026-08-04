@@ -2851,11 +2851,40 @@ function delFil(id){
   DB.filamentos=DB.filamentos.filter(x=>String(x.id)!==String(id));
   saveDB();renderFilamentos();notify('Filamento removido','red');
 }
+const _COR_MAP={
+  'amarelo':'#FFD700','amarelo claro':'#FFE566','amarelo escuro':'#CC9900',
+  'amarelo fluorescente':'#FFFF00','dourado':'#D4A017',
+  'laranja':'#FF6B00','laranja claro':'#FFAA44','laranja fluorescente':'#FF4500',
+  'vermelho':'#DC2626','vermelho escuro':'#7F1D1D','vermelho claro':'#F87171',
+  'rosa':'#EC4899','rosa bebê':'#FFB6C1','rosa claro':'#FBCFE8',
+  'roxo':'#7C3AED','lilás':'#A78BFA','violeta':'#8B5CF6',
+  'azul':'#2563EB','azul claro':'#60A5FA','azul escuro':'#1E40AF',
+  'azul bebê':'#ADD8E6','azul royal':'#4169E1','azul celeste':'#38BDF8',
+  'ciano':'#06B6D4','turquesa':'#0D9488','teal':'#14B8A6',
+  'verde':'#16A34A','verde claro':'#4ADE80','verde escuro':'#14532D',
+  'verde limão':'#84CC16','verde fluorescente':'#39FF14','verde militar':'#4B5320',
+  'marrom':'#92400E','bege':'#D4A574','café':'#6F4E37','caramelo':'#C47C26',
+  'cinza':'#6B7280','cinza claro':'#D1D5DB','cinza escuro':'#374151',
+  'preto':'#111111','branco':'#F8F8F8','creme':'#FFF5E0',
+  'prata':'#9CA3AF','prata metálico':'#C0C0C0','bronze':'#CD7F32',
+  'natural':'#EDE9D0','transparente':'#AAAAAA','variada':'#888888','multicolor':'#888888',
+  'silk':'#B5A642','silk dourado':'#D4AF37','silk prata':'#C0C0C0',
+  'glow':'#39FF14','fosforescente':'#7FFF00',
+};
+function _resolveHex(texto){
+  if(!texto)return null;
+  const t=texto.toLowerCase().trim();
+  if(/^#[0-9a-fA-F]{6}$/.test(t))return t;
+  return _COR_MAP[t]||null;
+}
 function syncColorPickerToText(){
   // Picker mudou → não altera o campo texto (nomes livres), só mantém o picker
 }
 function syncColorPickerFromText(){
-  // Texto mudou → não força picker (cor é texto livre como "Azul Royal")
+  const texto=(document.getElementById('mf-cor')||{}).value||'';
+  const hex=_resolveHex(texto);
+  const picker=document.getElementById('mf-cor-picker');
+  if(picker&&hex) picker.value=hex;
 }
 function editFil(id){
   const f=DB.filamentos.find(x=>String(x.id)===String(id));if(!f)return;
@@ -2867,7 +2896,11 @@ function editFil(id){
   document.getElementById('mf-custo').value=f.custo;
   document.getElementById('mf-peso').value=f.peso;
   const picker=document.getElementById('mf-cor-picker');
-  if(picker) picker.value=f.hexCor&&/^#[0-9a-fA-F]{6}$/.test(f.hexCor)?f.hexCor:'#888888';
+  if(picker){
+    const savedHex=f.hexCor&&/^#[0-9a-fA-F]{6}$/.test(f.hexCor)?f.hexCor:null;
+    const mappedHex=_resolveHex(f.cor||'');
+    picker.value=savedHex||mappedHex||'#888888';
+  }
   document.getElementById('modal-fil').classList.add('open');
 }
 
@@ -4673,3 +4706,5 @@ function setCrmView(m){
   }
 })();
 </script>
+
+
