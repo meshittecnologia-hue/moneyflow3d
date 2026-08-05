@@ -1868,19 +1868,22 @@ async function saveFil(){
   };
   if(!fil.nome){ notify('Informe o nome','red'); return; }
 
-  if(editId){
+  // IDs numéricos (<=6 dígitos) = filamentos default do FIL_DEFAULT, não têm UUID no Supabase
+  const isDefaultId = editId && /^\d{1,6}$/.test(String(editId));
+
+  if(editId && !isDefaultId){
+    // UPDATE normal no Supabase (tem UUID real)
     await _supa.from('filaments').update({
       name: fil.nome, brand: fil.marca, color: fil.cor,
       type: fil.tipo, cost: fil.custo, weight_g: fil.peso
     }).eq('id', editId);
-    DB.filamentos = DB.filamentos.map(f=>f.id===editId?{...f,...fil}:f);
+    DB.filamentos = DB.filamentos.map(f=>String(f.id)===String(editId)?{...f,...fil}:f);
   } else {
+    // INSERT — novo filamento OU filamento default sendo personalizado
+    if(isDefaultId) DB.filamentos = DB.filamentos.filter(f=>String(f.id)!==String(editId));
     const { data } = await _supa.from('filaments').insert({
       user_id: uid, name: fil.nome, brand: fil.marca, color: fil.cor,
-      type: fil.tipo, cost: fil.custo, weight_g: fil.peso,
-      // Campos pt-BR para compatibilidade
-      nome: fil.nome, marca: fil.marca, cor: fil.cor, tipo: fil.tipo,
-      custo: fil.custo, peso: fil.peso
+      type: fil.tipo, cost: fil.custo, weight_g: fil.peso
     }).select().single();
     if(data) DB.filamentos.unshift({...fil, id: data.id});
   }
@@ -2876,14 +2879,13 @@ function renderFilamentos(){
   document.getElementById('fil-empty').style.display=shown?'none':'block';
   const FIL_BADGE={bg:'rgba(148,163,184,.15)',text:'#94a3b8'};
   document.getElementById('fil-tbody').innerHTML=fs.map(f=>{
-    const corDot = (f.cor&&f.cor.startsWith('#')) ? f.cor : null;
-    const dotHtml = corDot
-      ? `<span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:${corDot};border:1px solid rgba(0,0,0,.2);vertical-align:middle;margin-right:5px"></span>`
-      : '';
+    const corHex = (f.cor&&/^#[0-9A-Fa-f]{3,8}$/.test(f.cor)) ? f.cor : null;
+    const dotBg = corHex || 'rgba(148,163,184,0.35)';
+    const dotHtml = `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${dotBg};border:1px solid rgba(0,0,0,.15);vertical-align:middle;margin-right:6px;flex-shrink:0"></span>`;
     return`<tr>
       <td style="font-weight:600">${dotHtml}${f.nome}</td>
       <td style="color:var(--text2)">${f.marca||'—'}</td>
-      <td style="color:var(--text2)">${corDot?`<span style="display:inline-flex;align-items:center;gap:5px"><span style="display:inline-block;width:14px;height:14px;border-radius:3px;background:${corDot};border:1px solid rgba(0,0,0,.15)"></span>${f.cor}</span>`:f.cor||'—'}</td>
+      <td style="color:var(--text2)">${corHex?`<span style="display:inline-flex;align-items:center;gap:5px"><span style="display:inline-block;width:14px;height:14px;border-radius:3px;background:${corHex};border:1px solid rgba(0,0,0,.15)"></span>${f.cor}</span>`:f.cor||'—'}</td>
       <td><span style="display:inline-block;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700;background:${FIL_BADGE.bg};color:${FIL_BADGE.text}">${f.tipo}</span></td>
       <td>${f.custo>0?'R$ '+(f.custo/(f.peso/1000)).toFixed(2):'<span style="color:var(--accent);font-size:11px">cadastrar preço</span>'}</td>
       <td style="color:var(--text2)">${f.custo>0?'R$ '+(f.custo/f.peso).toFixed(4):'—'}</td>
