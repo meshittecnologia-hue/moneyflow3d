@@ -377,6 +377,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
       <div class="nav-item" id="nav-filamentos" onclick="showPage('filamentos')"><span class="nav-icon">◌</span>Filamentos &amp; estoque</div>
       <div class="nav-item" id="nav-importar" onclick="showPage('importar')"><span class="nav-icon">⬆</span>Importar dados</div>
       <div class="nav-section">Sistema</div>
+      <div class="nav-item" id="nav-roadmap" onclick="showPage('roadmap')" style="color:var(--accent)"><span class="nav-icon">🗺</span>O que vem por aí</div>
       <div class="nav-item" id="nav-settings" onclick="showPage(&#39;settings&#39;)"><span class="nav-icon">⚙</span>Configurações</div>
       <div style="padding:16px 8px 8px">
         <button class="theme-btn" onclick="toggleTheme()" id="theme-btn" style="width:100%;justify-content:center">🌙 Tema Claro</button>
@@ -421,19 +422,6 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
           <div class="two-col">
             <div class="card"><div class="card-title">Margem por produto</div><div id="dash-chart"><div style="color:var(--text3);font-size:13px;padding:12px 0;text-align:center">Nenhum produto ainda</div></div></div>
             <div class="card"><div class="card-title">Últimos cadastrados</div><div id="dash-recentes"><div style="color:var(--text3);font-size:13px;padding:8px 0">Nenhum produto ainda</div></div></div>
-          </div>
-          <div class="two-col">
-            <div class="card">
-              <div class="card-title">📦 Fila de produção</div>
-              <div id="dash-fila-metrics" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px;margin-bottom:12px"></div>
-              <div id="dash-fila-lista"><div style="color:var(--text3);font-size:13px;padding:8px 0">Nenhum pedido na fila</div></div>
-              <div style="margin-top:10px"><button class="btn btn-ghost btn-sm" onclick="showPage('fila')">Ver fila completa →</button></div>
-            </div>
-            <div class="card">
-              <div class="card-title">🧵 Estoque de filamentos</div>
-              <div id="dash-estoque-lista"><div style="color:var(--text3);font-size:13px;padding:8px 0">Nenhum carretel registrado</div></div>
-              <div style="margin-top:10px"><button class="btn btn-ghost btn-sm" onclick="showPage('filamentos')">Gerenciar estoque →</button></div>
-            </div>
           </div>
         </div>
       </div>
@@ -617,26 +605,28 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
         </div>
         <div class="content">
           <div class="card">
-            <div class="card-title">Seus produtos — selecione para comparar</div>
-            <div id="comp-sel"><div style="color:var(--text3);font-size:13px">Nenhum produto cadastrado</div></div>
+            <div class="card-title">🎯 Selecione o produto e o concorrente para comparar</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+              <div>
+                <label style="font-size:12px;color:var(--text3);display:block;margin-bottom:6px">Seu produto</label>
+                <select id="comp-sel-prod" onchange="updateComp()" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--rsm);padding:8px 10px;color:var(--text);outline:none;font-size:13px">
+                  <option value="">— Selecione um produto —</option>
+                </select>
+              </div>
+              <div>
+                <label style="font-size:12px;color:var(--text3);display:block;margin-bottom:6px">Concorrente</label>
+                <select id="comp-sel-conc" onchange="updateComp()" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--rsm);padding:8px 10px;color:var(--text);outline:none;font-size:13px">
+                  <option value="">— Selecione um concorrente —</option>
+                </select>
+              </div>
+            </div>
+            <button class="btn btn-primary" onclick="runBenchmarkSelecionado()" style="width:100%">⇌ Comparar</button>
           </div>
 
           <div class="card">
             <div class="card-title">🏪 Concorrentes cadastrados</div>
             <div id="conc-list"></div>
             <div id="conc-empty" class="empty" style="display: block; padding: 24px;"><div class="empty-icon">🏪</div><div class="empty-title">Nenhum concorrente cadastrado</div><div style="font-size:12px;color:var(--text3);margin-top:4px">Adicione produtos da concorrência para comparar preços</div></div>
-          </div>
-
-          <div class="card" id="bench-filtro-card" style="display:none">
-            <div class="card-title">🎯 Filtro do benchmark</div>
-            <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">
-              <div style="flex:1;min-width:200px">
-                <label style="font-size:12px;color:var(--text3);display:block;margin-bottom:4px">Comparar com concorrente</label>
-                <select id="bench-conc-filter" onchange="renderBenchmark()" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--rsm);padding:8px 10px;color:var(--text);outline:none;font-size:13px">
-                  <option value="">Todos os concorrentes</option>
-                </select>
-              </div>
-            </div>
           </div>
 
           <div id="comp-result" style="margin-top:8px"></div>
@@ -710,44 +700,18 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
           <button class="btn btn-primary" onclick="openFilModal(&#39;page&#39;)">+ Adicionar</button>
         </div>
         <div class="content">
-
           <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center">
             <input type="text" id="fil-search" placeholder="🔍 Buscar filamento..." oninput="renderFilamentos()" style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--rsm);padding:8px 12px;color:var(--text);outline:none;flex:1;min-width:180px;font-size:13px">
             <select id="fil-filter-tipo" onchange="renderFilamentos()" style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--rsm);padding:8px 10px;color:var(--text);outline:none;font-size:13px">
               <option value="">Todos os tipos</option>
-              <option value="PLA">PLA</option>
-              <option value="PLA+">PLA+</option>
-              <option value="Silk PLA">Silk PLA</option>
-              <option value="Matte PLA">Matte PLA</option>
-              <option value="Tough PLA">Tough PLA</option>
-              <option value="ABS">ABS</option>
-              <option value="ABS+">ABS+</option>
-              <option value="PETG">PETG</option>
-              <option value="ASA">ASA</option>
-              <option value="TPU">TPU</option>
-              <option value="TPE">TPE</option>
-              <option value="PA">PA (Nylon)</option>
-              <option value="PA-CF">PA-CF</option>
-              <option value="PA-GF">PA-GF</option>
-              <option value="PC">PC</option>
-              <option value="PC-ABS">PC-ABS</option>
-              <option value="PP">PP</option>
-              <option value="HIPS">HIPS</option>
-              <option value="PVA">PVA</option>
-              <option value="BVOH">BVOH</option>
-              <option value="PEEK">PEEK</option>
-              <option value="PEKK">PEKK</option>
-              <option value="PEI (ULTEM)">PEI (ULTEM)</option>
-              <option value="Carbon Fiber">Carbon Fiber</option>
-              <option value="Glass Fiber">Glass Fiber</option>
-              <option value="Wood">Wood</option>
-              <option value="Marble">Marble</option>
-              <option value="Metal Fill">Metal Fill</option>
-              <option value="Glow in the Dark">Glow in the Dark</option>
-              <option value="Conductive PLA">Conductive PLA</option>
-              <option value="ESD Safe">ESD Safe</option>
-              <option value="Recycled PLA">Recycled PLA</option>
-              <option value="Recycled PETG">Recycled PETG</option>
+              <option>PLA</option><option>PLA+</option><option>Silk PLA</option><option>Matte PLA</option><option>Tough PLA</option>
+              <option>ABS</option><option>ABS+</option><option>PETG</option><option>ASA</option>
+              <option>TPU</option><option>TPE</option><option>PA (Nylon)</option><option>PA-CF</option><option>PA-GF</option>
+              <option>PC</option><option>PC-ABS</option><option>PP</option><option>HIPS</option>
+              <option>PVA</option><option>BVOH</option><option>PEEK</option><option>PEKK</option><option>PEI (ULTEM)</option>
+              <option>Carbon Fiber</option><option>Glass Fiber</option><option>Wood</option><option>Marble</option>
+              <option>Metal Fill</option><option>Glow in the Dark</option><option>Conductive PLA</option>
+              <option>ESD Safe</option><option>Recycled PLA</option><option>Recycled PETG</option><option>Outro</option>
             </select>
             <select id="fil-filter-preco" onchange="renderFilamentos()" style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--rsm);padding:8px 10px;color:var(--text);outline:none;font-size:13px">
               <option value="">Todos os preços</option>
@@ -1127,22 +1091,17 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 
           <!-- SUPORTE -->
           <div class="card">
-            <div class="card-title">🆘 Suporte</div>
-            <p style="font-size:13px;color:var(--text2);margin-bottom:14px">Precisa de ajuda ou encontrou algum problema? Entre em contato com a equipe MoneyFlow 3D.</p>
-            <div style="display:flex;flex-direction:column;gap:10px">
-              <a href="mailto:suporte@moneyflow3d.com.br" style="display:inline-flex;align-items:center;gap:8px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--rsm);padding:10px 14px;color:var(--text);text-decoration:none;font-size:13px;font-weight:500;transition:border-color .2s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
-                <span style="font-size:16px">✉</span>
-                <div>
-                  <div style="font-weight:600">Enviar e-mail de suporte</div>
-                  <div style="font-size:11px;color:var(--text3)">suporte@moneyflow3d.com.br</div>
-                </div>
-              </a>
-              <div style="font-size:11px;color:var(--text3)">Tempo de resposta: até 24h em dias úteis</div>
+            <div class="card-title">🎧 Suporte</div>
+            <div style="font-size:13px;color:var(--text2);margin-bottom:14px">Precisa de ajuda? Entre em contato com nossa equipe de suporte.</div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+              <a href="mailto:suporte@moneyflow3d.com.br?subject=Suporte MoneyFlow 3D" class="btn btn-primary" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px">📧 Enviar email de suporte</a>
+              <span style="font-size:12px;color:var(--text3)">suporte@moneyflow3d.com.br</span>
             </div>
+            <div style="font-size:11px;color:var(--text3);margin-top:10px">Resposta em até 24h úteis · Segunda a Sexta</div>
           </div>
 
           <!-- DADOS -->
-          <div class="card">
+          <div class="card" id="backup-dados-card">
             <div class="card-title">💾 Backup &amp; dados</div>
             <div style="display:flex;gap:8px;flex-wrap:wrap">
               <button class="btn btn-ghost" onclick="exportarDados()">⬇ Exportar tudo (JSON)</button>
@@ -1248,6 +1207,44 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
         </div>
       </div>
 
+      <div class="panel" id="page-roadmap">
+<div class="page-header"><div><div class="page-title">O que vem por aí</div><div class="page-sub">Novidades planejadas para o MoneyFlow 3D</div></div></div>
+<div class="content">
+<div style="display:inline-flex;align-items:center;gap:7px;background:rgba(34,197,94,.12);color:var(--green);font-size:11px;font-weight:600;padding:6px 12px;border-radius:20px;margin-bottom:20px;border:1px solid rgba(34,197,94,.25)">📅 1 atualização por mês — assinantes Pro recebem tudo automaticamente</div>
+<div style="margin-bottom:14px;border:1px solid rgba(34,197,94,.3);border-radius:10px;overflow:hidden">
+<div style="background:rgba(34,197,94,.08);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;border-bottom:1px solid rgba(34,197,94,.15)"><div style="display:flex;align-items:center;gap:8px"><span style="background:var(--green);color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px">✓ Em produção</span><span style="font-weight:600;font-size:13px">Fase 1 — Calculadora & Gestão Completa</span></div><span style="font-size:11px;color:var(--text2)">v1.0 · Jul 2026</span></div>
+<div style="padding:10px 14px;border-bottom:1px solid rgba(34,197,94,.1);display:flex;gap:8px"><span>🧮</span><div><div style="font-size:12px;font-weight:600">Calculadora de custos</div><div style="font-size:11px;color:var(--text2)">Filamento, energia, máquina, MO e taxas de marketplace</div></div></div>
+<div style="padding:10px 14px;border-bottom:1px solid rgba(34,197,94,.1);display:flex;gap:8px"><span>📦</span><div><div style="font-size:12px;font-weight:600">Catálogo & Produtos</div><div style="font-size:11px;color:var(--text2)">Orçamentos em PDF com sua logo em segundos</div></div></div>
+<div style="padding:10px 14px;border-bottom:1px solid rgba(34,197,94,.1);display:flex;gap:8px"><span>🏭</span><div><div style="font-size:12px;font-weight:600">Fila de produção</div><div style="font-size:11px;color:var(--text2)">8 etapas da impressão à entrega com rastreio</div></div></div>
+<div style="padding:10px 14px;display:flex;gap:8px"><span>👥</span><div><div style="font-size:12px;font-weight:600">CRM de clientes</div><div style="font-size:11px;color:var(--text2)">Histórico, métricas e importação CSV</div></div></div>
+</div>
+<div style="margin-bottom:14px;border:1px solid var(--border);border-radius:10px;overflow:hidden">
+<div style="background:var(--bg2);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;border-bottom:1px solid var(--border)"><div style="display:flex;align-items:center;gap:8px"><span style="background:var(--blue);color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px">→ Em breve</span><span style="font-weight:600;font-size:13px">Fase 2 — Atualizações Mensais</span></div><span style="font-size:11px;color:var(--text2)">Ago–Nov 2026</span></div>
+<div style="display:flex;flex-wrap:wrap;gap:10px;padding:12px 14px">
+<div style="flex:1;min-width:130px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px"><div style="font-size:10px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px">Agosto</div><div style="font-size:12px;font-weight:600;margin-bottom:2px">Relatórios avançados</div><div style="font-size:11px;color:var(--text2)">Lucro real por período e ranking</div></div>
+<div style="flex:1;min-width:130px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px"><div style="font-size:10px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px">Setembro</div><div style="font-size:12px;font-weight:600;margin-bottom:2px">Sincronização na nuvem</div><div style="font-size:11px;color:var(--text2)">Acesse de qualquer dispositivo</div></div>
+<div style="flex:1;min-width:130px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px"><div style="font-size:10px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px">Outubro</div><div style="font-size:12px;font-weight:600;margin-bottom:2px">Simulação em lote</div><div style="font-size:11px;color:var(--text2)">Custo de múltiplas peças</div></div>
+<div style="flex:1;min-width:130px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px"><div style="font-size:10px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px">Novembro</div><div style="font-size:12px;font-weight:600;margin-bottom:2px">Login com Google</div><div style="font-size:11px;color:var(--text2)">Acesse sem senha</div></div>
+</div></div>
+<div style="margin-bottom:14px;border:1px solid rgba(168,85,247,.3);border-radius:10px;overflow:hidden">
+<div style="background:rgba(168,85,247,.1);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;border-bottom:1px solid rgba(168,85,247,.2)"><div style="display:flex;align-items:center;gap:8px"><span style="background:#a855f7;color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px">Planejada</span><span style="font-weight:600;font-size:13px">Fase 3 — Inteligência Artificial & Expansão</span></div><span style="font-size:11px;color:var(--text2)">Q4 2026</span></div>
+<div style="padding:10px 14px;border-bottom:1px solid rgba(168,85,247,.1);display:flex;gap:8px"><span>🤖</span><div><div style="font-size:12px;font-weight:600">IA na plataforma</div><div style="font-size:11px;color:var(--text2)">Assistente integrado para sugestões de precificação e análise de margem</div></div></div>
+<div style="padding:10px 14px;border-bottom:1px solid rgba(168,85,247,.1);display:flex;gap:8px"><span>💬</span><div><div style="font-size:12px;font-weight:600">Assistente via WhatsApp</div><div style="font-size:11px;color:var(--text2)">Consulte seu catálogo pelo WhatsApp sem abrir o app</div></div></div>
+<div style="padding:10px 14px;border-bottom:1px solid rgba(168,85,247,.1);display:flex;gap:8px"><span>📊</span><div><div style="font-size:12px;font-weight:600">Gestão de vendas avançada</div><div style="font-size:11px;color:var(--text2)">Dashboard com metas, funil de conversão e comparativo mensal</div></div></div>
+<div style="padding:10px 14px;border-bottom:1px solid rgba(168,85,247,.1);display:flex;gap:8px"><span>🔗</span><div><div style="font-size:12px;font-weight:600">Integração com marketplaces</div><div style="font-size:11px;color:var(--text2)">Sincronização de pedidos, preços e estoque com Shopee, ML e Amazon</div></div></div>
+<div style="padding:10px 14px;display:flex;gap:8px"><span>⚡</span><div><div style="font-size:12px;font-weight:600">Pedidos automáticos na fila</div><div style="font-size:11px;color:var(--text2)">Pedidos aprovados nos marketplaces entram direto na fila de produção</div></div></div>
+</div>
+<div style="margin-bottom:20px;border:1px solid var(--border);border-radius:10px;overflow:hidden">
+<div style="background:var(--bg2);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;border-bottom:1px solid var(--border)"><div style="display:flex;align-items:center;gap:8px"><span style="background:var(--bg3);color:var(--text2);font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;border:1px solid var(--border)">Planejada</span><span style="font-weight:600;font-size:13px">Fase 4 — App Mobile APK de Gestão</span></div><span style="font-size:11px;color:var(--text2)">Q1 2027</span></div>
+<div style="padding:10px 14px;border-bottom:1px solid var(--border);display:flex;gap:8px"><span>📱</span><div><div style="font-size:12px;font-weight:600">App Android nativo</div><div style="font-size:11px;color:var(--text2)">APK completo para gestão da impressora — fila, status, pedidos e alertas</div></div></div>
+<div style="padding:10px 14px;border-bottom:1px solid var(--border);display:flex;gap:8px"><span>🖨️</span><div><div style="font-size:12px;font-weight:600">Impressão em tempo real</div><div style="font-size:11px;color:var(--text2)">Status ao vivo via integração Bambu Lab / OrcaSlicer API</div></div></div>
+<div style="padding:10px 14px;border-bottom:1px solid var(--border);display:flex;gap:8px"><span>🔔</span><div><div style="font-size:12px;font-weight:600">Notificações push</div><div style="font-size:11px;color:var(--text2)">Alertas automáticos: impressão concluída, pedido aprovado, estoque baixo</div></div></div>
+<div style="padding:10px 14px;display:flex;gap:8px"><span>📶</span><div><div style="font-size:12px;font-weight:600">Modo offline</div><div style="font-size:11px;color:var(--text2)">Funcionalidades básicas sem internet, sincroniza ao reconectar</div></div></div>
+</div>
+<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px 14px;display:flex;gap:10px;align-items:flex-start"><span style="flex-shrink:0">ℹ️</span><div style="font-size:12px;color:var(--text2);line-height:1.6"><strong style="color:var(--text)">Você está dentro antes de todo mundo.</strong> Como assinante Pro, recebe cada atualização automaticamente sem pagar a mais. O roadmap evolui com o feedback de quem usa — sua opinião conta.</div></div>
+</div>
+      </div>
+
     </main>
   </div>
 </div>
@@ -1270,11 +1267,11 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
         <span>✅ Compartilhar via WhatsApp</span>
       </div>
     </div>
-    <div style="font-size:24px;font-weight:700;color:var(--accent);margin-bottom:4px">R$ 18<span style="font-size:14px;font-weight:400;color:var(--text2)">/mês</span></div>
+    <div style="font-size:24px;font-weight:700;color:var(--accent);margin-bottom:4px">R$ 23,50<span style="font-size:14px;font-weight:400;color:var(--text2)">/mês</span></div>
     <div style="font-size:12px;color:var(--text3);margin-bottom:20px">Cancele quando quiser · 7 dias de garantia</div>
     <div class="modal-footer" style="justify-content:center;gap:10px">
       <button class="btn btn-ghost" onclick="closeModal('modal-upgrade')">Agora não</button>
-      <a href="https://pay.kiwify.com.br/bRJAryH" target="_blank" class="btn btn-primary" style="text-decoration:none">Assinar agora →</a>
+      <a href="https://pay.kiwify.com.br/8epGftp" target="_blank" class="btn btn-primary" style="text-decoration:none">Assinar agora →</a>
     </div>
   </div>
 </div>
@@ -1297,11 +1294,11 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
         <span>✅ Compartilhar via WhatsApp</span>
       </div>
     </div>
-    <div style="font-size:24px;font-weight:700;color:var(--accent);margin-bottom:4px">R$ 18<span style="font-size:14px;font-weight:400;color:var(--text2)">/mês</span></div>
+    <div style="font-size:24px;font-weight:700;color:var(--accent);margin-bottom:4px">R$ 23,50<span style="font-size:14px;font-weight:400;color:var(--text2)">/mês</span></div>
     <div style="font-size:12px;color:var(--text3);margin-bottom:20px">Cancele quando quiser · 7 dias de garantia</div>
     <div class="modal-footer" style="justify-content:center;gap:10px">
       <button class="btn btn-ghost" onclick="closeModal('modal-upgrade')">Agora não</button>
-      <a href="https://pay.kiwify.com.br/bRJAryH" target="_blank" class="btn btn-primary" style="text-decoration:none">Assinar agora →</a>
+      <a href="https://pay.kiwify.com.br/8epGftp" target="_blank" class="btn btn-primary" style="text-decoration:none">Assinar agora →</a>
     </div>
   </div>
 </div>
@@ -1335,14 +1332,28 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
           <option value="">Selecione ou crie no CRM</option>
         </select>
       </div>
-      <div class="field full"><label>Produto</label>
+      <div class="field full"><label>Preencher a partir de produto salvo</label>
         <select id="orc-produto" onchange="preencherOrcProduto()" style="width:100%">
-          <option value="">Selecione um produto salvo</option>
+          <option value="">Selecionar produto salvo (opcional)</option>
         </select>
       </div>
-      <div class="field"><label>Quantidade</label><input type="number" id="orc-qtd" value="1" min="1" oninput="calcOrcTotal()"></div>
-      <div class="field"><label>Preço unitário (R$)</label><input type="number" id="orc-preco" value="0" step="0.01" oninput="calcOrcTotal()"></div>
-      <div class="field"><label>Desconto (%)</label><input type="number" id="orc-desc" value="0" min="0" max="100" oninput="calcOrcTotal()"></div>
+      <div class="field full">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <label style="margin-bottom:0">Itens do orçamento</label>
+          <button type="button" onclick="addOrcItem()" class="btn btn-ghost btn-sm" style="font-size:12px">+ Adicionar item</button>
+        </div>
+        <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--rsm);padding:8px;margin-bottom:6px">
+          <div style="display:grid;grid-template-columns:1fr 56px 90px 70px 28px;gap:4px;margin-bottom:6px;padding:0 4px">
+            <span style="font-size:10px;color:var(--text2);font-weight:600">PRODUTO/SERVIÇO</span>
+            <span style="font-size:10px;color:var(--text2);font-weight:600;text-align:center">QTD</span>
+            <span style="font-size:10px;color:var(--text2);font-weight:600;text-align:right">PREÇO UNIT.</span>
+            <span style="font-size:10px;color:var(--text2);font-weight:600;text-align:right">SUBTOTAL</span>
+            <span></span>
+          </div>
+          <div id="orc-itens-container"></div>
+        </div>
+      </div>
+      <div class="field"><label>Desconto geral (%)</label><input type="number" id="orc-desc" value="0" min="0" max="100" oninput="calcOrcTotal()"></div>
       <div class="field"><label>Total</label><input type="text" id="orc-total" readonly style="opacity:.7"></div>
       <div class="field full"><label>Marketplace / Canal</label>
         <select id="orc-mp" style="width:100%">
@@ -1556,22 +1567,16 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
     <div class="form-grid">
       <div class="field full"><label>Nome</label><input type="text" id="mf-nome" placeholder="PLA ESUN Preto"></div>
       <div class="field"><label>Marca</label><input type="text" id="mf-marca" placeholder="ESUN"></div>
-      <div class="field"><label>Cor do filamento</label>
-        <div style="display:flex;gap:8px;align-items:center">
-          <input type="text" id="mf-cor" placeholder="Ex: Preto, Azul Royal" style="flex:1" oninput="syncColorPickerFromText()">
-          <input type="color" id="mf-cor-picker" value="#888888" oninput="syncColorPickerToText()" title="Escolher cor" style="width:36px;height:36px;padding:2px;border:1px solid var(--border);border-radius:6px;background:var(--bg3);cursor:pointer">
-        </div>
-      </div>
+      <div class="field"><label>Cor do filamento</label><div style="display:flex;align-items:center;gap:8px"><input type="color" id="mf-cor-picker" value="#cccccc" oninput="document.getElementById('mf-cor').value=this.value" style="width:36px;height:36px;border:none;background:none;cursor:pointer;padding:0;border-radius:6px"><input type="text" id="mf-cor" placeholder="#cccccc ou Nome" oninput="syncColorPicker()" style="flex:1"></div></div>
       <div class="field"><label>Tipo</label><select id="mf-tipo">
         <option>PLA</option><option>PLA+</option><option>Silk PLA</option><option>Matte PLA</option><option>Tough PLA</option>
-        <option>ABS</option><option>ABS+</option><option>PETG</option><option>ASA</option><option>TPU</option><option>TPE</option>
-        <option>PA (Nylon)</option><option>PA-CF</option><option>PA-GF</option><option>PC</option><option>PC-ABS</option>
-        <option>PP</option><option>HIPS</option><option>PVA</option><option>BVOH</option>
-        <option>PEEK</option><option>PEKK</option><option>PEI (ULTEM)</option>
+        <option>ABS</option><option>ABS+</option><option>PETG</option><option>ASA</option>
+        <option>TPU</option><option>TPE</option><option>PA (Nylon)</option><option>PA-CF</option><option>PA-GF</option>
+        <option>PC</option><option>PC-ABS</option><option>PP</option><option>HIPS</option>
+        <option>PVA</option><option>BVOH</option><option>PEEK</option><option>PEKK</option><option>PEI (ULTEM)</option>
         <option>Carbon Fiber</option><option>Glass Fiber</option><option>Wood</option><option>Marble</option>
         <option>Metal Fill</option><option>Glow in the Dark</option><option>Conductive PLA</option>
-        <option>ESD Safe</option><option>Recycled PLA</option><option>Recycled PETG</option>
-        <option>Outro</option>
+        <option>ESD Safe</option><option>Recycled PLA</option><option>Recycled PETG</option><option>Outro</option>
       </select></div>
       <div class="field"><label>Custo do carretel (R$)</label><input type="number" id="mf-custo" value="120" step="0.50"></div>
       <div class="field"><label>Peso do carretel (g)</label><input type="number" id="mf-peso" value="1000"></div>
@@ -1755,16 +1760,21 @@ async function loadSupabaseData(){
   }));
 
   // Orçamentos
-  DB.orcamentos = (orcamentos || []).map(o=>({
-    id: o.id, clienteId: o.cliente_id, clienteNome: o.cliente_nome||'Cliente não informado',
-    clienteWpp: o.cliente_wpp||'', produtoNome: o.produto_nome||'',
-    produtoId: o.produto_id||null,
-    qtd: o.qtd||1, preco: o.preco||0, desc: o.desconto||0,
-    total: o.total||0, marketplace: o.marketplace||'', obs: o.obs||'',
-    validade: o.validade||'', status: o.status||'pendente',
-    data: o.data||new Date(o.created_at).toLocaleDateString('pt-BR'),
-    ts: new Date(o.created_at).getTime()
-  }));
+  DB.orcamentos = (orcamentos || []).map(o=>{
+    let itens=null;
+    if(o.itens){try{itens=typeof o.itens==='string'?JSON.parse(o.itens):o.itens;}catch{itens=null;}}
+    if(!itens){itens=[{nome:o.produto_nome||'Item',qtd:o.qtd||1,preco:o.preco||0}];}
+    return {
+      id: o.id, clienteId: o.cliente_id, clienteNome: o.cliente_nome||'Cliente não informado',
+      clienteWpp: o.cliente_wpp||'', produtoNome: o.produto_nome||'',
+      produtoId: o.produto_id||null, itens,
+      qtd: o.qtd||1, preco: o.preco||0, desc: o.desconto||0,
+      total: o.total||0, marketplace: o.marketplace||'', obs: o.obs||'',
+      validade: o.validade||'', status: o.status||'pendente',
+      data: o.data||new Date(o.created_at).toLocaleDateString('pt-BR'),
+      ts: new Date(o.created_at).getTime()
+    };
+  });
 
   // Fila
   DB.fila = (fila || []).map(f=>({
@@ -1848,13 +1858,10 @@ async function salvar(){
 async function saveFil(){
   const uid = _currentUser.id;
   const editId = editFilId;
-  const pickerEl = document.getElementById('mf-cor-picker');
-  const hexCor = pickerEl ? pickerEl.value : '#888888';
   const fil = {
     nome: document.getElementById('mf-nome').value.trim(),
     marca: document.getElementById('mf-marca').value.trim(),
     cor: document.getElementById('mf-cor').value.trim(),
-    hexCor: hexCor,
     tipo: document.getElementById('mf-tipo').value,
     custo: parseFloat(document.getElementById('mf-custo').value)||0,
     peso: parseInt(document.getElementById('mf-peso').value)||1000,
@@ -1925,51 +1932,64 @@ async function saveOrcamento(){
   const editId = document.getElementById('modal-orc').dataset.editId||null;
   const cliId = document.getElementById('orc-cliente').value;
   const cli = DB.clientes.find(c=>String(c.id)===String(cliId));
-  const prodId = document.getElementById('orc-produto').value;
-  const prod = DB.produtos.find(p=>String(p.id)===String(prodId));
-  const qtd = parseInt(document.getElementById('orc-qtd').value)||1;
-  const preco = parseFloat(document.getElementById('orc-preco').value)||0;
   const desc = parseFloat(document.getElementById('orc-desc').value)||0;
-  const total = qtd*preco*(1-desc/100);
-  const prodNome = prod?prod.nome:(document.getElementById('orc-produto').options[document.getElementById('orc-produto').selectedIndex]?.text||'Produto não informado');
+
+  const itens = getOrcItens().filter(i=>i.nome&&i.preco>0);
+  if(!itens.length){ notify('Adicione pelo menos um item com nome e preço','red'); return; }
+
+  const subtotal = itens.reduce((s,i)=>s+i.qtd*i.preco, 0);
+  const total = subtotal*(1-desc/100);
+  const prodNome = itens.map(i=>i.qtd>1?`${i.qtd}x ${i.nome}`:i.nome).join(', ');
+  const qtdTotal = itens.reduce((s,i)=>s+i.qtd, 0);
+
   const payload = {
     cliente_id: cliId||null,
     cliente_nome: cli?cli.nome:'Cliente não informado',
     cliente_wpp: cli?cli.wpp:'',
-    produto_nome: prodNome, produto_id: prodId||null, qtd, preco, desconto: desc, total,
+    produto_nome: prodNome,
+    qtd: qtdTotal,
+    preco: itens[0].preco,
+    desconto: desc,
+    total,
     marketplace: document.getElementById('orc-mp').value,
     obs: document.getElementById('orc-obs').value.trim(),
     validade: document.getElementById('orc-validade').value,
   };
 
   if(editId){
-    const {error}=await _supa.from('orcamentos').update(payload).eq('id',editId);
+    let upPayload = {...payload, itens: JSON.stringify(itens)};
+    let {error}=await _supa.from('orcamentos').update(upPayload).eq('id',editId);
+    if(error&&error.message&&error.message.includes('itens')){
+      ({error}=await _supa.from('orcamentos').update(payload).eq('id',editId));
+    }
     if(error){notify('Erro: '+error.message,'red');return;}
     DB.orcamentos=DB.orcamentos.map(o=>String(o.id)===String(editId)?{...o,
       clienteId:cliId,clienteNome:payload.cliente_nome,clienteWpp:payload.cliente_wpp,
-      produtoId:prodId,produtoNome:prodNome,qtd,preco,desc,total,
-      marketplace:payload.marketplace,obs:payload.obs,validade:payload.validade}:o);
+      produtoId:null,produtoNome:prodNome,qtd:qtdTotal,preco:itens[0].preco,desc,total,
+      itens,marketplace:payload.marketplace,obs:payload.obs,validade:payload.validade}:o);
     delete document.getElementById('modal-orc').dataset.editId;
     document.getElementById('modal-orc').querySelector('.modal-title').textContent='Novo orçamento';
     closeModal('modal-orc');notify('Orçamento atualizado!');renderOrcamentos();
     return;
   }
 
-  const { data, error } = await _supa.from('orcamentos').insert({
-    user_id: uid, ...payload,
-    status: 'pendente',
-    data: new Date().toLocaleDateString('pt-BR'),
-  }).select().single();
-
+  let insPayload = {user_id:uid,...payload,status:'pendente',itens:JSON.stringify(itens)};
+  let { data, error } = await _supa.from('orcamentos').insert(insPayload).select().single();
+  if(error&&error.message&&error.message.includes('itens')){
+    ({data,error}=await _supa.from('orcamentos').insert({user_id:uid,...payload,status:'pendente'}).select().single());
+  }
   if(error){ notify('Erro: '+error.message,'red'); return; }
 
   DB.orcamentos.unshift({
     id: data.id, clienteId: cliId, clienteNome: payload.cliente_nome,
-    clienteWpp: payload.cliente_wpp, produtoId: prodId, produtoNome: prodNome,
-    qtd, preco, desc, total,
-    marketplace: data.marketplace, obs: data.obs,
-    validade: data.validade, status: 'pendente',
-    data: data.data, ts: new Date(data.created_at).getTime()
+    clienteWpp: payload.cliente_wpp, produtoId: null, produtoNome: prodNome,
+    qtd: qtdTotal, preco: itens[0].preco, desc, total, itens,
+    marketplace: data.marketplace||payload.marketplace,
+    obs: data.obs||payload.obs,
+    validade: data.validade||payload.validade,
+    status: 'pendente',
+    data: new Date(data.created_at).toLocaleDateString('pt-BR'),
+    ts: new Date(data.created_at).getTime()
   });
   closeModal('modal-orc'); notify('Orçamento salvo!'); renderOrcamentos();
 }
@@ -2036,34 +2056,11 @@ async function saveFila(){
   const cliId = document.getElementById('fp-cliente').value;
   const cli = DB.clientes.find(c=>c.id==cliId);
 
-  const nomeProduto = document.getElementById('fp-produto').value.trim()||'Pedido sem nome';
-  const qtdPedido = parseInt(document.getElementById('fp-qtd').value)||1;
-
-  // Verificar estoque de filamento
-  if(!editId){
-    const prodMatch = DB.produtos.find(p=>(p.nome||'').toLowerCase()===nomeProduto.toLowerCase());
-    if(prodMatch && prodMatch.gramas){
-      const gramasNecessarias = prodMatch.gramas * qtdPedido;
-      if(!DB.estoque) DB.estoque=[];
-      const filNome = prodMatch.filamento||'';
-      const estFil = DB.estoque.find(e=>(e.nome||'').toLowerCase().includes(filNome.toLowerCase()) || (e.nome||'')===(filNome));
-      if(estFil){
-        const gramasDisponiveis = (estFil.qtd||0) * ((estFil.peso||1000));
-        if(gramasNecessarias > gramasDisponiveis){
-          const faltam = gramasNecessarias - gramasDisponiveis;
-          if(!confirm(`⚠️ Estoque insuficiente!\n\nFilamento: ${estFil.nome}\nNecessário: ${gramasNecessarias.toFixed(0)}g\nDisponível: ${gramasDisponiveis.toFixed(0)}g\nFaltam: ${faltam.toFixed(0)}g\n\nDeseja salvar o pedido mesmo assim?`)){
-            return;
-          }
-        }
-      }
-    }
-  }
-
   const payload = {
-    produto: nomeProduto,
+    produto: document.getElementById('fp-produto').value.trim()||'Pedido sem nome',
     cliente_id: cliId||null,
     cliente_nome: cli?cli.nome:'—',
-    qtd: qtdPedido,
+    qtd: parseInt(document.getElementById('fp-qtd').value)||1,
     prazo: document.getElementById('fp-prazo').value,
     status: document.getElementById('fp-status').value,
     obs: document.getElementById('fp-obs').value.trim(),
@@ -2080,9 +2077,62 @@ async function saveFila(){
     if(data) DB.fila.unshift({...payload, id: data.id, clienteId: payload.cliente_id, clienteNome: payload.cliente_nome, ts: Date.now()});
   }
   closeModal('modal-fila'); renderFila(); notify('Pedido salvo!');
+  // Verificar estoque de filamento para o produto
+  verificarEstoqueFilamento(payload.produto, payload.qtd);
 }
 
 /* ── AVANÇAR STATUS FILA ─────────────────────────────── */
+function verificarEstoqueFilamento(nomeProduto, qtdPedido){
+  // Encontrar produto no catálogo pelo nome
+  const prod = DB.produtos.find(p => p.nome === nomeProduto);
+  if(!prod || !prod.filamento || !prod.gramas) return; // sem dados suficientes
+
+  const gramasNecessarios = (prod.gramas || 0) * (qtdPedido || 1);
+  if(gramasNecessarios <= 0) return;
+
+  // Encontrar filamento no estoque pelo nome/tipo
+  const estoque = DB.estoque || [];
+  const filamentoNome = (prod.filamento || '').toLowerCase();
+
+  // Soma total disponível: qtd carretéis × peso do carretel (buscado nos filamentos cadastrados)
+  let gramasDisponiveis = 0;
+  estoque.forEach(e => {
+    const match = (e.nome||'').toLowerCase().includes(filamentoNome) ||
+                  filamentoNome.includes((e.tipo||'').toLowerCase());
+    if(match && e.qtd > 0) {
+      // Peso do carretel: buscar no cadastro de filamentos
+      const filCad = DB.filamentos.find(f => f.nome === e.nome || f.id === e.id);
+      const pesoPorCarretel = filCad ? (filCad.peso || 1000) : 1000;
+      gramasDisponiveis += e.qtd * pesoPorCarretel;
+    }
+  });
+
+  if(gramasDisponiveis === 0) return; // sem estoque cadastrado — não alertar
+
+  if(gramasNecessarios > gramasDisponiveis) {
+    const faltam = (gramasNecessarios - gramasDisponiveis).toFixed(0);
+    const temg = gramasDisponiveis.toFixed(0);
+    const precisag = gramasNecessarios.toFixed(0);
+    // Popup de aviso
+    const popup = document.createElement('div');
+    popup.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:9999';
+    popup.innerHTML = `<div style="background:var(--bg2);border:2px solid var(--red);border-radius:16px;padding:28px;max-width:380px;width:90%;text-align:center">
+      <div style="font-size:40px;margin-bottom:12px">⚠️</div>
+      <div style="font-size:16px;font-weight:700;color:var(--red);margin-bottom:8px">Filamento insuficiente!</div>
+      <div style="font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:16px">
+        Para imprimir <strong>${qtdPedido}× ${nomeProduto}</strong> são necessários <strong>${precisag}g</strong> de <strong>${prod.filamento}</strong>.<br><br>
+        Estoque disponível: <strong style="color:var(--red)">${temg}g</strong><br>
+        Faltam: <strong style="color:var(--red)">${faltam}g</strong>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:center">
+        <button onclick="showPage('filamentos');this.closest('[style*=inset]').remove()" style="padding:8px 18px;background:var(--accent);color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:600">Ver estoque</button>
+        <button onclick="this.closest('[style*=inset]').remove()" style="padding:8px 18px;background:var(--bg3);color:var(--text);border:1px solid var(--border);border-radius:8px;cursor:pointer">OK</button>
+      </div>
+    </div>`;
+    document.body.appendChild(popup);
+  }
+}
+
 async function avancarStatus(id){
   const order=['aguardando','fatiando','imprimindo','pos_processo','pronto','ag_envio','enviado','entregue'];
   const item = DB.fila.find(x=>String(x.id)===String(id)); if(!item) return;
@@ -2284,6 +2334,12 @@ async function verificarAcesso(){
 
   // Aplicar bloqueio de módulos por plano
   aplicarBloqueioPlano(profile);
+
+  // Backup JSON: somente admins
+  const backupCard = document.getElementById('backup-dados-card');
+  if(backupCard){
+    backupCard.style.display = (profile.role === 'admin') ? '' : 'none';
+  }
 }
 
 /* ── CONTROLE DE ACESSO POR PLANO ─────────────────────── */
@@ -2313,29 +2369,44 @@ function diasRestantesTrial(profile){
 }
 
 function aplicarBloqueioPlano(profile){
-  const pro = temAcesso(profile);
-  const dias = diasRestantesTrial(profile);
   const plano = profile?.plan || 'free';
+  const isInterno = plano === 'interno';
+  const dias = diasRestantesTrial(profile);
 
-  // Módulos bloqueados para plano free/trial expirado
-  const modulosBloqueados = ['crm','orcamentos','pedidos','fila','comparar','relatorio'];
+  // profile.modules configurado pelo admin tem prioridade sobre o plano
+  const adminMods = Array.isArray(profile?.modules) && profile.modules.length > 0
+    ? profile.modules : null;
 
-  modulosBloqueados.forEach(mod => {
-    const nav = document.getElementById('nav-'+mod);
+  // nav ID → módulo necessário para acesso
+  const NAV_MOD = {
+    'crm':       'crm',
+    'orcamentos':'pdf',
+    'pedidos':   'crm',
+    'fila':      'fila',
+    'comparar':  'calc',
+    'relatorio': 'relatorio',
+  };
+
+  const getAcesso = (slug) => {
+    if(adminMods) return adminMods.includes(slug); // admin config tem prioridade total
+    if(isInterno) return true;                     // interno sem config específica: tudo
+    return temAcesso(profile);
+  };
+
+  Object.entries(NAV_MOD).forEach(([navId, slug]) => {
+    const nav = document.getElementById('nav-'+navId);
     if(!nav) return;
-    if(pro){
+    if(getAcesso(slug)){
       nav.style.opacity = '';
-      nav.onclick = function(){ showPage(mod); };
-      // remover badge de cadeado se existir
+      nav.onclick = function(){ showPage(navId); };
       const badge = nav.querySelector('.plan-lock');
       if(badge) badge.remove();
     } else {
       nav.style.opacity = '0.5';
-      // adicionar cadeado se não existir
       if(!nav.querySelector('.plan-lock')){
         const lock = document.createElement('span');
         lock.className = 'plan-lock';
-        lock.textContent = '🔒';
+        lock.textContent = '\u{1F512}';
         lock.style.cssText = 'margin-left:auto;font-size:11px';
         nav.appendChild(lock);
       }
@@ -2343,7 +2414,7 @@ function aplicarBloqueioPlano(profile){
     }
   });
 
-  // Mostrar banner de trial se ainda ativo
+  const pro = (adminMods && adminMods.length > 0) || isInterno || temAcesso(profile);
   const banner = document.getElementById('trial-banner');
   if(banner){
     if(!pro && dias > 0){
@@ -2351,16 +2422,14 @@ function aplicarBloqueioPlano(profile){
       const el = document.getElementById('trial-dias');
       if(el) el.textContent = dias === 1 ? '1 dia' : dias+' dias';
     } else if(!pro && dias === 0){
-      // Trial expirado
       banner.style.display = 'flex';
       banner.style.background = 'var(--red)';
-      banner.innerHTML = '<span>⚠️ Seu trial expirou. <strong>Assine o MoneyFlow 3D Pro por R$ 18/mês</strong> para continuar usando todos os módulos.</span><a href="https://pay.kiwify.com.br/bRJAryH" target="_blank" style="color:#fff;font-weight:700;text-decoration:underline;white-space:nowrap;margin-left:12px">Assinar agora →</a>';
+      banner.innerHTML = '<span>Seu trial expirou. Assine o MoneyFlow 3D Pro por R$ 23,50/mes para continuar.</span><a href="https://pay.kiwify.com.br/8epGftp" target="_blank" style="color:#fff;font-weight:700;text-decoration:underline;white-space:nowrap;margin-left:12px">Assinar agora</a>';
     } else {
       banner.style.display = 'none';
     }
   }
 }
-
 function abrirModalUpgrade(){
   const dias = diasRestantesTrial(_userProfile);
   const expirou = dias === 0;
@@ -2368,8 +2437,8 @@ function abrirModalUpgrade(){
   if(m){
     document.getElementById('upgrade-titulo').textContent = expirou ? 'Acesso bloqueado' : 'Módulo exclusivo Pro';
     document.getElementById('upgrade-msg').textContent = expirou
-      ? 'Seu acesso expirou. Assine o MoneyFlow 3D Pro por R$ 18/mês e desbloqueie tudo. Garantia de 7 dias com reembolso total.'
-      : 'Este módulo está disponível no plano Pro. Aproveite a oferta de fundador: R$ 18/mês para sempre (sobe para R$ 36/mês após os 50 primeiros).';
+      ? 'Seu acesso expirou. Assine o MoneyFlow 3D Pro por R$ 23,50/mês e desbloqueie tudo. Garantia de 7 dias com reembolso total.'
+      : 'Este módulo está disponível no plano Pro. Aproveite a oferta de fundador: R$ 23,50/mês para sempre (sobe para R$ 47/mês após os 50 primeiros).';
     m.classList.add('open');
   }
 }
@@ -2422,7 +2491,7 @@ function closeSidebar(){
 }
 
 /* ── NAVIGATION ─────────────────────────────────────── */
-const PAGE_TITLES={dashboard:'Dashboard',calc:'Nova precificação',produtos:'Produtos',pedidos:'Painel de pedidos',comparar:'Comparar',relatorio:'Relatório',config:'Máquina & custos',filamentos:'Filamentos & estoque',importar:'Importar dados',settings:'Configurações',orcamentos:'Orçamentos',crm:'Clientes (CRM)',fila:'Fila de produção'};
+const PAGE_TITLES={roadmap:'O que vem por aí',dashboard:'Dashboard',calc:'Nova precificação',produtos:'Produtos',pedidos:'Painel de pedidos',comparar:'Comparar',relatorio:'Relatório',config:'Máquina & custos',filamentos:'Filamentos & estoque',importar:'Importar dados',settings:'Configurações',orcamentos:'Orçamentos',crm:'Clientes (CRM)',fila:'Fila de produção'};
 function showPage(p){
   document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(x=>x.classList.remove('active'));
@@ -2683,11 +2752,20 @@ function renderDashboard(){
   const avgM=ps.length?(ps.reduce((a,b)=>a+b.margem,0)/ps.length).toFixed(1):0;
   const best=ps.length?ps.reduce((a,b)=>a.margem>b.margem?a:b):null;
   const mc=avgM>30?'green':avgM>15?'yellow':'red';
+  const fila=DB.fila||[];
+  const pedidosAtivos=fila.filter(x=>!['entregue','cancelado'].includes(x.status)).length;
+  const pedidosProntos=fila.filter(x=>x.status==='pronto'||x.status==='ag_envio').length;
+  const pedidosImprimindo=fila.filter(x=>x.status==='imprimindo'||x.status==='fatiando').length;
+  const pedidosAguardando=fila.filter(x=>x.status==='aguardando').length;
   document.getElementById('dash-metrics').innerHTML=`
     <div class="metric"><div class="metric-label">Produtos</div><div class="metric-value">${ps.length}</div></div>
     <div class="metric"><div class="metric-label">Margem média</div><div class="metric-value ${mc}">${avgM}%</div></div>
     <div class="metric"><div class="metric-label">Melhor produto</div><div class="metric-value" style="font-size:14px;line-height:1.3">${best?best.nome:'—'}</div></div>
-    <div class="metric"><div class="metric-label">Filamentos</div><div class="metric-value">${DB.filamentos.length}</div></div>`;
+    <div class="metric"><div class="metric-label">Filamentos</div><div class="metric-value">${DB.filamentos.length}</div></div>
+    <div class="metric"><div class="metric-label">Pedidos ativos</div><div class="metric-value ${pedidosAtivos>0?'yellow':''}">${pedidosAtivos}</div></div>
+    <div class="metric" onclick="showPage('fila')" style="cursor:pointer" title="Ver fila"><div class="metric-label">Aguardando</div><div class="metric-value">${pedidosAguardando}</div></div>
+    <div class="metric" onclick="showPage('fila')" style="cursor:pointer" title="Ver fila"><div class="metric-label">Imprimindo</div><div class="metric-value blue">${pedidosImprimindo}</div></div>
+    <div class="metric" onclick="showPage('fila')" style="cursor:pointer" title="Ver fila"><div class="metric-label">Prontos/Envio</div><div class="metric-value green">${pedidosProntos}</div></div>`;
   const sorted=[...ps].sort((a,b)=>b.margem-a.margem).slice(0,6);
   const maxM=sorted.length?Math.max(...sorted.map(x=>x.margem)):1;
   document.getElementById('dash-chart').innerHTML=sorted.length?sorted.map(p=>{
@@ -2696,44 +2774,6 @@ function renderDashboard(){
   }).join(''):'<div style="color:var(--text3);font-size:13px;padding:12px 0;text-align:center">Nenhum produto ainda</div>';
   document.getElementById('dash-recentes').innerHTML=ps.slice(0,5).map(p=>`
     <div class="br-row"><span class="br-label">${p.nome}</span><span style="font-size:12px;color:var(--text2)">R$ ${p.precoBase.toFixed(2)}</span></div>`).join('')||'<div style="color:var(--text3);font-size:13px;padding:8px 0">Nenhum produto ainda</div>';
-
-  // ── WIDGET FILA ──
-  const fila=DB.fila||[];
-  const filaStatus=['aguardando','fatiando','imprimindo','pos_processo','pronto','ag_envio','enviado'];
-  const filaContadores={aguardando:0,fatiando:0,imprimindo:0,pos_processo:0,pronto:0,ag_envio:0,enviado:0};
-  fila.forEach(f=>{if(filaContadores[f.status]!==undefined)filaContadores[f.status]++;});
-  const filaLabels={aguardando:'Aguardando',fatiando:'Fatiando',imprimindo:'Imprimindo',pos_processo:'Pós-proc.',pronto:'Pronto',ag_envio:'Ag. Envio',enviado:'Enviado'};
-  const filaCores={aguardando:'var(--text3)',fatiando:'var(--blue)',imprimindo:'var(--accent)',pos_processo:'var(--yellow)',pronto:'var(--green)',ag_envio:'#f472b6',enviado:'#38bdf8'};
-  const filaMEl=document.getElementById('dash-fila-metrics');
-  if(filaMEl) filaMEl.innerHTML=filaStatus.map(s=>`
-    <div style="background:var(--bg3);border-radius:var(--rsm);padding:10px 12px;text-align:center">
-      <div style="font-size:20px;font-weight:800;color:${filaCores[s]}">${filaContadores[s]}</div>
-      <div style="font-size:10px;color:var(--text3);margin-top:2px">${filaLabels[s]}</div>
-    </div>`).join('');
-  const ativas=fila.filter(f=>!['entregue'].includes(f.status)).slice(0,5);
-  const filaListaEl=document.getElementById('dash-fila-lista');
-  if(filaListaEl) filaListaEl.innerHTML=ativas.length?ativas.map(f=>`
-    <div class="br-row"><span class="br-label">${f.produto}</span><span style="font-size:12px;color:${filaCores[f.status]||'var(--text3)'}">${filaLabels[f.status]||f.status}</span></div>`).join(''):'<div style="color:var(--text3);font-size:13px;padding:8px 0">Nenhum pedido ativo na fila</div>';
-
-  // ── WIDGET ESTOQUE FILAMENTOS ──
-  const estoque=DB.estoque||[];
-  const estoqueListaEl=document.getElementById('dash-estoque-lista');
-  if(estoqueListaEl){
-    if(!estoque.length){
-      estoqueListaEl.innerHTML='<div style="color:var(--text3);font-size:13px;padding:8px 0">Nenhum carretel registrado</div>';
-    } else {
-      const baixos=estoque.filter(e=>e.qtd<=e.min);
-      let html='';
-      if(baixos.length) html+=`<div style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:var(--rsm);padding:8px 12px;margin-bottom:8px;font-size:12px;color:var(--red)">⚠️ ${baixos.length} filamento${baixos.length!==1?'s':''} com estoque baixo</div>`;
-      html+=estoque.slice(0,6).map(e=>{
-        const filMatch=DB.filamentos.find(f=>String(f.id)===String(e.filId||e.id));
-        const dotColor=filMatch&&filMatch.hexCor?filMatch.hexCor:'#888888';
-        const low=e.qtd<=e.min;
-        return`<div class="br-row"><span class="br-label" style="display:flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:${dotColor};display:inline-block;flex-shrink:0"></span>${e.nome}</span><span style="font-size:12px;color:${low?'var(--red)':'var(--text2)'};font-weight:${low?'700':'400'}">${e.qtd} carretel${e.qtd!==1?'s':''}</span></div>`;
-      }).join('');
-      estoqueListaEl.innerHTML=html;
-    }
-  }
 }
 
 /* ── PRODUTOS ───────────────────────────────────────── */
@@ -2804,8 +2844,11 @@ function criarOrcamentoProduto(id){
   showPage('orcamentos');
   setTimeout(()=>{
     openOrcModal();
-    document.getElementById('orc-produto').value=id;
-    document.getElementById('orc-preco').value=(p.precoBase||0).toFixed(2);
+    if(p){
+      const container=document.getElementById('orc-itens-container');
+      container.innerHTML='';
+      addOrcItem(p.nome,1,p.precoBase||0);
+    }
     calcOrcTotal();
   },100);
 }
@@ -2831,60 +2874,33 @@ function renderFilamentos(){
     }
   }
   document.getElementById('fil-empty').style.display=shown?'none':'block';
-  const BADGE_GRAY={bg:'rgba(148,163,184,.15)',text:'#94a3b8'};
+  const FIL_BADGE={bg:'rgba(148,163,184,.15)',text:'#94a3b8'};
   document.getElementById('fil-tbody').innerHTML=fs.map(f=>{
-    const dotColor=f.hexCor&&f.hexCor.startsWith('#')?f.hexCor:'#888888';
-    const corLabel=f.cor?`<span style="display:inline-flex;align-items:center;gap:5px"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${dotColor};border:1px solid rgba(255,255,255,.2);flex-shrink:0"></span>${f.cor}</span>`:'—';
+    const corDot = (f.cor&&f.cor.startsWith('#')) ? f.cor : null;
+    const dotHtml = corDot
+      ? `<span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:${corDot};border:1px solid rgba(0,0,0,.2);vertical-align:middle;margin-right:5px"></span>`
+      : '';
     return`<tr>
-      <td style="font-weight:600">${f.nome}</td>
+      <td style="font-weight:600">${dotHtml}${f.nome}</td>
       <td style="color:var(--text2)">${f.marca||'—'}</td>
-      <td style="color:var(--text2)">${corLabel}</td>
-      <td><span style="display:inline-block;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700;background:${BADGE_GRAY.bg};color:${BADGE_GRAY.text}">${f.tipo}</span></td>
+      <td style="color:var(--text2)">${corDot?`<span style="display:inline-flex;align-items:center;gap:5px"><span style="display:inline-block;width:14px;height:14px;border-radius:3px;background:${corDot};border:1px solid rgba(0,0,0,.15)"></span>${f.cor}</span>`:f.cor||'—'}</td>
+      <td><span style="display:inline-block;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700;background:${FIL_BADGE.bg};color:${FIL_BADGE.text}">${f.tipo}</span></td>
       <td>${f.custo>0?'R$ '+(f.custo/(f.peso/1000)).toFixed(2):'<span style="color:var(--accent);font-size:11px">cadastrar preço</span>'}</td>
       <td style="color:var(--text2)">${f.custo>0?'R$ '+(f.custo/f.peso).toFixed(4):'—'}</td>
       <td style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn btn-ghost btn-sm" onclick="editFil('${f.id}')">Editar</button><button class="btn btn-danger btn-sm" onclick="delFil('${f.id}')">✕</button></td>
     </tr>`;
   }).join('');
 }
+function syncColorPicker(){
+  const hex=document.getElementById('mf-cor')?.value;
+  const picker=document.getElementById('mf-cor-picker');
+  if(picker&&hex&&/^#[0-9A-Fa-f]{6}$/.test(hex))picker.value=hex;
+}
+
 function delFil(id){
   if(!confirm('Excluir este filamento?'))return;
   DB.filamentos=DB.filamentos.filter(x=>String(x.id)!==String(id));
   saveDB();renderFilamentos();notify('Filamento removido','red');
-}
-const _COR_MAP={
-  'amarelo':'#FFD700','amarelo claro':'#FFE566','amarelo escuro':'#CC9900',
-  'amarelo fluorescente':'#FFFF00','dourado':'#D4A017',
-  'laranja':'#FF6B00','laranja claro':'#FFAA44','laranja fluorescente':'#FF4500',
-  'vermelho':'#DC2626','vermelho escuro':'#7F1D1D','vermelho claro':'#F87171',
-  'rosa':'#EC4899','rosa bebê':'#FFB6C1','rosa claro':'#FBCFE8',
-  'roxo':'#7C3AED','lilás':'#A78BFA','violeta':'#8B5CF6',
-  'azul':'#2563EB','azul claro':'#60A5FA','azul escuro':'#1E40AF',
-  'azul bebê':'#ADD8E6','azul royal':'#4169E1','azul celeste':'#38BDF8',
-  'ciano':'#06B6D4','turquesa':'#0D9488','teal':'#14B8A6',
-  'verde':'#16A34A','verde claro':'#4ADE80','verde escuro':'#14532D',
-  'verde limão':'#84CC16','verde fluorescente':'#39FF14','verde militar':'#4B5320',
-  'marrom':'#92400E','bege':'#D4A574','café':'#6F4E37','caramelo':'#C47C26',
-  'cinza':'#6B7280','cinza claro':'#D1D5DB','cinza escuro':'#374151',
-  'preto':'#111111','branco':'#F8F8F8','creme':'#FFF5E0',
-  'prata':'#9CA3AF','prata metálico':'#C0C0C0','bronze':'#CD7F32',
-  'natural':'#EDE9D0','transparente':'#AAAAAA','variada':'#888888','multicolor':'#888888',
-  'silk':'#B5A642','silk dourado':'#D4AF37','silk prata':'#C0C0C0',
-  'glow':'#39FF14','fosforescente':'#7FFF00',
-};
-function _resolveHex(texto){
-  if(!texto)return null;
-  const t=texto.toLowerCase().trim();
-  if(/^#[0-9a-fA-F]{6}$/.test(t))return t;
-  return _COR_MAP[t]||null;
-}
-function syncColorPickerToText(){
-  // Picker mudou → não altera o campo texto (nomes livres), só mantém o picker
-}
-function syncColorPickerFromText(){
-  const texto=(document.getElementById('mf-cor')||{}).value||'';
-  const hex=_resolveHex(texto);
-  const picker=document.getElementById('mf-cor-picker');
-  if(picker&&hex) picker.value=hex;
 }
 function editFil(id){
   const f=DB.filamentos.find(x=>String(x.id)===String(id));if(!f)return;
@@ -2892,15 +2908,12 @@ function editFil(id){
   document.getElementById('mf-nome').value=f.nome;
   document.getElementById('mf-marca').value=f.marca||'';
   document.getElementById('mf-cor').value=f.cor||'';
+  const picker=document.getElementById('mf-cor-picker');
+  if(picker&&f.cor&&f.cor.startsWith('#')&&f.cor.length===7)picker.value=f.cor;
+  else if(picker)picker.value='#cccccc';
   document.getElementById('mf-tipo').value=f.tipo;
   document.getElementById('mf-custo').value=f.custo;
   document.getElementById('mf-peso').value=f.peso;
-  const picker=document.getElementById('mf-cor-picker');
-  if(picker){
-    const savedHex=f.hexCor&&/^#[0-9a-fA-F]{6}$/.test(f.hexCor)?f.hexCor:null;
-    const mappedHex=_resolveHex(f.cor||'');
-    picker.value=savedHex||mappedHex||'#888888';
-  }
   document.getElementById('modal-fil').classList.add('open');
 }
 
@@ -2955,35 +2968,50 @@ function renderRelatorio(){
 function renderComparar(){
   if(!DB.concorrentes)DB.concorrentes=[];
   const ps=DB.produtos;
-  document.getElementById('comp-sel').innerHTML=ps.map(p=>`
-    <label style="display:inline-flex;align-items:center;gap:6px;margin:4px 8px 4px 0;font-size:13px;cursor:pointer;color:var(--text)">
-      <input type="checkbox" value="${p.id}" onchange="updateComp()" ${compSel.includes(String(p.id))?'checked':''}>${p.nome}
-    </label>`).join('')||'<div style="color:var(--text3);font-size:13px">Nenhum produto cadastrado</div>';
-  // Atualizar filtro de concorrente
-  const benchFiltroCard=document.getElementById('bench-filtro-card');
-  const benchConcFilter=document.getElementById('bench-conc-filter');
-  if(benchConcFilter){
-    const valorAtual=benchConcFilter.value;
-    benchConcFilter.innerHTML='<option value="">Todos os concorrentes</option>'+DB.concorrentes.map(c=>`<option value="${c.id}">${c.nome}${c.loja?' — '+c.loja:''}</option>`).join('');
-    if(valorAtual) benchConcFilter.value=valorAtual;
+  const concs=DB.concorrentes;
+  // Populate product selector
+  const selProd=document.getElementById('comp-sel-prod');
+  const selConc=document.getElementById('comp-sel-conc');
+  if(selProd){
+    const curProd=selProd.value;
+    selProd.innerHTML='<option value="">— Selecione um produto —</option>'+
+      ps.map(p=>`<option value="${p.id}">${p.nome}</option>`).join('');
+    if(curProd)selProd.value=curProd;
   }
-  if(benchFiltroCard) benchFiltroCard.style.display=DB.concorrentes.length&&compSel.length?'block':'none';
-  renderBenchmark();
+  if(selConc){
+    const curConc=selConc.value;
+    selConc.innerHTML='<option value="">— Selecione um concorrente —</option>'+
+      concs.map(c=>`<option value="${c.id}">${c.nome}${c.loja?' ('+c.loja+')':''}</option>`).join('');
+    if(curConc)selConc.value=curConc;
+  }
   renderConcList();
 }
-function updateComp(){
-  compSel=Array.from(document.querySelectorAll('#comp-sel input:checked')).map(x=>x.value);
-  const benchFiltroCard=document.getElementById('bench-filtro-card');
-  if(benchFiltroCard) benchFiltroCard.style.display=(DB.concorrentes&&DB.concorrentes.length&&compSel.length)?'block':'none';
+function updateComp(){ /* selects são usados em runBenchmarkSelecionado */ }
+function renderCompResult(){ runBenchmarkSelecionado(); }
+function runBenchmarkSelecionado(){
+  const prodId=document.getElementById('comp-sel-prod')?.value;
+  const concId=document.getElementById('comp-sel-conc')?.value;
+  const el=document.getElementById('comp-result');
+  if(!prodId||!concId){
+    el.innerHTML='<div style="color:var(--text3);font-size:13px;padding:12px 0;text-align:center">Selecione um produto e um concorrente para comparar</div>';
+    return;
+  }
+  const p=DB.produtos.find(x=>String(x.id)===String(prodId));
+  const c=DB.concorrentes.find(x=>String(x.id)===String(concId));
+  if(!p||!c){el.innerHTML='';return;}
+  // Reutilizar lógica de renderBenchmark com os dois selecionados
+  compSel=[String(prodId)];
+  _benchSingleConc=concId;
   renderBenchmark();
+  _benchSingleConc=null;
 }
-function renderCompResult(){ renderBenchmark(); }
+let _benchSingleConc=null;
 
 function renderBenchmark(){
   var meusProdutos = DB.produtos.filter(function(x){return compSel.includes(String(x.id));});
-  var todosConc = DB.concorrentes||[];
-  var filtroConc = (document.getElementById('bench-conc-filter')||{}).value||'';
-  var concorrentes = filtroConc ? todosConc.filter(function(c){return String(c.id)===filtroConc;}) : todosConc;
+  var concorrentes = _benchSingleConc
+    ? (DB.concorrentes||[]).filter(c=>String(c.id)===String(_benchSingleConc))
+    : DB.concorrentes||[];
   var el = document.getElementById('comp-result');
   if(!meusProdutos.length && !concorrentes.length){el.innerHTML='';return;}
   if(!meusProdutos.length){el.innerHTML='<div style="color:var(--text3);font-size:13px;padding:12px 0">Selecione um produto acima para ver o benchmark</div>';return;}
@@ -3082,13 +3110,6 @@ function renderConcList(){
   if(!DB.concorrentes)DB.concorrentes=[];
   const cs=DB.concorrentes;
   document.getElementById('conc-empty').style.display=cs.length?'none':'block';
-  // Atualizar select de filtro
-  const benchConcFilter=document.getElementById('bench-conc-filter');
-  if(benchConcFilter){
-    const valorAtual=benchConcFilter.value;
-    benchConcFilter.innerHTML='<option value="">Todos os concorrentes</option>'+cs.map(c=>`<option value="${c.id}">${c.nome}${c.loja?' — '+c.loja:''}</option>`).join('');
-    if(valorAtual&&cs.find(c=>String(c.id)===valorAtual)) benchConcFilter.value=valorAtual;
-  }
   document.getElementById('conc-list').innerHTML=cs.map(function(conc){
     var obsHtml=conc.obs?'<div style="font-size:11px;color:var(--text3);margin-top:2px">'+conc.obs+'</div>':'';
     var urlHtml=conc.url?'<a href="'+conc.url+'" target="_blank" style="font-size:11px;color:var(--accent);text-decoration:none;margin-top:2px;display:inline-block">🔗 Ver produto</a>':'';
@@ -3127,11 +3148,10 @@ function openFilModal(origin){
   document.getElementById('mf-nome').value='';
   document.getElementById('mf-marca').value='';
   document.getElementById('mf-cor').value='';
+  const picker=document.getElementById('mf-cor-picker');if(picker)picker.value='#cccccc';
   document.getElementById('mf-tipo').value='PLA';
   document.getElementById('mf-custo').value=120;
   document.getElementById('mf-peso').value=1000;
-  const picker=document.getElementById('mf-cor-picker');
-  if(picker) picker.value='#888888';
   document.getElementById('modal-fil').classList.add('open');
 }
 function closeModal(id){document.getElementById(id).classList.remove('open');}
@@ -3470,18 +3490,28 @@ function toggleEsqueciSenha(){
 
 async function enviarResetSenha(){
   const email = document.getElementById('esqueci-email').value.trim();
-  const msg = document.getElementById('esqueci-msg');
-  msg.style.color='var(--text2)';
-  msg.textContent='Enviando...';
+  const msg   = document.getElementById('esqueci-msg');
+  msg.style.color='var(--text2)'; msg.textContent='Enviando...';
   if(!email){ msg.style.color='var(--red)'; msg.textContent='Informe seu email.'; return; }
-  const { error } = await _supa.auth.resetPasswordForEmail(email, {
-    redirectTo: 'https://moneyflow3d.com.br'
-  });
-  if(error){ msg.style.color='var(--red)'; msg.textContent='Erro ao enviar. Verifique o email.'; return; }
-  msg.style.color='var(--green)';
-  msg.textContent='Link enviado! Verifique seu email.';
-}
 
+  // Enviar via Edge Function (usa Resend REST — sem SMTP)
+  try {
+    const r = await fetch('https://fqthlewarcqvmqojmzzs.supabase.co/functions/v1/webhook-kiwify?_action=send_recovery', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + _supa.supabaseKey },
+      body: JSON.stringify({ email })
+    });
+    const d = await r.json();
+    if(r.ok && d.sent){
+      msg.style.color='var(--green)'; msg.textContent='Link enviado! Verifique seu email.'; return;
+    }
+  } catch(e){ console.warn('edge fn failed:', e); }
+
+  // Fallback Supabase SMTP
+  const { error } = await _supa.auth.resetPasswordForEmail(email, { redirectTo: 'https://moneyflow3d.com.br' });
+  if(error){ msg.style.color='var(--red)'; msg.textContent='Erro ao enviar. Verifique o email.'; return; }
+  msg.style.color='var(--green)'; msg.textContent='Link enviado! Verifique seu email.';
+}
 async function doResetSenha(){
   const pw = document.getElementById('reset-pw').value;
   const pw2 = document.getElementById('reset-pw2').value;
@@ -3497,14 +3527,9 @@ async function doResetSenha(){
 }
 
 async function doLogout(){
-  // Não faz signOut do Supabase — mantém sessão para auto-login na próxima abertura
-  // Apenas limpa a sessão local para forçar reconfirmação (biométrica ou senha)
+  // Encerrar sessão no Supabase para evitar auto-login no reload
+  try { await _supa.auth.signOut(); } catch(e) { console.warn('signOut error:', e); }
   sessionStorage.removeItem('p3d_ok');
-  document.getElementById('login-overlay').style.display='flex';
-  document.getElementById('login-email').value='';
-  document.getElementById('login-pw').value='';
-  document.getElementById('login-err').textContent='';
-  // Recarregar para acionar o fluxo de boot (biometria automática se cadastrada)
   location.reload();
 }
 
@@ -3652,20 +3677,40 @@ function loadSettingsPage(){
    MÓDULO 1 — ORÇAMENTOS com PDF + WhatsApp
    --- */
 
+function addOrcItem(nome='', qtd=1, preco=0){
+  const container=document.getElementById('orc-itens-container');
+  const row=document.createElement('div');
+  row.className='orc-item-row';
+  row.style.cssText='display:grid;grid-template-columns:1fr 56px 90px 70px 28px;gap:4px;align-items:center;margin-bottom:6px';
+  row.innerHTML=`<input class="orc-item-nome" value="${nome.replace(/"/g,'&quot;')}" placeholder="Nome do item" style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--rsm);padding:6px 8px;color:var(--text);font-size:12px;width:100%" oninput="calcOrcTotal()">`
+    +`<input type="number" class="orc-item-qtd" value="${qtd}" min="1" style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--rsm);padding:6px 6px;color:var(--text);font-size:12px;width:100%;text-align:center" oninput="calcOrcTotal()">`
+    +`<input type="number" class="orc-item-preco" value="${preco||''}" placeholder="0.00" step="0.01" min="0" style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--rsm);padding:6px 8px;color:var(--text);font-size:12px;width:100%;text-align:right" oninput="calcOrcTotal()">`
+    +`<span class="orc-item-sub" style="font-size:12px;color:var(--text2);text-align:right">—</span>`
+    +`<button type="button" onclick="this.closest('.orc-item-row').remove();calcOrcTotal()" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:15px;padding:0;line-height:1;width:28px;text-align:center">✕</button>`;
+  container.appendChild(row);
+  calcOrcTotal();
+}
+
+function getOrcItens(){
+  return Array.from(document.querySelectorAll('.orc-item-row')).map(row=>({
+    nome:(row.querySelector('.orc-item-nome').value||'').trim()||'Item',
+    qtd:parseInt(row.querySelector('.orc-item-qtd').value)||1,
+    preco:parseFloat(row.querySelector('.orc-item-preco').value)||0
+  }));
+}
+
 function openOrcModal(){
   if(!DB.orcamentos)DB.orcamentos=[];
   orcAtual=null;
-  // popular selects
   const sc=document.getElementById('orc-cliente');
   sc.innerHTML='<option value="">Sem cliente</option>'+(DB.clientes||[]).map(c=>`<option value="${c.id}">${c.nome}</option>`).join('');
   const sp=document.getElementById('orc-produto');
-  sp.innerHTML='<option value="">Sem produto vinculado</option>'+(DB.produtos||[]).map(p=>`<option value="${p.id}">${p.nome} — R$${p.precoBase?p.precoBase.toFixed(2):'0.00'}</option>`).join('');
-  document.getElementById('orc-qtd').value=1;
-  document.getElementById('orc-preco').value='0.00';
+  sp.innerHTML='<option value="">Selecionar produto salvo (opcional)</option>'+(DB.produtos||[]).map(p=>`<option value="${p.id}">${p.nome} — R$${p.precoBase?p.precoBase.toFixed(2):'0.00'}</option>`).join('');
+  document.getElementById('orc-itens-container').innerHTML='';
+  addOrcItem();
   document.getElementById('orc-desc').value=0;
   document.getElementById('orc-total').value='R$ 0,00';
   document.getElementById('orc-obs').value='';
-  // validade padrão: 7 dias
   const v=new Date();v.setDate(v.getDate()+7);
   document.getElementById('orc-validade').value=v.toISOString().slice(0,10);
   document.getElementById('modal-orc').classList.add('open');
@@ -3674,17 +3719,32 @@ function openOrcModal(){
 function preencherOrcProduto(){
   const pid=document.getElementById('orc-produto').value;
   const p=DB.produtos.find(x=>String(x.id)===String(pid));
-  if(p){
-    document.getElementById('orc-preco').value=(p.precoBase||0).toFixed(2);
-    calcOrcTotal();
+  if(!p)return;
+  const container=document.getElementById('orc-itens-container');
+  const rows=container.querySelectorAll('.orc-item-row');
+  const lastRow=rows[rows.length-1];
+  if(lastRow){
+    const nomeIn=lastRow.querySelector('.orc-item-nome');
+    const precoIn=lastRow.querySelector('.orc-item-preco');
+    if(!nomeIn.value.trim()&&!precoIn.value){
+      nomeIn.value=p.nome;
+      precoIn.value=(p.precoBase||0).toFixed(2);
+      calcOrcTotal();return;
+    }
   }
+  addOrcItem(p.nome,1,p.precoBase||0);
 }
 
 function calcOrcTotal(){
-  const qtd=parseFloat(document.getElementById('orc-qtd').value)||1;
-  const preco=parseFloat(document.getElementById('orc-preco').value)||0;
+  const itens=getOrcItens();
   const desc=parseFloat(document.getElementById('orc-desc').value)||0;
-  const total=qtd*preco*(1-desc/100);
+  const subtotal=itens.reduce((s,i)=>s+i.qtd*i.preco,0);
+  const total=subtotal*(1-desc/100);
+  document.querySelectorAll('.orc-item-row').forEach(row=>{
+    const qtd=parseInt(row.querySelector('.orc-item-qtd').value)||1;
+    const preco=parseFloat(row.querySelector('.orc-item-preco').value)||0;
+    row.querySelector('.orc-item-sub').textContent='R$'+(qtd*preco).toFixed(2).replace('.',',');
+  });
   document.getElementById('orc-total').value='R$ '+total.toFixed(2).replace('.',',');
   return total;
 }
@@ -3783,17 +3843,15 @@ function editarOrcamento(id){
   const sc=document.getElementById('orc-cliente');
   sc.innerHTML='<option value="">Sem cliente</option>'+(DB.clientes||[]).map(c=>`<option value="${c.id}">${c.nome}</option>`).join('');
   const sp=document.getElementById('orc-produto');
-  sp.innerHTML='<option value="">Sem produto vinculado</option>'+(DB.produtos||[]).map(p=>`<option value="${p.id}">${p.nome} — R$${p.precoBase?p.precoBase.toFixed(2):'0.00'}</option>`).join('');
+  sp.innerHTML='<option value="">Selecionar produto salvo (opcional)</option>'+(DB.produtos||[]).map(p=>`<option value="${p.id}">${p.nome} — R$${p.precoBase?p.precoBase.toFixed(2):'0.00'}</option>`).join('');
   document.getElementById('orc-cliente').value=o.clienteId||'';
-  // Buscar produto por id ou por nome
-  const _prodEncontrado = o.produtoId
-    ? DB.produtos.find(p=>String(p.id)===String(o.produtoId))
-    : DB.produtos.find(p=>p.nome===o.produtoNome);
-  document.getElementById('orc-produto').value=_prodEncontrado?_prodEncontrado.id:'';
-  document.getElementById('orc-qtd').value=o.qtd||1;
-  // Preencher preço: do orçamento salvo, ou do produto se existir
-  const _precoOrc = o.preco&&o.preco>0 ? o.preco : (_prodEncontrado?((_prodEncontrado.precoBase||0)):0);
-  document.getElementById('orc-preco').value=parseFloat(_precoOrc).toFixed(2);
+  // Carregar itens no container
+  document.getElementById('orc-itens-container').innerHTML='';
+  if(o.itens&&o.itens.length){
+    o.itens.forEach(item=>addOrcItem(item.nome,item.qtd,item.preco));
+  } else {
+    addOrcItem(o.produtoNome||'',o.qtd||1,o.preco||0);
+  }
   document.getElementById('orc-desc').value=o.desc||0;
   document.getElementById('orc-obs').value=o.obs||'';
   if(o.validade)document.getElementById('orc-validade').value=o.validade;
@@ -3846,19 +3904,18 @@ function verOrcamentoPDF(id){
           <th style="padding:8px 12px;text-align:left;font-size:12px;border:1px solid #ddd">Produto / Serviço</th>
           <th style="padding:8px 12px;text-align:center;font-size:12px;border:1px solid #ddd">Qtd</th>
           <th style="padding:8px 12px;text-align:right;font-size:12px;border:1px solid #ddd">Preço unit.</th>
-          <th style="padding:8px 12px;text-align:right;font-size:12px;border:1px solid #ddd">Desconto</th>
-          <th style="padding:8px 12px;text-align:right;font-size:12px;border:1px solid #ddd">Total</th>
+          <th style="padding:8px 12px;text-align:right;font-size:12px;border:1px solid #ddd">Subtotal</th>
         </tr></thead>
-        <tbody><tr>
-          <td style="padding:10px 12px;border:1px solid #ddd;font-weight:600">${o.produtoNome}</td>
-          <td style="padding:10px 12px;border:1px solid #ddd;text-align:center">${o.qtd}</td>
-          <td style="padding:10px 12px;border:1px solid #ddd;text-align:right">R$ ${o.preco.toFixed(2).replace('.',',')}</td>
-          <td style="padding:10px 12px;border:1px solid #ddd;text-align:right">${o.desc>0?o.desc+'%':'—'}</td>
-          <td style="padding:10px 12px;border:1px solid #ddd;text-align:right;font-weight:700">R$ ${o.total.toFixed(2).replace('.',',')}</td>
-        </tr></tbody>
+        <tbody>${(o.itens&&o.itens.length?o.itens:[{nome:o.produtoNome,qtd:o.qtd,preco:o.preco}]).map(item=>`<tr>
+          <td style="padding:10px 12px;border:1px solid #ddd;font-weight:600;color:#111">${item.nome}</td>
+          <td style="padding:10px 12px;border:1px solid #ddd;text-align:center;color:#111">${item.qtd}</td>
+          <td style="padding:10px 12px;border:1px solid #ddd;text-align:right;color:#111">R$ ${(item.preco||0).toFixed(2).replace('.',',')}</td>
+          <td style="padding:10px 12px;border:1px solid #ddd;text-align:right;font-weight:700;color:#111">R$ ${((item.qtd||1)*(item.preco||0)).toFixed(2).replace('.',',')}</td>
+        </tr>`).join('')}</tbody>
       </table>
       <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
         <div style="text-align:right">
+          ${o.desc>0?`<div style="font-size:12px;color:#888">Subtotal: R$ ${(o.total/(1-o.desc/100)).toFixed(2).replace('.',',')} — Desconto ${o.desc}%</div>`:''}
           <div style="font-size:12px;color:#888">Canal de venda: ${o.marketplace}</div>
           <div style="font-size:20px;font-weight:800;color:#f97316">Total: R$ ${o.total.toFixed(2).replace('.',',')}</div>
         </div>
@@ -3883,8 +3940,9 @@ function exportarPDF(){
   const sysname=s.sysname||'MoneyFlow 3D';
   const o=orcAtual;
   const valStr=o.validade?new Date(o.validade).toLocaleDateString('pt-BR'):'—';
+  const itens=o.itens&&o.itens.length?o.itens:[{nome:o.produtoNome||'Item',qtd:o.qtd||1,preco:o.preco||0}];
 
-  // Header
+  // Header laranja
   doc.setFillColor(249,115,22);
   doc.rect(0,0,210,28,'F');
   doc.setTextColor(255,255,255);
@@ -3908,41 +3966,64 @@ function exportarPDF(){
   doc.text(o.clienteNome,14,47);
   if(o.clienteWpp){doc.setFontSize(9);doc.setTextColor(100,100,100);doc.text('WhatsApp: '+o.clienteWpp,14,53);}
 
-  // Tabela
+  // Tabela de itens
   doc.setTextColor(0,0,0);doc.setFontSize(9);doc.setFont(undefined,'bold');
   doc.text('ITENS DO ORÇAMENTO',14,62);
-  doc.line(14,64,196,64);
-  // cabeçalho tabela
-  doc.setFillColor(244,244,244);doc.rect(14,66,182,7,'F');
-  doc.setFontSize(8);
+  doc.setDrawColor(249,115,22);doc.line(14,64,196,64);
+  // cabeçalho
+  doc.setFillColor(244,244,244);doc.rect(14,65,182,8,'F');
+  doc.setFontSize(8);doc.setTextColor(80,80,80);
   doc.text('Produto/Serviço',16,71);
-  doc.text('Qtd',130,71,{align:'center'});
+  doc.text('Qtd',118,71,{align:'center'});
   doc.text('Preço unit.',152,71,{align:'right'});
-  doc.text('Desc.',168,71,{align:'right'});
-  doc.text('Total',194,71,{align:'right'});
-  // linha do produto
-  doc.setFont(undefined,'normal');doc.setFontSize(9);
-  doc.text(o.produtoNome.slice(0,50),16,80);
-  doc.text(String(o.qtd),130,80,{align:'center'});
-  doc.text('R$ '+o.preco.toFixed(2),152,80,{align:'right'});
-  doc.text(o.desc>0?o.desc+'%':'—',168,80,{align:'right'});
-  doc.setFont(undefined,'bold');
-  doc.text('R$ '+o.total.toFixed(2),194,80,{align:'right'});
-  doc.setDrawColor(220,220,220);doc.line(14,84,196,84);
+  doc.text('Subtotal',194,71,{align:'right'});
 
-  // Total
-  doc.setFillColor(255,248,243);doc.rect(130,87,66,10,'F');
-  doc.setDrawColor(249,115,22);doc.rect(130,87,66,10,'S');
+  // Linhas de itens dinamicamente
+  let y=73;
+  doc.setFont(undefined,'normal');doc.setFontSize(9);doc.setTextColor(0,0,0);
+  itens.forEach((item,idx)=>{
+    y+=9;
+    const subtotal=(item.qtd||1)*(item.preco||0);
+    const nome=String(item.nome||'Item').slice(0,48);
+    doc.text(nome,16,y);
+    doc.text(String(item.qtd||1),118,y,{align:'center'});
+    doc.text('R$'+(item.preco||0).toFixed(2),152,y,{align:'right'});
+    doc.setFont(undefined,'bold');
+    doc.text('R$'+subtotal.toFixed(2),194,y,{align:'right'});
+    doc.setFont(undefined,'normal');
+    if(idx<itens.length-1){
+      doc.setDrawColor(230,230,230);doc.setLineWidth(0.2);
+      doc.line(14,y+3,196,y+3);
+    }
+  });
+
+  y+=5;
+  doc.setDrawColor(220,220,220);doc.setLineWidth(0.5);doc.line(14,y,196,y);
+
+  // Desconto e total
+  y+=3;
+  if(o.desc>0){
+    const subtotalBruto=itens.reduce((s,i)=>s+(i.qtd||1)*(i.preco||0),0);
+    doc.setFontSize(9);doc.setFont(undefined,'normal');doc.setTextColor(100,100,100);
+    doc.text('Subtotal: R$'+subtotalBruto.toFixed(2)+'  |  Desconto: '+o.desc+'%',194,y+6,{align:'right'});
+    y+=8;
+  }
+
+  // Caixa total
+  doc.setFillColor(255,248,243);doc.rect(130,y+2,66,10,'F');
+  doc.setDrawColor(249,115,22);doc.rect(130,y+2,66,10,'S');
   doc.setFontSize(11);doc.setFont(undefined,'bold');doc.setTextColor(249,115,22);
-  doc.text('TOTAL: R$ '+o.total.toFixed(2),194,94,{align:'right'});
+  doc.text('TOTAL: R$'+o.total.toFixed(2),194,y+9,{align:'right'});
 
   // Canal + obs
+  y+=16;
   doc.setTextColor(0,0,0);doc.setFontSize(9);doc.setFont(undefined,'normal');
-  doc.text('Canal de venda: '+o.marketplace,14,100);
+  doc.text('Canal de venda: '+o.marketplace,14,y);
   if(o.obs){
+    y+=6;
     doc.setFontSize(8);doc.setTextColor(100,100,100);
     const obsWrapped=doc.splitTextToSize('Observações: '+o.obs,170);
-    doc.text(obsWrapped,14,108);
+    doc.text(obsWrapped,14,y);
   }
 
   // Rodapé
@@ -3964,7 +4045,8 @@ function compartilharWhatsApp(){
   const s=JSON.parse(localStorage.getItem('p3d_settings')||'{}');
   const empresa=s.empresa||'MoneyFlow 3D';
   const valStr=o.validade?new Date(o.validade).toLocaleDateString('pt-BR'):'—';
-  const msg=`*ORÇAMENTO — ${empresa}*\n\nOlá ${o.clienteNome}! 👋\n\n📦 *Produto:* ${o.produtoNome}\n📊 *Quantidade:* ${o.qtd}\n💰 *Valor:* R$ ${o.total.toFixed(2).replace('.',',')}\n${o.desc>0?`🏷 *Desconto:* ${o.desc}%\n`:''}\n🛒 *Canal:* ${o.marketplace}\n📅 *Válido até:* ${valStr}\n${o.obs?`\n📝 *Obs:* ${o.obs}\n`:''}\n_Gerado por ${s.sysname||'MoneyFlow 3D'}_`;
+  const itensMsg=(o.itens&&o.itens.length?o.itens:[{nome:o.produtoNome,qtd:o.qtd,preco:o.preco}]).map(i=>`• ${i.nome} x${i.qtd} — R$ ${((i.qtd||1)*(i.preco||0)).toFixed(2).replace('.',',')}`).join('\n');
+  const msg=`*ORÇAMENTO — ${empresa}*\n\nOlá ${o.clienteNome}! 👋\n\n📦 *Itens:*\n${itensMsg}\n${o.desc>0?`🏷 *Desconto:* ${o.desc}%\n`:''}\n💰 *TOTAL: R$ ${o.total.toFixed(2).replace('.',',')}*\n\n🛒 *Canal:* ${o.marketplace}\n📅 *Válido até:* ${valStr}\n${o.obs?`\n📝 *Obs:* ${o.obs}\n`:''}\n_Gerado por ${s.sysname||'MoneyFlow 3D'}_`;
   const num=o.clienteWpp?o.clienteWpp.replace(/\D/g,''):'';
   const url=`https://wa.me/${num?'55'+num:''}?text=${encodeURIComponent(msg)}`;
   window.open(url,'_blank');
@@ -4244,12 +4326,10 @@ function renderEstoque(){
     return;
   }
   el.innerHTML=`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px">${itens.map(i=>{
-    const filMatch=DB.filamentos.find(f=>String(f.id)===String(i.filId||i.id));
-    const dotColor=filMatch&&filMatch.hexCor?filMatch.hexCor:'#888888';
     const low=i.qtd<=i.min;
     return `<div style="background:var(--bg2);border:1px solid ${low?'rgba(239,68,68,.4)':'var(--border)'};border-radius:var(--radius);padding:14px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-        <span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;background:rgba(148,163,184,.15);color:#94a3b8;padding:2px 8px;border-radius:20px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${dotColor};flex-shrink:0"></span>${i.tipo}</span>
+        <span style="font-size:11px;font-weight:700;background:rgba(148,163,184,.15);color:#94a3b8;padding:2px 8px;border-radius:20px">${i.tipo}</span>
         <div style="display:flex;gap:4px">
           <button class="btn btn-ghost btn-sm" onclick='openEstoqueModal(${JSON.stringify(i)})' title="Editar">✏</button>
           <button class="btn btn-ghost btn-sm" style="color:var(--red)" onclick="delEstoque('${i.id}')">✕</button>
