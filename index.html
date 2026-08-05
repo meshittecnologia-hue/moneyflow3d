@@ -1671,8 +1671,8 @@ let DB={config:{kwh:0.85},impressoras:[{id:1,nome:'Bambu Lab X1 Carbon',inv:9500
 /* ── DB LOCAL (em memória) — dados vêm do Supabase ── */
 function loadDB(){
   try{
-    const ids=new Set(DB.filamentos.map(f=>f.id));
-    FIL_DEFAULT.forEach(f=>{if(!ids.has(f.id))DB.filamentos.unshift(f);});
+    const nomes=new Set(DB.filamentos.map(f=>(f.nome||'').toLowerCase().trim()));
+    FIL_DEFAULT.forEach(f=>{if(!nomes.has((f.nome||'').toLowerCase().trim()))DB.filamentos.push(f);});
   }catch(e){}
 }
 async function saveDB(){/* dados persistidos pelo Supabase diretamente */}
@@ -1688,9 +1688,9 @@ let _userProfile = null;
 /* ── DB SYNC ─────────────────────────────────────────── */
 function loadDB(){
   // DB em memória — dados vêm do Supabase no initApp()
-  // Mantém filamentos default como fallback
-  const ids = new Set(DB.filamentos.map(f=>f.id));
-  FIL_DEFAULT.forEach(f=>{ if(!ids.has(f.id)) DB.filamentos.unshift(f); });
+  // Mantém filamentos default como fallback — deduplicar por nome
+  const nomes = new Set(DB.filamentos.map(f=>(f.nome||'').toLowerCase().trim()));
+  FIL_DEFAULT.forEach(f=>{ if(!nomes.has((f.nome||'').toLowerCase().trim())) DB.filamentos.push(f); });
 }
 
 async function saveDB(){
@@ -1740,14 +1740,19 @@ async function loadSupabaseData(){
 
   // Filamentos — usa os do Supabase + defaults não cadastrados
   if(filamentos && filamentos.length){
-    const ids = new Set(filamentos.map(f=>f.id));
-    const extras = FIL_DEFAULT.filter(f=>!ids.has(f.id));
+    // Deduplicar por nome (não por ID — IDs do FIL_DEFAULT são numéricos, Supabase usa UUIDs)
+    const supabaseNomes = new Set(filamentos.map(f=>(f.nome||f.name||'').toLowerCase().trim()));
+    const extras = FIL_DEFAULT.filter(f=>!supabaseNomes.has((f.nome||'').toLowerCase().trim()));
     DB.filamentos = [...filamentos.map(f=>({
       id: f.id, nome: f.nome||f.name, marca: f.marca||f.brand||'',
       cor: f.cor||f.color||'', tipo: f.tipo||f.type||'PLA',
       custo: f.custo||f.cost||0, peso: f.peso||f.weight_g||1000
     })), ...extras];
-    DB.filamentos.sort((a,b)=>(a.tipo||'').localeCompare(b.tipo||''));
+    DB.filamentos.sort((a,b)=>{
+      const t=(a.tipo||'').localeCompare(b.tipo||''); if(t!==0) return t;
+      const c=(a.cor||'').localeCompare(b.cor||'');  if(c!==0) return c;
+      return (a.nome||'').localeCompare(b.nome||'');
+    });
   }
 
   // Impressoras
@@ -1892,14 +1897,14 @@ async function saveFil(){
       user_id: uid, name: fil.nome, brand: fil.marca, color: fil.cor,
       type: fil.tipo, cost: fil.custo, weight_g: fil.peso
     }).select().single();
-    if(data){
-      const novo = {...fil, id: data.id};
-      // Inserir após o último filamento do mesmo tipo (mantém agrupamento)
-      const lastIdx = DB.filamentos.reduce((acc,f,i)=>f.tipo===fil.tipo?i:acc, -1);
-      if(lastIdx>=0) DB.filamentos.splice(lastIdx+1, 0, novo);
-      else DB.filamentos.push(novo);
-    }
+    if(data) DB.filamentos.push({...fil, id: data.id});
   }
+  // Re-sort por tipo → cor → nome após qualquer alteração
+  DB.filamentos.sort((a,b)=>{
+    const t=(a.tipo||'').localeCompare(b.tipo||''); if(t!==0) return t;
+    const c=(a.cor||'').localeCompare(b.cor||'');  if(c!==0) return c;
+    return (a.nome||'').localeCompare(b.nome||'');
+  });
   editFilId = null;
   closeModal('modal-fil');
   renderFilamentos(); populateSelects();
@@ -2870,24 +2875,16 @@ function criarOrcamentoProduto(id){
 }
 
 /* ── FILAMENTOS ─────────────────────────────────────── */
-function moveFilamento(id, dir){
-  const arr = DB.filamentos;
-  const idx = arr.findIndex(f=>String(f.id)===String(id));
-  if(idx<0) return;
-  const tipo = arr[idx].tipo;
-  if(dir==='up' && idx>0 && arr[idx-1].tipo===tipo){
-    [arr[idx-1], arr[idx]] = [arr[idx], arr[idx-1]];
-  } else if(dir==='down' && idx<arr.length-1 && arr[idx+1].tipo===tipo){
-    [arr[idx+1], arr[idx]] = [arr[idx], arr[idx+1]];
-  } else return;
-  renderFilamentos();
-}
 function renderFilamentos(){
   const q=(document.getElementById('fil-search')?.value||'').toLowerCase();
   const tipoFil=document.getElementById('fil-filter-tipo')?.value||'';
   const preco=document.getElementById('fil-filter-preco')?.value||'';
-  // Ordena por tipo (agrupado), preserva ordem interna do array (customizável)
-  let fs=[...DB.filamentos].sort((a,b)=>(a.tipo||'').localeCompare(b.tipo||''));
+  // Ordenar por tipo → cor → nome (agrupamento natural)
+  let fs=[...DB.filamentos].sort((a,b)=>{
+    const t=(a.tipo||'').localeCompare(b.tipo||''); if(t!==0) return t;
+    const c=(a.cor||'').localeCompare(b.cor||'');  if(c!==0) return c;
+    return (a.nome||'').localeCompare(b.nome||'');
+  });
   if(q) fs=fs.filter(f=>(f.nome||'').toLowerCase().includes(q)||(f.marca||'').toLowerCase().includes(q));
   if(tipoFil) fs=fs.filter(f=>f.tipo===tipoFil);
   if(preco==='com') fs=fs.filter(f=>f.custo>0);
@@ -2908,14 +2905,6 @@ function renderFilamentos(){
     const corHex = (f.cor&&/^#[0-9A-Fa-f]{3,8}$/.test(f.cor)) ? f.cor : null;
     const dotBg = corHex || 'rgba(148,163,184,0.35)';
     const dotHtml = `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${dotBg};border:1px solid rgba(0,0,0,.15);vertical-align:middle;margin-right:6px;flex-shrink:0"></span>`;
-    // Determinar se pode mover (dentro do mesmo tipo em DB.filamentos)
-    const dbArr = DB.filamentos;
-    const dbIdx = dbArr.findIndex(x=>String(x.id)===String(f.id));
-    const canUp = dbIdx>0 && dbArr[dbIdx-1].tipo===f.tipo;
-    const canDown = dbIdx<dbArr.length-1 && dbArr[dbIdx+1].tipo===f.tipo;
-    const btnStyle = 'padding:1px 5px;font-size:10px;line-height:1.4;min-width:18px';
-    const upBtn = `<button class="btn btn-ghost btn-sm" style="${btnStyle}${canUp?'':';opacity:.25;pointer-events:none'}" onclick="moveFilamento('${f.id}','up')">▲</button>`;
-    const dnBtn = `<button class="btn btn-ghost btn-sm" style="${btnStyle}${canDown?'':';opacity:.25;pointer-events:none'}" onclick="moveFilamento('${f.id}','down')">▼</button>`;
     return`<tr>
       <td style="font-weight:600">${dotHtml}${f.nome}</td>
       <td style="color:var(--text2)">${f.marca||'—'}</td>
@@ -2923,8 +2912,7 @@ function renderFilamentos(){
       <td><span style="display:inline-block;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700;background:${FIL_BADGE.bg};color:${FIL_BADGE.text}">${f.tipo}</span></td>
       <td>${f.custo>0?'R$ '+(f.custo/(f.peso/1000)).toFixed(2):'<span style="color:var(--accent);font-size:11px">cadastrar preço</span>'}</td>
       <td style="color:var(--text2)">${f.custo>0?'R$ '+(f.custo/f.peso).toFixed(4):'—'}</td>
-      <td style="display:flex;gap:4px;flex-wrap:wrap;align-items:center">
-        <div style="display:flex;flex-direction:column;gap:2px">${upBtn}${dnBtn}</div>
+      <td style="display:flex;gap:6px;flex-wrap:wrap">
         <button class="btn btn-ghost btn-sm" onclick="editFil('${f.id}')">Editar</button>
         <button class="btn btn-danger btn-sm" onclick="delFil('${f.id}')">✕</button>
       </td>
