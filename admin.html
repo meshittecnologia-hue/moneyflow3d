@@ -1277,6 +1277,25 @@ function filterUsers() {
   renderUsers(filtered);
 }
 
+async function excluirUsuario(userId, email) {
+  if (!confirm(`Excluir permanentemente o usuário "${email}"?\n\nIsso remove o perfil e todos os dados do usuário. A conta de autenticação será desativada.\n\nEsta ação não pode ser desfeita.`)) return;
+  try {
+    // 1. Deletar o perfil (cascade apaga dados relacionados via FK ON DELETE CASCADE)
+    const { error: delErr } = await sb.from('profiles').delete().eq('id', userId);
+    if (delErr) { showToast('Erro ao excluir perfil: ' + delErr.message, 'error'); return; }
+    // 2. Chamar Edge Function para remover da auth.users (service_role)
+    fetch('https://fqthlewarcqvmqojmzzs.functions.supabase.co/webhook-kiwify?_action=delete_user', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id: userId })
+    }).catch(() => {}); // fire-and-forget, não bloqueia o UI
+    // Remover da lista local e re-renderizar
+    allUsers = allUsers.filter(u => u.id !== userId);
+    renderUsers(allUsers);
+    showToast('Usuário excluído com sucesso');
+  } catch(e) { showToast('Erro: ' + e.message, 'error'); }
+}
+
 async function enviarResetSenha(email) {
   if (!email) { showToast('E-mail não encontrado', 'error'); return; }
   try {
@@ -1315,6 +1334,7 @@ function renderUsers(users) {
       <td style="display:flex;gap:6px;flex-wrap:wrap">
         <button class="btn btn-ghost btn-sm" onclick='openEditUser(${JSON.stringify(u).replace(/'/g,"&#39;")})'>Editar</button>
         <button class="btn btn-ghost btn-sm" style="font-size:11px" onclick="enviarResetSenha('${u.email}')">📧 Link senha</button>
+        ${u.role !== 'admin' ? `<button class="btn btn-danger btn-sm" style="font-size:11px" onclick="excluirUsuario('${u.id}','${u.email?.replace(/'/g,'')}')">🗑 Excluir</button>` : ''}
       </td>
     </tr>`;
   }).join('');

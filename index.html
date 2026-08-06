@@ -1255,6 +1255,29 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   </div>
 </div>
 
+<!-- MODAL BOAS-VINDAS / ONBOARDING -->
+<div class="modal-overlay" id="modal-welcome" style="z-index:1100">
+  <div class="modal" style="max-width:480px;text-align:center">
+    <div style="font-size:48px;margin-bottom:12px">👋</div>
+    <div class="modal-title" style="font-size:20px;margin-bottom:8px">Bem-vindo ao MoneyFlow 3D!</div>
+    <p style="color:var(--text2);font-size:14px;line-height:1.6;margin-bottom:20px">Parece que é sua primeira vez por aqui.<br>Quer carregar <strong style="color:var(--text)">dados de exemplo</strong> para ver como o app funciona?</p>
+    <div style="background:var(--bg3);border-radius:8px;padding:14px;margin-bottom:20px;text-align:left">
+      <div style="font-size:11px;color:var(--text3);margin-bottom:8px;font-weight:700;text-transform:uppercase;letter-spacing:.5px">O que será carregado</div>
+      <div style="display:grid;gap:6px;font-size:13px;color:var(--text2)">
+        <div>🖨️ <strong style="color:var(--text)">1 impressora</strong> — Ender 3 Pro com custos reais</div>
+        <div>🧵 <strong style="color:var(--text)">2 filamentos</strong> — PLA e PETG com preços</div>
+        <div>📦 <strong style="color:var(--text)">3 produtos</strong> — precificados com margem e markup</div>
+        <div>👤 <strong style="color:var(--text)">1 cliente</strong> — para testar orçamentos</div>
+      </div>
+    </div>
+    <p style="font-size:12px;color:var(--text3);margin-bottom:20px">Tudo marcado como <em>(Exemplo)</em> — delete quando quiser e cadastre os seus dados.</p>
+    <div style="display:flex;gap:10px">
+      <button class="btn" style="flex:1;background:var(--bg3);color:var(--text2);border:1px solid var(--border)" onclick="dispensarOnboarding()">Começar do zero</button>
+      <button class="btn btn-primary" style="flex:1" id="btn-seed-loading" onclick="carregarExemplos()">⚡ Carregar exemplos</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL UPGRADE -->
 <div class="modal-overlay" id="modal-upgrade">
   <div class="modal" style="max-width:440px;text-align:center">
@@ -2476,10 +2499,76 @@ async function initApp(){
   renderDashboard();
   renderBioStatus();
   loadSettingsPage();
+  checkFirstLogin(_currentUser.id);
 }
 
 
-/* ── NOTIFY ─────────────────────────────────────────── */
+/* ── ONBOARDING / DADOS DE EXEMPLO ──────────────────── */
+function checkFirstLogin(userId){
+  if(DB.impressoras.length===0 && DB.produtos.length===0){
+    const key='mf3d_welcomed_'+userId;
+    if(!localStorage.getItem(key)){
+      setTimeout(()=>{ document.getElementById('modal-welcome').classList.add('open'); }, 600);
+    }
+  }
+}
+function dispensarOnboarding(){
+  document.getElementById('modal-welcome').classList.remove('open');
+  localStorage.setItem('mf3d_welcomed_'+_currentUser.id,'1');
+}
+async function carregarExemplos(){
+  const btn=document.getElementById('btn-seed-loading');
+  if(btn){ btn.textContent='⏳ Carregando...'; btn.disabled=true; }
+  const uid=_currentUser.id;
+  try{
+    // 1. Impressora
+    const {data:imp}=await _supa.from('printers').insert({
+      user_id:uid, name:'Ender 3 Pro (Exemplo)',
+      investment:1800, roi_months:18, watts:250, hours_per_day:8, fail_rate:5
+    }).select().single();
+
+    // 2. Filamentos
+    const {data:fil1}=await _supa.from('filaments').insert({
+      user_id:uid, name:'PLA Branco (Exemplo)', brand:'Genérico', color:'#f5f5f5', type:'PLA', cost:99.90, weight_g:1000
+    }).select().single();
+    const {data:fil2}=await _supa.from('filaments').insert({
+      user_id:uid, name:'PETG Preto (Exemplo)', brand:'Genérico', color:'#1a1a1a', type:'PETG', cost:115.00, weight_g:1000
+    }).select().single();
+
+    // 3. Produtos (campos básicos — compatível com qualquer schema)
+    await _supa.from('products').insert([
+      { user_id:uid, name:'Vaso Decorativo (Exemplo)', filament_name:'PLA Branco (Exemplo)',
+        cost_total:6.88, price_base:12.38, margin:44.4, markup:80,
+        print_hours:3, grams_used:45, packaging:0, supplies:0, labor_hour:0 },
+      { user_id:uid, name:'Suporte de Celular (Exemplo)', filament_name:'PLA Branco (Exemplo)',
+        cost_total:3.71, price_base:7.42, margin:50.0, markup:100,
+        print_hours:1.5, grams_used:25, packaging:0, supplies:0, labor_hour:0 },
+      { user_id:uid, name:'Chaveiro Personalizado (Exemplo)', filament_name:'PETG Preto (Exemplo)',
+        cost_total:1.38, price_base:3.31, margin:58.3, markup:140,
+        print_hours:0.5, grams_used:10, packaging:0, supplies:0, labor_hour:0 },
+    ]);
+
+    // 4. Cliente
+    await _supa.from('clientes').insert({
+      user_id:uid, name:'João Silva (Exemplo)',
+      whatsapp:'(11) 99999-0000', email:'joao@exemplo.com',
+      notes:'Cliente de exemplo — pode excluir'
+    });
+
+    localStorage.setItem('mf3d_welcomed_'+uid,'1');
+    document.getElementById('modal-welcome').classList.remove('open');
+    notify('Dados de exemplo carregados! 🎉');
+    await loadSupabaseData();
+    loadDB();
+    renderDashboard();
+    showPage('produtos');
+  }catch(e){
+    if(btn){ btn.textContent='⚡ Carregar exemplos'; btn.disabled=false; }
+    notify('Erro ao carregar exemplos: '+e.message,'red');
+    console.error('carregarExemplos',e);
+  }
+}
+
 function notify(msg,type='green'){
   const n=document.getElementById('notif');
   n.textContent=msg;n.className='notif '+type;n.classList.add('show');
