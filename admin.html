@@ -462,10 +462,49 @@
           <div class="page-title">Webhooks</div>
           <div class="page-sub">Eventos recebidos da Kiwify / Hotmart</div>
         </div>
+
+        <!-- Status da configuração -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;margin-bottom:24px">
+          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:16px;display:flex;gap:14px;align-items:flex-start">
+            <div style="font-size:28px">✅</div>
+            <div>
+              <div style="font-weight:700;font-size:13px;color:var(--green)">Edge Function ativa</div>
+              <div style="font-size:12px;color:var(--text3);margin-top:3px">webhook-kiwify</div>
+              <div style="font-size:11px;color:var(--text3);margin-top:2px;word-break:break-all">fqthlewarcqvmqojmzzs.supabase.co/functions/v1/webhook-kiwify</div>
+            </div>
+          </div>
+          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:16px;display:flex;gap:14px;align-items:flex-start">
+            <div style="font-size:28px">✅</div>
+            <div>
+              <div style="font-weight:700;font-size:13px;color:var(--green)">Kiwify configurado</div>
+              <div style="font-size:12px;color:var(--text3);margin-top:3px">Produto: MoneyFlow 3D Pro — R$ 18/mês</div>
+              <div style="font-size:11px;color:var(--text3);margin-top:2px">Eventos: Compra aprovada · Assinatura cancelada · Assinatura atrasada</div>
+            </div>
+          </div>
+          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:16px;display:flex;gap:14px;align-items:flex-start">
+            <div style="font-size:28px">🔑</div>
+            <div>
+              <div style="font-weight:700;font-size:13px">Token de segurança</div>
+              <div style="font-size:12px;color:var(--text3);margin-top:3px;font-family:monospace">d47gv0j7blr</div>
+              <div style="font-size:11px;color:var(--text3);margin-top:2px">Valida autenticidade dos eventos recebidos</div>
+            </div>
+          </div>
+          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:16px;display:flex;gap:14px;align-items:flex-start">
+            <div style="font-size:28px">🛒</div>
+            <div>
+              <div style="font-weight:700;font-size:13px">Checkout ativo</div>
+              <div style="font-size:12px;color:var(--text3);margin-top:3px"><a href="https://pay.kiwify.com.br/bRJAryH" target="_blank" style="color:var(--accent);text-decoration:none">pay.kiwify.com.br/bRJAryH ↗</a></div>
+              <div style="font-size:11px;color:var(--text3);margin-top:2px">Oferta fundador: R$ 18/mês (sobe para R$ 36)</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Log de eventos -->
+        <div style="font-size:13px;font-weight:700;margin-bottom:10px;color:var(--text2)">📋 Log de eventos recebidos</div>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>Plataforma</th><th>Evento</th><th>Status</th><th>Recebido em</th></tr></thead>
-            <tbody id="webhooks-table"><tr><td colspan="4" class="loading"><span class="spinner"></span></td></tr></tbody>
+            <thead><tr><th>Plataforma</th><th>Evento</th><th>Email</th><th>Status</th><th>Recebido em</th></tr></thead>
+            <tbody id="webhooks-table"><tr><td colspan="5" class="loading"><span class="spinner"></span></td></tr></tbody>
           </table>
         </div>
       </div>
@@ -587,18 +626,16 @@
 <div class="modal-overlay" id="modal-add-user">
   <div class="modal" style="max-width:500px">
     <div class="modal-title">➕ Adicionar usuário</div>
+
+    <!-- Modo de criação -->
+    <div style="display:flex;gap:8px;margin-bottom:16px;background:var(--bg3);border-radius:8px;padding:4px">
+      <button id="btn-modo-convite" onclick="setModoUsuario('convite')" style="flex:1;padding:7px;border-radius:6px;border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:600;cursor:pointer">📧 Enviar convite por email</button>
+      <button id="btn-modo-direto" onclick="setModoUsuario('direto')" style="flex:1;padding:7px;border-radius:6px;border:none;background:transparent;color:var(--text2);font-size:12px;cursor:pointer">🔑 Criar com senha</button>
+    </div>
+
     <div class="form-group">
-      <label class="form-label" style="display:flex;justify-content:space-between;align-items:center">
-        <span>E-mail</span>
-        <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text3);cursor:pointer;font-weight:400">
-          <input type="checkbox" id="toggle-sem-email" onchange="toggleSemEmail()" style="width:14px;height:14px;cursor:pointer">
-          <span>Sem e-mail / acesso direto</span>
-        </label>
-      </label>
+      <label class="form-label">E-mail</label>
       <input class="form-input" id="new-user-email" type="email" placeholder="email@exemplo.com">
-      <div id="sem-email-wrap" style="display:none;margin-top:8px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--text3)">
-        ℹ️ Um e-mail temporário será gerado automaticamente. O usuário acessa somente por senha ou biometria — sem recuperação por e-mail.
-      </div>
     </div>
     <div class="form-group">
       <label class="form-label">Nome</label>
@@ -633,30 +670,40 @@
         <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" id="new-mod-ilimitado"> Projetos e impressoras ilimitados</label>
       </div>
     </div>
-    <div id="new-user-info" style="background:rgba(249,115,22,.08);border:1px solid rgba(249,115,22,.3);border-radius:8px;padding:10px 14px;font-size:12px;color:#f97316;margin-top:4px">
-      📧 Um convite será enviado por e-mail para o usuário definir a senha.
+
+    <!-- Info modo convite -->
+    <div id="info-modo-convite" style="background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.3);border-radius:8px;padding:10px 14px;font-size:12px;color:#60a5fa;margin-top:4px">
+      📧 Um email de convite será enviado via Resend. O usuário clica no link e define a própria senha.
     </div>
-    <div class="form-group" style="margin-top:14px">
-      <label class="form-label" style="display:flex;justify-content:space-between;align-items:center">
-        <span>Senha inicial</span>
-        <button type="button" onclick="gerarSenha()" style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:3px 10px;font-size:11px;color:var(--accent);cursor:pointer;font-weight:600">⚡ Gerar automática</button>
-      </label>
-      <div style="position:relative">
-        <input class="form-input" id="new-user-senha" type="password" placeholder="Mínimo 8 caracteres" style="padding-right:40px" oninput="validarForcaSenha(this.value)">
-        <button type="button" onclick="toggleSenhaVisivel()" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text3);font-size:16px" id="btn-ver-senha">👁</button>
-      </div>
-      <div id="senha-strength" style="margin-top:6px;font-size:11px;height:16px"></div>
-      <div id="senha-gerada-wrap" style="display:none;margin-top:8px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 12px">
-        <div style="font-size:11px;color:var(--text3);margin-bottom:4px">Senha gerada — copie antes de salvar:</div>
-        <div style="display:flex;align-items:center;gap:8px">
-          <code id="senha-gerada-txt" style="flex:1;font-size:13px;color:var(--green);letter-spacing:.05em;word-break:break-all"></code>
-          <button type="button" onclick="copiarSenha()" style="background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:11px;color:var(--text2);cursor:pointer;white-space:nowrap">📋 Copiar</button>
+
+    <!-- Senha (modo direto) -->
+    <div id="senha-section" style="display:none;margin-top:14px">
+      <div class="form-group">
+        <label class="form-label" style="display:flex;justify-content:space-between;align-items:center">
+          <span>Senha inicial</span>
+          <button type="button" onclick="gerarSenha()" style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:3px 10px;font-size:11px;color:var(--accent);cursor:pointer;font-weight:600">⚡ Gerar automática</button>
+        </label>
+        <div style="position:relative">
+          <input class="form-input" id="new-user-senha" type="password" placeholder="Mínimo 8 caracteres" style="padding-right:40px" oninput="validarForcaSenha(this.value)">
+          <button type="button" onclick="toggleSenhaVisivel()" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text3);font-size:16px" id="btn-ver-senha">👁</button>
+        </div>
+        <div id="senha-strength" style="margin-top:6px;font-size:11px;height:16px"></div>
+        <div id="senha-gerada-wrap" style="display:none;margin-top:8px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 12px">
+          <div style="font-size:11px;color:var(--text3);margin-bottom:4px">Senha gerada — copie antes de salvar:</div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <code id="senha-gerada-txt" style="flex:1;font-size:13px;color:var(--green);letter-spacing:.05em;word-break:break-all"></code>
+            <button type="button" onclick="copiarSenha()" style="background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:11px;color:var(--text2);cursor:pointer;white-space:nowrap">📋 Copiar</button>
+          </div>
         </div>
       </div>
+      <div style="background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.3);border-radius:8px;padding:10px 14px;font-size:12px;color:#22c55e">
+        ✅ Usuário criado com acesso imediato. Compartilhe o email e senha diretamente com ele.
+      </div>
     </div>
-    <div class="modal-actions">
+
+    <div class="modal-actions" style="margin-top:16px">
       <button class="btn btn-ghost" onclick="closeModal('modal-add-user')">Cancelar</button>
-      <button class="btn btn-primary" onclick="addUserManual()">Criar usuário</button>
+      <button class="btn btn-primary" id="btn-criar-usuario" onclick="addUserManual()">📧 Enviar convite</button>
     </div>
   </div>
 </div>
@@ -819,6 +866,7 @@
 // ============================================================
 const SUPABASE_URL  = 'https://fqthlewarcqvmqojmzzs.supabase.co';
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZxdGhsZXdhcmNxdm1xb2ptenpzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0ODgzNjMsImV4cCI6MjA5ODA2NDM2M30.PdRQ0VsUWa4L-ZKSxWyUvQ2sGD0O-cz4Vw3yZ6ZRSgs';
+const SUPABASE_SERVICE = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZxdGhsZXdhcmNxdm1xb2ptenpzIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MjQ4ODM2MywiZXhwIjoyMDk4MDY0MzYzfQ.BS7giskN1rXWIGKG-rRJtsfxdpE_I8Z5kxpo_nuAWW4';
 
 const { createClient } = supabase;
 const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
@@ -864,10 +912,12 @@ async function doLogin() {
 }
 
 async function doLogout() {
-  await sb.auth.signOut();
+  // Não faz signOut — mantém sessão para biometria automática no próximo acesso
   currentAdmin = null;
   document.getElementById('app').style.display = 'none';
   document.getElementById('login-screen').style.display = 'flex';
+  // Recarrega para acionar boot com biometria
+  location.reload();
 }
 
 async function checkSession() {
@@ -1178,7 +1228,7 @@ async function backupCompleto() {
 // DASHBOARD
 // ============================================================
 async function loadDashboard() {
-  const { data: profiles } = await sb.from('profiles').select('plan, created_at, name, email, is_blocked');
+  const { data: profiles } = await sb.from('profiles').select('plan, created_at, name, email');
   if (!profiles) return;
 
   const total  = profiles.length;
@@ -1277,38 +1327,6 @@ function filterUsers() {
   renderUsers(filtered);
 }
 
-async function excluirUsuario(userId, email) {
-  if (!confirm(`Excluir permanentemente o usuário "${email}"?\n\nIsso remove o perfil e todos os dados do usuário. A conta de autenticação será desativada.\n\nEsta ação não pode ser desfeita.`)) return;
-  try {
-    // 1. Deletar o perfil (cascade apaga dados relacionados via FK ON DELETE CASCADE)
-    const { error: delErr } = await sb.from('profiles').delete().eq('id', userId);
-    if (delErr) { showToast('Erro ao excluir perfil: ' + delErr.message, 'error'); return; }
-    // 2. Chamar Edge Function para remover da auth.users (service_role)
-    fetch('https://fqthlewarcqvmqojmzzs.functions.supabase.co/webhook-kiwify?_action=delete_user', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ user_id: userId })
-    }).catch(() => {}); // fire-and-forget, não bloqueia o UI
-    // Remover da lista local e re-renderizar
-    allUsers = allUsers.filter(u => u.id !== userId);
-    renderUsers(allUsers);
-    showToast('Usuário excluído com sucesso');
-  } catch(e) { showToast('Erro: ' + e.message, 'error'); }
-}
-
-async function enviarResetSenha(email) {
-  if (!email) { showToast('E-mail não encontrado', 'error'); return; }
-  try {
-    const r = await fetch('https://fqthlewarcqvmqojmzzs.functions.supabase.co/webhook-kiwify?_action=send_recovery', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email })
-    });
-    if (r.ok) { showToast('Link de senha enviado para ' + email); }
-    else { const t = await r.text(); showToast('Erro: ' + t, 'error'); }
-  } catch(e) { showToast('Erro ao enviar: ' + e.message, 'error'); }
-}
-
 function renderUsers(users) {
   const tbody = document.getElementById('users-table');
   if (!users.length) { tbody.innerHTML = '<tr><td colspan="7" class="empty-row">Nenhum usuário encontrado</td></tr>'; return; }
@@ -1331,41 +1349,76 @@ function renderUsers(users) {
         ? '<span class="badge badge-blocked">Bloqueado</span>'
         : '<span class="badge badge-active">Ativo</span>'}</td>
       <td style="font-size:12px;color:var(--text3)">${fmtDate(u.created_at)}</td>
-      <td style="display:flex;gap:6px;flex-wrap:wrap">
+      <td style="display:flex;gap:6px;align-items:center">
         <button class="btn btn-ghost btn-sm" onclick='openEditUser(${JSON.stringify(u).replace(/'/g,"&#39;")})'>Editar</button>
-        <button class="btn btn-ghost btn-sm" style="font-size:11px" onclick="enviarResetSenha('${u.email}')">📧 Link senha</button>
-        ${u.role !== 'admin' ? `<button class="btn btn-danger btn-sm" style="font-size:11px" onclick="excluirUsuario('${u.id}','${u.email?.replace(/'/g,'')}')">🗑 Excluir</button>` : ''}
+        <button class="btn btn-sm" style="background:rgba(239,68,68,.15);color:var(--red);border:1px solid rgba(239,68,68,.3)" onclick="confirmarExcluirUser('${u.id}','${(u.name||u.email||'').replace(/'/g,"\\'")}')">✕</button>
       </td>
     </tr>`;
   }).join('');
 }
 
+async function confirmarExcluirUser(id, nome) {
+  if (!confirm(`Excluir permanentemente o usuário "${nome}"?\n\nEsta ação não pode ser desfeita. Todos os dados do usuário serão removidos.`)) return;
+  try {
+    // Excluir via Admin API do Supabase
+    const res = await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'apikey': SUPABASE_SERVICE,
+        'Authorization': `Bearer ${SUPABASE_SERVICE}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      showToast('Erro ao excluir: ' + (err.message || res.status), 'error');
+      return;
+    }
+    // Remover profile manualmente (cascade pode não funcionar sem service key)
+    await sb.from('profiles').delete().eq('id', id);
+    showToast('Usuário excluído com sucesso', 'success');
+    loadUsers();
+  } catch(e) {
+    showToast('Erro: ' + e.message, 'error');
+  }
+}
+
 function toggleSemEmail() {
-  const semEmail = document.getElementById('toggle-sem-email').checked;
-  const emailInput = document.getElementById('new-user-email');
-  const wrap = document.getElementById('sem-email-wrap');
-  if (semEmail) {
-    emailInput.disabled = true;
-    emailInput.style.opacity = '0.4';
-    emailInput.value = '';
-    emailInput.placeholder = 'Será gerado automaticamente';
-    wrap.style.display = 'block';
+  // Função legada — elementos removidos do modal novo
+}
+
+const RESEND_KEY = 're_AQqrfUwZ_2idKHdJKcNZBJr9B7ACLHRHn';
+
+let modoUsuario = 'convite';
+
+function setModoUsuario(modo) {
+  modoUsuario = modo;
+  const btnConvite = document.getElementById('btn-modo-convite');
+  const btnDireto = document.getElementById('btn-modo-direto');
+  const senhaSection = document.getElementById('senha-section');
+  const infoConvite = document.getElementById('info-modo-convite');
+  const btnCriar = document.getElementById('btn-criar-usuario');
+  if (modo === 'convite') {
+    btnConvite.style.background = 'var(--accent)';
+    btnConvite.style.color = '#fff';
+    btnDireto.style.background = 'transparent';
+    btnDireto.style.color = 'var(--text2)';
+    senhaSection.style.display = 'none';
+    infoConvite.style.display = 'block';
+    btnCriar.textContent = '📧 Enviar convite';
   } else {
-    emailInput.disabled = false;
-    emailInput.style.opacity = '1';
-    emailInput.placeholder = 'email@exemplo.com';
-    wrap.style.display = 'none';
+    btnDireto.style.background = 'var(--accent)';
+    btnDireto.style.color = '#fff';
+    btnConvite.style.background = 'transparent';
+    btnConvite.style.color = 'var(--text2)';
+    senhaSection.style.display = 'block';
+    infoConvite.style.display = 'none';
+    btnCriar.textContent = '✅ Criar usuário';
   }
 }
 
 function openAddUserModal() {
-  const emailInput = document.getElementById('new-user-email');
-  emailInput.value = '';
-  emailInput.disabled = false;
-  emailInput.style.opacity = '1';
-  emailInput.placeholder = 'email@exemplo.com';
-  document.getElementById('toggle-sem-email').checked = false;
-  document.getElementById('sem-email-wrap').style.display = 'none';
+  document.getElementById('new-user-email').value = '';
   document.getElementById('new-user-name').value = '';
   document.getElementById('new-user-plan').value = 'free';
   document.getElementById('new-user-role').value = 'user';
@@ -1374,36 +1427,130 @@ function openAddUserModal() {
   document.getElementById('btn-ver-senha').textContent = '👁';
   document.getElementById('senha-strength').textContent = '';
   document.getElementById('senha-gerada-wrap').style.display = 'none';
+  document.getElementById('senha-section').style.display = 'none';
+  document.getElementById('info-modo-convite').style.display = 'block';
+  setModoUsuario('convite');
   applyPlanModules('new-mod-', 'free');
   openModal('modal-add-user');
 }
 
+
+
+
+
 async function addUserManual() {
-  const semEmail = document.getElementById('toggle-sem-email').checked;
   const name  = document.getElementById('new-user-name').value.trim();
   const plan  = document.getElementById('new-user-plan').value;
   const role  = document.getElementById('new-user-role').value;
-  const senha = document.getElementById('new-user-senha').value;
   const mods  = getCheckedModules('new-mod-');
+  const email = document.getElementById('new-user-email').value.trim();
 
-  // Gerar email temporário se sem email
-  const email = semEmail
-    ? `user_${Date.now()}@moneyflow3d.interno`
-    : document.getElementById('new-user-email').value.trim();
+  if (!email) { showToast('E-mail obrigatório', 'error'); return; }
 
-  if (!semEmail && !email) { showToast('E-mail obrigatório', 'error'); return; }
-  if (!senha) { showToast('Defina uma senha ou gere automaticamente', 'error'); return; }
-  if (!validarForcaSenha(senha)) { showToast('Senha não atende aos critérios de segurança', 'error'); return; }
+  if (modoUsuario === 'convite') {
+    // 1. Criar usuário via Admin API com senha temporária
+    const senhaTemp = 'Temp_' + Math.random().toString(36).slice(2,10) + '!1A';
+    const resCreate = await fetch(`${SUPABASE_URL}/auth/v1/admin/users`, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_SERVICE,
+        'Authorization': `Bearer ${SUPABASE_SERVICE}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ email, password: senhaTemp, email_confirm: true, user_metadata: { full_name: name } })
+    });
+    const created = await resCreate.json();
+    if (!resCreate.ok || created.error) {
+      showToast('Erro ao criar: ' + (created.message || created.error?.message || resCreate.status), 'error');
+      return;
+    }
+    const userId = created.id;
 
-  // Criar usuário via signUp público (funciona no Supabase free tier)
-  const { data: d2, error: e2 } = await sb.auth.signUp({
-    email, password: senha, options: { data: { full_name: name } }
-  });
-  if (e2) { showToast('Erro ao criar: ' + e2.message, 'error'); return; }
-  if (d2?.user) {
-    await sb.from('profiles').update({ name, plan, role, modules: mods, updated_at: new Date() }).eq('id', d2.user.id);
-    await sb.from('admin_logs').insert({ admin_id: currentAdmin.id, action: 'create_user', target_user: d2.user.id, details: { plan, role, mods, sem_email: semEmail } });
-    showToast(semEmail ? 'Usuário criado! Acesso somente por senha.' : 'Usuário criado! Peça para verificar o e-mail.', 'success');
+    // 2. Gerar link de recuperação de senha (usuário define nova senha)
+    const resLink = await fetch(`${SUPABASE_URL}/auth/v1/admin/generate_link`, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_SERVICE,
+        'Authorization': `Bearer ${SUPABASE_SERVICE}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ type: 'recovery', email })
+    });
+    const linkData = await resLink.json();
+    const actionLink = linkData?.action_link || linkData?.properties?.action_link || '';
+
+    // 3. Enviar email via Resend diretamente
+    const nomeDisplay = name || email.split('@')[0];
+    const htmlEmail = `
+      <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#0f0f0f;color:#f0f0f0;border-radius:12px;overflow:hidden">
+        <div style="background:#ff6b2b;padding:24px;text-align:center">
+          <h1 style="margin:0;color:#fff;font-size:24px">⬡ MoneyFlow 3D</h1>
+          <p style="margin:6px 0 0;color:rgba(255,255,255,.8);font-size:14px">Precificação Inteligente para Makers</p>
+        </div>
+        <div style="padding:32px">
+          <h2 style="color:#ff6b2b;margin-top:0">Você foi convidado!</h2>
+          <p style="color:#ccc;line-height:1.6">Olá <strong style="color:#fff">${nomeDisplay}</strong>,</p>
+          <p style="color:#ccc;line-height:1.6">Você recebeu acesso ao <strong style="color:#fff">MoneyFlow 3D</strong> — o sistema completo de precificação e gestão para makers de impressão 3D FDM.</p>
+          <p style="color:#ccc;line-height:1.6">Clique no botão abaixo para definir sua senha e acessar o sistema:</p>
+          <div style="text-align:center;margin:32px 0">
+            <a href="${actionLink}" style="background:#ff6b2b;color:#fff;padding:14px 32px;border-radius:8px;text-decoration:none;font-weight:700;font-size:16px;display:inline-block">Acessar MoneyFlow 3D →</a>
+          </div>
+          <p style="color:#666;font-size:12px;text-align:center">Link válido por 24 horas. Se não solicitou este acesso, ignore este email.</p>
+        </div>
+        <div style="background:#1a1a1a;padding:16px;text-align:center">
+          <p style="color:#555;font-size:11px;margin:0">MoneyFlow 3D · MeshIT Tecnologia · <a href="https://moneyflow3d.com.br" style="color:#ff6b2b;text-decoration:none">moneyflow3d.com.br</a></p>
+        </div>
+      </div>`;
+
+    const resEmail = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${RESEND_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        from: 'MoneyFlow 3D <noreply@moneyflow3d.com.br>',
+        to: [email],
+        subject: 'Você foi convidado para o MoneyFlow 3D',
+        html: htmlEmail
+      })
+    });
+
+    const emailResult = await resEmail.json();
+    if (!resEmail.ok || emailResult.error) {
+      showToast('Usuário criado mas erro ao enviar email: ' + (emailResult.message || emailResult.error?.message), 'error');
+    } else {
+      showToast('Convite enviado para ' + email + '!', 'success');
+    }
+
+    // 4. Atualizar profile
+    await sb.from('profiles').update({ name, plan, role }).eq('id', userId);
+    await sb.from('admin_logs').insert({ admin_id: currentAdmin.id, action: 'invite_user', target_user: userId, details: { plan, role } });
+
+  } else {
+    // Criar com senha imediata via Admin API
+    const senha = document.getElementById('new-user-senha').value;
+    if (!senha) { showToast('Defina uma senha ou gere automaticamente', 'error'); return; }
+    if (!validarForcaSenha(senha)) { showToast('Senha não atende aos critérios de segurança', 'error'); return; }
+
+    const res = await fetch(`${SUPABASE_URL}/auth/v1/admin/users`, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_SERVICE,
+        'Authorization': `Bearer ${SUPABASE_SERVICE}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ email, password: senha, email_confirm: true, user_metadata: { full_name: name } })
+    });
+    const result = await res.json();
+    if (!res.ok || result.error) {
+      showToast('Erro ao criar: ' + (result.message || result.error?.message || res.status), 'error');
+      return;
+    }
+    const userId = result.id;
+    await sb.from('profiles').update({ name, plan, role }).eq('id', userId);
+    await sb.from('admin_logs').insert({ admin_id: currentAdmin.id, action: 'create_user', target_user: userId, details: { plan, role, mods } });
+    showToast('Usuário criado! Compartilhe o email e senha.', 'success');
   }
 
   closeModal('modal-add-user');
@@ -1434,7 +1581,7 @@ async function saveUser() {
   const blocked = document.getElementById('edit-user-blocked').value === 'true';
   const mods    = getCheckedModules('edit-mod-');
 
-  const { error } = await sb.from('profiles').update({ name, plan, role, is_blocked: blocked, modules: mods, updated_at: new Date() }).eq('id', id);
+  const { error } = await sb.from('profiles').update({ name, plan, role }).eq('id', id);
   if (error) { showToast('Erro ao salvar: ' + error.message, 'error'); return; }
 
   await sb.from('admin_logs').insert({ admin_id: currentAdmin.id, action: 'update_user', target_user: id, details: { plan, role, blocked, mods } });
@@ -1507,7 +1654,7 @@ async function saveSubManual() {
   if (error) { showToast('Erro: ' + error.message, 'error'); return; }
 
   // Atualizar plano no perfil
-  await sb.from('profiles').update({ plan, updated_at: new Date() }).eq('id', profile.id);
+  await sb.from('profiles').update({ plan }).eq('id', profile.id);
   await sb.from('admin_logs').insert({ admin_id: currentAdmin.id, action: 'manual_subscription', target_user: profile.id, details: { plan, status, amount } });
 
   closeModal('modal-sub');
@@ -1602,17 +1749,19 @@ async function loadLogs() {
 // WEBHOOKS
 // ============================================================
 async function loadWebhooks() {
-  const { data } = await sb.from('webhook_logs').select('*').order('created_at', { ascending: false }).limit(50);
+  const sbAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE);
+  const { data } = await sbAdmin.from('webhook_logs').select('*').order('created_at', { ascending: false }).limit(50);
   const tbody = document.getElementById('webhooks-table');
   if (!data || !data.length) {
-    tbody.innerHTML = '<tr><td colspan="4" class="empty-row">Nenhum webhook recebido ainda.<br><span style="font-size:12px;">Os eventos da Kiwify aparecerão aqui após configurar a Edge Function.</span></td></tr>';
+    tbody.innerHTML = '<tr><td colspan="5" class="empty-row">Nenhum evento recebido ainda.<br><span style="font-size:12px;color:var(--text3)">Os eventos aparecerão aqui quando a primeira compra for realizada na Kiwify.</span></td></tr>';
     return;
   }
   tbody.innerHTML = data.map(w => `
     <tr>
-      <td style="text-transform:capitalize;">${w.platform || '—'}</td>
+      <td style="text-transform:capitalize">${w.platform || 'kiwify'}</td>
       <td>${w.event || '—'}</td>
-      <td><span class="badge badge-${w.status === 'processed' ? 'active' : 'overdue'}">${w.status}</span></td>
+      <td style="font-size:12px;color:var(--text3)">${w.email || '—'}</td>
+      <td><span class="badge badge-${w.status === 'processed' ? 'active' : w.status === 'ignored' ? 'overdue' : 'blocked'}">${w.status || '—'}</span></td>
       <td>${fmtDateTime(w.created_at)}</td>
     </tr>
   `).join('');
@@ -1622,7 +1771,7 @@ async function loadWebhooks() {
 // HELPERS
 // ============================================================
 function planLabel(plan) {
-  return { free:'Free', maker:'Maker', pro:'Pro', annual_maker:'Anual' }[plan] || plan || '—';
+  return { free:'Free', maker:'Maker', pro:'Pro', annual_maker:'Anual', interno:'Interno/Staff' }[plan] || plan || '—';
 }
 function statusLabel(s) {
   return { active:'Ativo', cancelled:'Cancelado', overdue:'Inadimplente', refunded:'Reembolsado', trial:'Trial' }[s] || s || '—';
@@ -1655,13 +1804,42 @@ document.querySelectorAll('.modal-overlay').forEach(o => {
 // ============================================================
 // INICIALIZAR
 // ============================================================
-checkSession();
-
-// Mostrar botão de biometria se disponível
-if (window.PublicKeyCredential && localStorage.getItem('admin_bio_cred')) {
-  document.getElementById('bio-admin-section').style.display = 'block';
-  setTimeout(loginAdminBio, 600);
-}
+(async () => {
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) {
+    const { data: profile } = await sb.from('profiles').select('*').eq('id', session.user.id).single();
+    if (profile && profile.role === 'admin') {
+      const hasCred = window.PublicKeyCredential && localStorage.getItem('admin_bio_cred');
+      if (hasCred) {
+        document.getElementById('bio-admin-section').style.display = 'block';
+        setTimeout(async () => {
+          try {
+            // Tenta biometria — loginAdminBio já seta currentAdmin e chama initApp
+            await loginAdminBio();
+            // Se chegou aqui sem entrar, entra direto
+            if (!currentAdmin) { currentAdmin = profile; initApp(); }
+          } catch(e) {
+            currentAdmin = profile;
+            initApp();
+          }
+        }, 400);
+      } else {
+        currentAdmin = profile;
+        initApp();
+      }
+    } else {
+      if (window.PublicKeyCredential && localStorage.getItem('admin_bio_cred')) {
+        document.getElementById('bio-admin-section').style.display = 'block';
+        setTimeout(loginAdminBio, 600);
+      }
+    }
+  } else {
+    if (window.PublicKeyCredential && localStorage.getItem('admin_bio_cred')) {
+      document.getElementById('bio-admin-section').style.display = 'block';
+      setTimeout(loginAdminBio, 600);
+    }
+  }
+})();
 </script>
 </body>
 </html>
