@@ -1581,7 +1581,7 @@ async function saveUser() {
   const blocked = document.getElementById('edit-user-blocked').value === 'true';
   const mods    = getCheckedModules('edit-mod-');
 
-  const { error } = await sb.from('profiles').update({ name, plan, role }).eq('id', id);
+  const { error } = await sb.from('profiles').update({ name, plan, role, is_blocked: blocked, modules: mods }).eq('id', id);
   if (error) { showToast('Erro ao salvar: ' + error.message, 'error'); return; }
 
   await sb.from('admin_logs').insert({ admin_id: currentAdmin.id, action: 'update_user', target_user: id, details: { plan, role, blocked, mods } });
@@ -1749,8 +1749,7 @@ async function loadLogs() {
 // WEBHOOKS
 // ============================================================
 async function loadWebhooks() {
-  const sbAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE);
-  const { data } = await sbAdmin.from('webhook_logs').select('*').order('created_at', { ascending: false }).limit(50);
+  const { data } = await sb.from('webhook_logs').select('*').order('created_at', { ascending: false }).limit(50);
   const tbody = document.getElementById('webhooks-table');
   if (!data || !data.length) {
     tbody.innerHTML = '<tr><td colspan="5" class="empty-row">Nenhum evento recebido ainda.<br><span style="font-size:12px;color:var(--text3)">Os eventos aparecerão aqui quando a primeira compra for realizada na Kiwify.</span></td></tr>';
