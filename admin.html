@@ -1461,14 +1461,31 @@ async function addUserManual() {
       body: JSON.stringify({ email, password: senhaTemp, email_confirm: true, user_metadata: { full_name: name } })
     });
     const created = await resCreate.json();
+    let userId = created.id;
     if (!resCreate.ok || created.error) {
-      const errMsg = created.message || created.msg
-        || (typeof created.error === 'string' ? created.error : created.error?.message)
-        || JSON.stringify(created);
-      showToast('Erro ao criar: ' + errMsg, 'error');
-      return;
+      const isAlreadyExists = resCreate.status === 422
+        || (typeof created.error === 'string' && created.error.includes('already'))
+        || (created.message && created.message.toLowerCase().includes('already'));
+      if (isAlreadyExists) {
+        // Usuário já existe no Auth — busca pelo email e continua
+        const resList = await fetch(`${SUPABASE_URL}/auth/v1/admin/users?email=${encodeURIComponent(email)}`, {
+          headers: { 'apikey': SUPABASE_SERVICE, 'Authorization': `Bearer ${SUPABASE_SERVICE}` }
+        });
+        const listData = await resList.json();
+        const existing = listData?.users?.[0];
+        if (!existing) {
+          showToast('Usuário já existe mas não foi possível localizar no Supabase', 'error');
+          return;
+        }
+        userId = existing.id;
+      } else {
+        const errMsg = created.message || created.msg
+          || (typeof created.error === 'string' ? created.error : created.error?.message)
+          || JSON.stringify(created);
+        showToast('Erro ao criar: ' + errMsg, 'error');
+        return;
+      }
     }
-    const userId = created.id;
 
     // 2. Gerar link de recuperação de senha (usuário define nova senha)
     const resLink = await fetch(`${SUPABASE_URL}/auth/v1/admin/generate_link`, {
@@ -1547,14 +1564,30 @@ async function addUserManual() {
       body: JSON.stringify({ email, password: senha, email_confirm: true, user_metadata: { full_name: name } })
     });
     const result = await res.json();
+    let userId = result.id;
     if (!res.ok || result.error) {
-      const errMsg = result.message || result.msg
-        || (typeof result.error === 'string' ? result.error : result.error?.message)
-        || JSON.stringify(result);
-      showToast('Erro ao criar: ' + errMsg, 'error');
-      return;
+      const isAlreadyExists = res.status === 422
+        || (typeof result.error === 'string' && result.error.includes('already'))
+        || (result.message && result.message.toLowerCase().includes('already'));
+      if (isAlreadyExists) {
+        const resList2 = await fetch(`${SUPABASE_URL}/auth/v1/admin/users?email=${encodeURIComponent(email)}`, {
+          headers: { 'apikey': SUPABASE_SERVICE, 'Authorization': `Bearer ${SUPABASE_SERVICE}` }
+        });
+        const listData2 = await resList2.json();
+        const existing2 = listData2?.users?.[0];
+        if (!existing2) {
+          showToast('Usuário já existe mas não foi possível localizar no Supabase', 'error');
+          return;
+        }
+        userId = existing2.id;
+      } else {
+        const errMsg = result.message || result.msg
+          || (typeof result.error === 'string' ? result.error : result.error?.message)
+          || JSON.stringify(result);
+        showToast('Erro ao criar: ' + errMsg, 'error');
+        return;
+      }
     }
-    const userId = result.id;
     await sb.from('profiles').update({ name, plan, role }).eq('id', userId);
     await sb.from('admin_logs').insert({ admin_id: currentAdmin.id, action: 'create_user', target_user: userId, details: { plan, role, mods } });
     showToast('Usuário criado! Compartilhe o email e senha.', 'success');
