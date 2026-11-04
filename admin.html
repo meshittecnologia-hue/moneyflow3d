@@ -1523,15 +1523,15 @@ async function addUserManual() {
         </div>
       </div>`;
 
-    const resEmail = await fetch('https://api.resend.com/emails', {
+    const resEmail = await fetch(`${SUPABASE_URL}/functions/v1/send-email`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${RESEND_KEY}`,
+        'apikey': SUPABASE_SERVICE,
+        'Authorization': `Bearer ${SUPABASE_SERVICE}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        from: 'MoneyFlow 3D <noreply@moneyflow3d.com.br>',
-        to: [email],
+        to: email,
         subject: 'Você foi convidado para o MoneyFlow 3D',
         html: htmlEmail
       })
@@ -1643,15 +1643,15 @@ async function sendPasswordEmail(email, name) {
       </div>
     </div>`;
 
-  const resEmail = await fetch('https://api.resend.com/emails', {
+  const resEmail = await fetch(`${SUPABASE_URL}/functions/v1/send-email`, {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${RESEND_KEY}`,
+      'apikey': SUPABASE_SERVICE,
+      'Authorization': `Bearer ${SUPABASE_SERVICE}`,
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({
-      from: 'MoneyFlow 3D <noreply@moneyflow3d.com.br>',
-      to: [email],
+      to: email,
       subject: 'Acesse o MoneyFlow 3D — link de acesso',
       html: htmlEmail
     })
