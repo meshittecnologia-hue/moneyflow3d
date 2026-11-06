@@ -1,0 +1,41 @@
+"""Regras 1 e 2 de qualidade do MoneyFlow 3D, automatizadas.
+
+Uso: python3 scripts/validar_html.py admin.html index.html lp.html
+Falha (exit 1) se: JS com erro de sintaxe, ou chave secreta no arquivo.
+IDs faltando são listados como aviso.
+"""
+import re
+import subprocess
+import sys
+import tempfile
+
+SEGREDOS = [
+    (r"eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}", "JWT (chave legada do Supabase)"),
+    (r"sb_secret_[A-Za-z0-9_-]+", "secret key do Supabase"),
+    (r"\bre_[A-Za-z0-9]{8,}_[A-Za-z0-9]+", "chave do Resend"),
+]
+
+falhou = False
+for arq in sys.argv[1:]:
+    code = open(arq, encoding="utf-8").read()
+    print(f"== {arq}")
+    for padrao, nome in SEGREDOS:
+        if re.search(padrao, code):
+            print(f"  ERRO: {nome} encontrada no arquivo")
+            falhou = True
+    js = "\n".join(re.findall(r"<script>(.*?)</script>", code, re.DOTALL))
+    with tempfile.NamedTemporaryFile("w", suffix=".js", delete=False) as t:
+        t.write(js)
+    r = subprocess.run(
+        ["node", "-e", "const c=require('fs').readFileSync(process.argv[1],'utf8');try{new Function(c);console.log('JS OK')}catch(e){console.log('ERRO JS:',e.message);process.exit(1)}", t.name],
+        capture_output=True, text=True,
+    )
+    print("  " + r.stdout.strip())
+    if r.returncode:
+        falhou = True
+    js_ids = set(re.findall(r"getElementById\('([^']+)'\)", code))
+    html_ids = set(re.findall(r'\bid=["\']([^"\']+)["\']', code))
+    faltando = js_ids - html_ids
+    print("  IDs faltando (aviso):", sorted(faltando) if faltando else "nenhum")
+
+sys.exit(1 if falhou else 0)
