@@ -873,6 +873,16 @@ const ADMIN_API_URL = '';
 const { createClient } = supabase;
 const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
 
+// Proteção contra XSS (auditoria, problema 10): todo texto vindo do banco
+// passa por esc() antes de ir para innerHTML.
+function esc(v) {
+  return String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+// Para valores dentro de onclick="fn('...')": escapa para string JS e depois para HTML.
+function escJs(v) {
+  return esc(String(v ?? '').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\r?\n/g, ' '));
+}
+
 let currentAdmin = null;
 let allUsers = [];
 let allSubs = [];
@@ -1021,7 +1031,7 @@ async function alterarSenhaAdmin() {
   if (nova !== conf)  { msg.innerHTML = '<span style="color:var(--red)">As senhas não coincidem.</span>'; return; }
   if (nova.length < 8){ msg.innerHTML = '<span style="color:var(--red)">Mínimo 8 caracteres.</span>'; return; }
   const { error } = await sb.auth.updateUser({ password: nova });
-  if (error) { msg.innerHTML = `<span style="color:var(--red)">${error.message}</span>`; return; }
+  if (error) { msg.innerHTML = `<span style="color:var(--red)">${esc(error.message)}</span>`; return; }
   msg.innerHTML = '<span style="color:var(--green)">✅ Senha alterada com sucesso!</span>';
   document.getElementById('cfg-nova-senha').value = '';
   document.getElementById('cfg-conf-senha').value = '';
@@ -1257,7 +1267,7 @@ async function loadDashboard() {
   const recent = [...profiles].sort((a,b) => new Date(b.created_at) - new Date(a.created_at)).slice(0,5);
   document.getElementById('dash-recent').innerHTML = recent.map(p =>
     `<tr>
-      <td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.name || p.email}</td>
+      <td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(p.name || p.email)}</td>
       <td><span class="badge badge-${p.plan === 'annual_maker' ? 'annual' : p.plan}">${planLabel(p.plan)}</span></td>
       <td>${fmtDate(p.created_at)}</td>
     </tr>`
@@ -1339,10 +1349,10 @@ function renderUsers(users) {
     ).join(' ') + (mods.length > 3 ? `<span style="font-size:10px;color:var(--text3)">+${mods.length-3}</span>` : '');
     return `<tr>
       <td>
-        <div style="font-weight:600">${u.name || '—'}</div>
-        <div style="font-size:12px;color:var(--text3)">${u.email || '—'}</div>
+        <div style="font-weight:600">${esc(u.name || '—')}</div>
+        <div style="font-size:12px;color:var(--text3)">${esc(u.email || '—')}</div>
       </td>
-      <td><span class="badge badge-${u.plan === 'annual_maker' ? 'annual' : u.plan === 'interno' ? 'interno' : u.plan}">${PLAN_LABELS[u.plan]||u.plan}</span></td>
+      <td><span class="badge badge-${u.plan === 'annual_maker' ? 'annual' : u.plan === 'interno' ? 'interno' : u.plan}">${esc(PLAN_LABELS[u.plan]||u.plan)}</span></td>
       <td>${u.role === 'admin'
         ? '<span class="badge badge-admin">🔑 Admin</span>'
         : '<span style="font-size:12px;color:var(--text3)">👤 Usuário</span>'}</td>
@@ -1353,8 +1363,8 @@ function renderUsers(users) {
       <td style="font-size:12px;color:var(--text3)">${fmtDate(u.created_at)}</td>
       <td style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
         <button class="btn btn-ghost btn-sm" onclick='openEditUser(${JSON.stringify(u).replace(/'/g,"&#39;")})'>Editar</button>
-        <button class="btn btn-sm btn-success" onclick="sendPasswordEmail('${u.email}','${(u.name||'').replace(/'/g,"\\'")}')">📧 Senha</button>
-        <button class="btn btn-sm" style="background:rgba(239,68,68,.15);color:var(--red);border:1px solid rgba(239,68,68,.3)" onclick="confirmarExcluirUser('${u.id}','${(u.name||u.email||'').replace(/'/g,"\\'")}')">✕</button>
+        <button class="btn btn-sm btn-success" onclick="sendPasswordEmail('${escJs(u.email)}','${escJs(u.name)}')">📧 Senha</button>
+        <button class="btn btn-sm" style="background:rgba(239,68,68,.15);color:var(--red);border:1px solid rgba(239,68,68,.3)" onclick="confirmarExcluirUser('${escJs(u.id)}','${escJs(u.name||u.email)}')">✕</button>
       </td>
     </tr>`;
   }).join('');
@@ -1553,7 +1563,7 @@ function renderSubs(subs) {
   if (!subs.length) { tbody.innerHTML = '<tr><td colspan="6" class="empty-row">Nenhuma assinatura encontrada</td></tr>'; return; }
   tbody.innerHTML = subs.map(s => `
     <tr>
-      <td>${s.profiles?.name || s.profiles?.email || '—'}</td>
+      <td>${esc(s.profiles?.name || s.profiles?.email || '—')}</td>
       <td><span class="badge badge-${s.plan === 'annual_maker' ? 'annual' : s.plan || 'free'}">${planLabel(s.plan)}</span></td>
       <td style="text-transform:capitalize;">${s.platform || '—'}</td>
       <td><span class="badge badge-${s.status}">${statusLabel(s.status)}</span></td>
@@ -1606,9 +1616,9 @@ async function loadModules() {
   if (!data || !data.length) { tbody.innerHTML = '<tr><td colspan="6" class="empty-row">Nenhum módulo</td></tr>'; return; }
   tbody.innerHTML = data.map(m => `
     <tr>
-      <td><code style="background:var(--bg3);padding:2px 8px;border-radius:4px;font-size:12px;">${m.slug}</code></td>
-      <td style="font-weight:600;">${m.name}</td>
-      <td style="color:var(--text3);">${m.description || '—'}</td>
+      <td><code style="background:var(--bg3);padding:2px 8px;border-radius:4px;font-size:12px;">${esc(m.slug)}</code></td>
+      <td style="font-weight:600;">${esc(m.name)}</td>
+      <td style="color:var(--text3);">${esc(m.description || '—')}</td>
       <td>${m.price_monthly > 0 ? 'R$ ' + Number(m.price_monthly).toFixed(2) : 'Grátis'}</td>
       <td><span class="badge ${m.active ? 'badge-active' : 'badge-cancelled'}">${m.active ? 'Ativo' : 'Inativo'}</span></td>
       <td>
@@ -1669,11 +1679,11 @@ async function loadLogs() {
   el.innerHTML = data.map(l => `
     <div class="log-entry">
       <div>
-        <span class="log-action">${l.action}</span>
-        ${l.target ? `→ <strong>${l.target.name || l.target.email}</strong>` : ''}
-        <span style="color:var(--text3);font-size:12px;">por ${l.admin?.name || l.admin?.email || '—'}</span>
+        <span class="log-action">${esc(l.action)}</span>
+        ${l.target ? `→ <strong>${esc(l.target.name || l.target.email)}</strong>` : ''}
+        <span style="color:var(--text3);font-size:12px;">por ${esc(l.admin?.name || l.admin?.email || '—')}</span>
       </div>
-      ${l.details ? `<div style="font-size:12px;color:var(--text3);margin-top:2px;">${JSON.stringify(l.details)}</div>` : ''}
+      ${l.details ? `<div style="font-size:12px;color:var(--text3);margin-top:2px;">${esc(JSON.stringify(l.details))}</div>` : ''}
       <div class="log-time">${fmtDateTime(l.created_at)}</div>
     </div>
   `).join('');
@@ -1691,10 +1701,10 @@ async function loadWebhooks() {
   }
   tbody.innerHTML = data.map(w => `
     <tr>
-      <td style="text-transform:capitalize">${w.platform || 'kiwify'}</td>
-      <td>${w.event || '—'}</td>
-      <td style="font-size:12px;color:var(--text3)">${w.email || '—'}</td>
-      <td><span class="badge badge-${w.status === 'processed' ? 'active' : w.status === 'ignored' ? 'overdue' : 'blocked'}">${w.status || '—'}</span></td>
+      <td style="text-transform:capitalize">${esc(w.platform || 'kiwify')}</td>
+      <td>${esc(w.event || '—')}</td>
+      <td style="font-size:12px;color:var(--text3)">${esc(w.email || '—')}</td>
+      <td><span class="badge badge-${w.status === 'processed' ? 'active' : w.status === 'ignored' ? 'overdue' : 'blocked'}">${esc(w.status || '—')}</span></td>
       <td>${fmtDateTime(w.created_at)}</td>
     </tr>
   `).join('');
