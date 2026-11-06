@@ -1,0 +1,30 @@
+name: Verificação
+
+on:
+  pull_request:
+  push:
+    branches: [Desenvolvimento, main]
+
+jobs:
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Regras 1 e 2 + varredura de segredos
+        run: python3 scripts/validar_html.py admin.html index.html lp.html
+
+  backend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements-dev.txt
+      - run: python -m pytest -q

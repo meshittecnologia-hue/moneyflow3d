@@ -2164,7 +2164,7 @@ function verificarEstoqueFilamento(nomeProduto, qtdPedido){
       <div style="font-size:40px;margin-bottom:12px">⚠️</div>
       <div style="font-size:16px;font-weight:700;color:var(--red);margin-bottom:8px">Filamento insuficiente!</div>
       <div style="font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:16px">
-        Para imprimir <strong>${qtdPedido}× ${nomeProduto}</strong> são necessários <strong>${precisag}g</strong> de <strong>${prod.filamento}</strong>.<br><br>
+        Para imprimir <strong>${qtdPedido}× ${nomeProduto}</strong> são necessários <strong>${precisag}g</strong> de <strong>${esc(prod.filamento)}</strong>.<br><br>
         Estoque disponível: <strong style="color:var(--red)">${temg}g</strong><br>
         Faltam: <strong style="color:var(--red)">${faltam}g</strong>
       </div>
@@ -2696,7 +2696,7 @@ function renderResult(){
 function renderMPGrid(base,total){
   document.getElementById('c-mpgrid').innerHTML=MPs.map(mp=>`
     <div class="mp-btn ${mp.id===selMP?'active':''}" onclick="selMP='${mp.id}';renderMPGrid(${base},${total});renderBreakdown(${base},${total},lastCalc)">
-      <div class="mp-name">${mp.name}</div>
+      <div class="mp-name">${esc(mp.name)}</div>
       <div class="mp-fee">${mp.fee>0?(mp.fee*100).toFixed(2)+'%':'0%'}</div>
     </div>`).join('');
   renderBreakdown(base,total,lastCalc);
@@ -2719,7 +2719,7 @@ function renderBreakdown(base,total,r){
   document.getElementById('c-breakdown').innerHTML=`
     <div class="br-row"><span class="br-label">Custo unitário</span><span class="br-val-red">- R$ ${total.toFixed(2)}</span></div>
     ${r&&r.desconto>0&&priceTog==='final'?`<div class="br-row"><span class="br-label">Desconto (${(r.desconto*100).toFixed(1)}%)</span><span class="br-val-red">- R$ ${(r.base-base).toFixed(2)}</span></div>`:''}
-    <div class="br-row"><span class="br-label">Taxa ${mp.name} (${(mp.fee*100).toFixed(2)}%)</span><span class="br-val-red">- R$ ${taxa.toFixed(2)}</span></div>
+    <div class="br-row"><span class="br-label">Taxa ${esc(mp.name)} (${(mp.fee*100).toFixed(2)}%)</span><span class="br-val-red">- R$ ${taxa.toFixed(2)}</span></div>
     <div class="br-row"><span class="br-label">Lucro líquido</span><span class="br-val-green">R$ ${liq.toFixed(2)}</span></div>`;
   document.getElementById('c-mperc').textContent=ml.toFixed(1)+'%';
   document.getElementById('c-mperc').style.color=c;
@@ -2769,14 +2769,14 @@ function populateSelects(){
   // Preencher o select hidden (mantém compatibilidade com calcRT)
   const fs=document.getElementById('c-fil');
   const cv=fs.value;
-  fs.innerHTML='<option value="">Selecione</option>'+DB.filamentos.map(f=>`<option value="${f.id}">${f.nome} — ${f.marca} (${f.tipo})${f.custo>0?' R$'+(f.custo/(f.peso/1000)).toFixed(0)+'/kg':' — sem preço'}</option>`).join('');
+  fs.innerHTML='<option value="">Selecione</option>'+DB.filamentos.map(f=>`<option value="${f.id}">${esc(f.nome)} — ${esc(f.marca)} (${esc(f.tipo)})${f.custo>0?' R$'+(f.custo/(f.peso/1000)).toFixed(0)+'/kg':' — sem preço'}</option>`).join('');
   if(cv)fs.value=cv;else if(DB.filamentos.length)fs.value=DB.filamentos[0].id;
   // Atualizar label visual do picker
   filPickerSync();
   // Preencher impressoras
   const is=document.getElementById('c-imp');
   const ci=is.value;
-  is.innerHTML='<option value="">Selecione</option>'+DB.impressoras.map(i=>`<option value="${i.id}">${i.nome}</option>`).join('');
+  is.innerHTML='<option value="">Selecione</option>'+DB.impressoras.map(i=>`<option value="${i.id}">${esc(i.nome)}</option>`).join('');
   if(ci)is.value=ci;else if(DB.impressoras.length)is.value=DB.impressoras[0].id;
 }
 
@@ -2880,10 +2880,10 @@ function renderDashboard(){
   const maxM=sorted.length?Math.max(...sorted.map(x=>x.margem)):1;
   document.getElementById('dash-chart').innerHTML=sorted.length?sorted.map(p=>{
     const c=p.margem>30?'#22c55e':p.margem>15?'#eab308':'#ef4444';
-    return`<div class="bar-row"><div class="bar-label">${p.nome}</div><div class="bar-track"><div class="bar-fill" style="width:${(p.margem/maxM*100).toFixed(0)}%;background:${c}">${p.margem.toFixed(1)}%</div></div><div class="bar-val">${p.margem.toFixed(1)}%</div></div>`;
+    return`<div class="bar-row"><div class="bar-label">${esc(p.nome)}</div><div class="bar-track"><div class="bar-fill" style="width:${(p.margem/maxM*100).toFixed(0)}%;background:${c}">${p.margem.toFixed(1)}%</div></div><div class="bar-val">${p.margem.toFixed(1)}%</div></div>`;
   }).join(''):'<div style="color:var(--text3);font-size:13px;padding:12px 0;text-align:center">Nenhum produto ainda</div>';
   document.getElementById('dash-recentes').innerHTML=ps.slice(0,5).map(p=>`
-    <div class="br-row"><span class="br-label">${p.nome}</span><span style="font-size:12px;color:var(--text2)">R$ ${p.precoBase.toFixed(2)}</span></div>`).join('')||'<div style="color:var(--text3);font-size:13px;padding:8px 0">Nenhum produto ainda</div>';
+    <div class="br-row"><span class="br-label">${esc(p.nome)}</span><span style="font-size:12px;color:var(--text2)">R$ ${p.precoBase.toFixed(2)}</span></div>`).join('')||'<div style="color:var(--text3);font-size:13px;padding:8px 0">Nenhum produto ainda</div>';
 }
 
 /* ── PRODUTOS ───────────────────────────────────────── */
@@ -2916,8 +2916,8 @@ function renderProdutos(){
     document.getElementById('prod-tbody').innerHTML=ps.map(p=>{
       const mc=p.margem>30?'badge-green':p.margem>15?'badge-yellow':'badge-red';
       return`<tr>
-        <td style="font-weight:500">${p.nome}</td>
-        <td style="color:var(--text2)">${p.filamento}</td>
+        <td style="font-weight:500">${esc(p.nome)}</td>
+        <td style="color:var(--text2)">${esc(p.filamento)}</td>
         <td>R$ ${(p.custoTotal||0).toFixed(2)}</td>
         <td style="font-weight:600">R$ ${(p.precoBase||0).toFixed(2)}</td>
         <td><span class="badge ${mc}">${(p.margem||0).toFixed(1)}%</span></td>
@@ -2932,8 +2932,8 @@ function renderProdutos(){
     empty2.style.display='none';
     grid.innerHTML=ps.map(p=>`
       <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:16px">
-        <div style="font-weight:600;font-size:14px;margin-bottom:4px">${p.nome}</div>
-        <div style="font-size:12px;color:var(--text2);margin-bottom:10px">${p.filamento}</div>
+        <div style="font-weight:600;font-size:14px;margin-bottom:4px">${esc(p.nome)}</div>
+        <div style="font-size:12px;color:var(--text2);margin-bottom:10px">${esc(p.filamento)}</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:12px;margin-bottom:10px">
           <div style="color:var(--text3)">Custo</div><div>R$ ${(p.custoTotal||0).toFixed(2)}</div>
           <div style="color:var(--text3)">Preço</div><div style="font-weight:600;color:var(--accent)">R$ ${(p.precoBase||0).toFixed(2)}</div>
@@ -2995,10 +2995,10 @@ function renderFilamentos(){
     const dotBg = corHex || 'rgba(148,163,184,0.35)';
     const dotHtml = `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${dotBg};border:1px solid rgba(0,0,0,.15);vertical-align:middle;margin-right:6px;flex-shrink:0"></span>`;
     return`<tr>
-      <td style="font-weight:600">${dotHtml}${f.nome}</td>
-      <td style="color:var(--text2)">${f.marca||'—'}</td>
-      <td style="color:var(--text2)">${corHex?`<span style="display:inline-flex;align-items:center;gap:5px"><span style="display:inline-block;width:14px;height:14px;border-radius:3px;background:${corHex};border:1px solid rgba(0,0,0,.15)"></span>${f.cor}</span>`:f.cor||'—'}</td>
-      <td><span style="display:inline-block;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700;background:${FIL_BADGE.bg};color:${FIL_BADGE.text}">${f.tipo}</span></td>
+      <td style="font-weight:600">${dotHtml}${esc(f.nome)}</td>
+      <td style="color:var(--text2)">${esc(f.marca||'—')}</td>
+      <td style="color:var(--text2)">${corHex?`<span style="display:inline-flex;align-items:center;gap:5px"><span style="display:inline-block;width:14px;height:14px;border-radius:3px;background:${corHex};border:1px solid rgba(0,0,0,.15)"></span>${esc(f.cor)}</span>`:f.cor||'—'}</td>
+      <td><span style="display:inline-block;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700;background:${FIL_BADGE.bg};color:${FIL_BADGE.text}">${esc(f.tipo)}</span></td>
       <td>${f.custo>0?'R$ '+(f.custo/(f.peso/1000)).toFixed(2):'<span style="color:var(--accent);font-size:11px">cadastrar preço</span>'}</td>
       <td style="color:var(--text2)">${f.custo>0?'R$ '+(f.custo/f.peso).toFixed(4):'—'}</td>
       <td style="display:flex;gap:6px;flex-wrap:wrap">
@@ -3041,7 +3041,7 @@ function renderConfig(){
   document.getElementById('imp-list').innerHTML=DB.impressoras.map(i=>`
     <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);gap:8px;flex-wrap:wrap">
       <div style="flex:1;min-width:180px">
-        <div style="font-weight:500">${i.nome}</div>
+        <div style="font-weight:500">${esc(i.nome)}</div>
         <div style="font-size:11px;color:var(--text3);margin-top:2px">R$ ${i.inv} | ROI ${i.roi}m | ${i.watts}W | ${i.hpd}h/dia | ${i.fail}% falhas</div>
       </div>
       <button class="btn btn-danger btn-sm" onclick="delImp('${i.id}')">Excluir</button>
@@ -3077,7 +3077,7 @@ function renderRelatorio(){
   document.getElementById('rel-chart').innerHTML=sorted.map(p=>{
     const liq=p.precoBase-p.custoTotal;
     const c=p.margem>30?'#22c55e':p.margem>15?'#eab308':'#ef4444';
-    return`<div class="bar-row"><div class="bar-label">${p.nome}</div><div class="bar-track"><div class="bar-fill" style="width:${(liq/maxL*100).toFixed(0)}%;background:${c}">R$ ${liq.toFixed(2)}</div></div><div class="bar-val">R$ ${liq.toFixed(2)}</div></div>`;
+    return`<div class="bar-row"><div class="bar-label">${esc(p.nome)}</div><div class="bar-track"><div class="bar-fill" style="width:${(liq/maxL*100).toFixed(0)}%;background:${c}">R$ ${liq.toFixed(2)}</div></div><div class="bar-val">R$ ${liq.toFixed(2)}</div></div>`;
   }).join('')||'<div style="color:var(--text3);font-size:13px;padding:12px 0">Nenhum produto ainda</div>';
 }
 
@@ -3092,13 +3092,13 @@ function renderComparar(){
   if(selProd){
     const curProd=selProd.value;
     selProd.innerHTML='<option value="">— Selecione um produto —</option>'+
-      ps.map(p=>`<option value="${p.id}">${p.nome}</option>`).join('');
+      ps.map(p=>`<option value="${p.id}">${esc(p.nome)}</option>`).join('');
     if(curProd)selProd.value=curProd;
   }
   if(selConc){
     const curConc=selConc.value;
     selConc.innerHTML='<option value="">— Selecione um concorrente —</option>'+
-      concs.map(c=>`<option value="${c.id}">${c.nome}${c.loja?' ('+c.loja+')':''}</option>`).join('');
+      concs.map(c=>`<option value="${c.id}">${esc(c.nome)}${esc(c.loja?' ('+c.loja+')':'')}</option>`).join('');
     if(curConc)selConc.value=curConc;
   }
   renderConcList();
@@ -3319,6 +3319,11 @@ function closeModal(id){document.getElementById(id).classList.remove('open');}
 let catalogoDB = [];
 
 function renderCatalogo(){
+  // A tela do catálogo foi removida do HTML; sem os elementos, não renderiza (evita erro silencioso).
+  if(!document.getElementById('cat-grid')||!document.getElementById('cat-empty')||!document.getElementById('cat-search')){
+    console.warn('renderCatalogo: tela do catálogo não existe no HTML');
+    return;
+  }
   const q=(document.getElementById('cat-search').value||'').toLowerCase();
   const items=DB.catalogos||[];
   const filtered=q?items.filter(x=>(x.nome||'').toLowerCase().includes(q)||(x.categoria||'').toLowerCase().includes(q)):items;
@@ -3330,15 +3335,15 @@ function renderCatalogo(){
     const mc=p.margem>30?'var(--green)':p.margem>15?'var(--yellow)':'var(--red)';
     return`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:16px">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:8px">
-        <div style="font-weight:600;font-size:14px;color:var(--text)">${p.nome}</div>
-        <span class="badge badge-blue">${p.categoria||'Geral'}</span>
+        <div style="font-weight:600;font-size:14px;color:var(--text)">${esc(p.nome)}</div>
+        <span class="badge badge-blue">${esc(p.categoria||'Geral')}</span>
       </div>
-      ${p.descricao?`<div style="font-size:12px;color:var(--text2);margin-bottom:10px">${p.descricao}</div>`:''}
+      ${p.descricao?`<div style="font-size:12px;color:var(--text2);margin-bottom:10px">${esc(p.descricao)}</div>`:''}
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:12px">
         <div style="color:var(--text3)">Custo</div><div style="font-weight:500">R$ ${(p.custoTotal||0).toFixed(2)}</div>
         <div style="color:var(--text3)">Preço</div><div style="font-weight:600;color:var(--accent)">R$ ${(p.precoBase||0).toFixed(2)}</div>
         <div style="color:var(--text3)">Margem</div><div style="font-weight:600;color:${mc}">${(p.margem||0).toFixed(1)}%</div>
-        <div style="color:var(--text3)">Filamento</div><div>${p.filamento||'—'}</div>
+        <div style="color:var(--text3)">Filamento</div><div>${esc(p.filamento||'—')}</div>
         ${p.marketplace?`<div style="color:var(--text3)">Marketplace</div><div>${p.marketplace}</div>`:''}
       </div>
       <div style="margin-top:10px;display:flex;justify-content:flex-end">
@@ -3596,8 +3601,11 @@ function limparDados(){
 /* ── THEME (sync both buttons) ───────────────────────── */
 /* ── SUPABASE ────────────────────────────────────────── */
 const SUPABASE_URL = 'https://fqthlewarcqvmqojmzzs.supabase.co';
-const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZxdGhsZXdhcmNxdm1xb2ptenpzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0ODgzNjMsImV4cCI6MjA5ODA2NDM2M30.PdRQ0VsUWa4L-ZKSxWyUvQ2sGD0O-cz4Vw3yZ6ZRSgs';
+const SUPABASE_ANON = 'sb_publishable_Y1nupemuEmSd9TIlLGg5cg_rS7cyQK2';
 const _supa = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+// Proteção contra XSS (auditoria, problema 10): texto vindo do banco passa por esc() antes de ir para innerHTML.
+function esc(v){ return String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function escJs(v){ return esc(String(v ?? '').replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/\r?\n/g,' ')); }
 
 /* ── LOGIN ──────────────────────────────────────────── */
 const RP_ID=location.hostname||'localhost';
@@ -3860,9 +3868,9 @@ function openOrcModal(){
   if(!DB.orcamentos)DB.orcamentos=[];
   orcAtual=null;
   const sc=document.getElementById('orc-cliente');
-  sc.innerHTML='<option value="">Sem cliente</option>'+(DB.clientes||[]).map(c=>`<option value="${c.id}">${c.nome}</option>`).join('');
+  sc.innerHTML='<option value="">Sem cliente</option>'+(DB.clientes||[]).map(c=>`<option value="${c.id}">${esc(c.nome)}</option>`).join('');
   const sp=document.getElementById('orc-produto');
-  sp.innerHTML='<option value="">Selecionar produto salvo (opcional)</option>'+(DB.produtos||[]).map(p=>`<option value="${p.id}">${p.nome} — R$${p.precoBase?p.precoBase.toFixed(2):'0.00'}</option>`).join('');
+  sp.innerHTML='<option value="">Selecionar produto salvo (opcional)</option>'+(DB.produtos||[]).map(p=>`<option value="${p.id}">${esc(p.nome)} — R$${p.precoBase?p.precoBase.toFixed(2):'0.00'}</option>`).join('');
   document.getElementById('orc-itens-container').innerHTML='';
   addOrcItem();
   document.getElementById('orc-desc').value=0;
@@ -3936,7 +3944,7 @@ function renderOrcamentos(){
         <td style="padding:12px 14px;font-size:13px;font-weight:700;color:var(--accent)">R$ ${o.total.toFixed(2).replace('.',',')}</td>
         <td style="padding:12px 14px">
           <select onchange="updateOrcStatus('${o.id}',this.value)" style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:4px 8px;color:${statusCores[o.status]||'var(--text)'};font-size:12px;outline:none">
-            ${['pendente','aprovado','recusado'].map(s=>`<option value="${s}" ${o.status===s?'selected':''}>${statusLabel[s]}</option>`).join('')}
+            ${['pendente','aprovado','recusado'].map(s=>`<option value="${s}" ${esc(o.status===s?'selected':'')}>${statusLabel[s]}</option>`).join('')}
           </select>
         </td>
         <td style="padding:12px 14px;font-size:12px;color:var(--text3)">${o.data}</td>
@@ -3998,9 +4006,9 @@ function editarOrcamento(id){
   if(!o)return;
   orcAtual=null;
   const sc=document.getElementById('orc-cliente');
-  sc.innerHTML='<option value="">Sem cliente</option>'+(DB.clientes||[]).map(c=>`<option value="${c.id}">${c.nome}</option>`).join('');
+  sc.innerHTML='<option value="">Sem cliente</option>'+(DB.clientes||[]).map(c=>`<option value="${c.id}">${esc(c.nome)}</option>`).join('');
   const sp=document.getElementById('orc-produto');
-  sp.innerHTML='<option value="">Selecionar produto salvo (opcional)</option>'+(DB.produtos||[]).map(p=>`<option value="${p.id}">${p.nome} — R$${p.precoBase?p.precoBase.toFixed(2):'0.00'}</option>`).join('');
+  sp.innerHTML='<option value="">Selecionar produto salvo (opcional)</option>'+(DB.produtos||[]).map(p=>`<option value="${p.id}">${esc(p.nome)} — R$${p.precoBase?p.precoBase.toFixed(2):'0.00'}</option>`).join('');
   document.getElementById('orc-cliente').value=o.clienteId||'';
   // Carregar itens no container
   document.getElementById('orc-itens-container').innerHTML='';
@@ -4064,7 +4072,7 @@ function verOrcamentoPDF(id){
           <th style="padding:8px 12px;text-align:right;font-size:12px;border:1px solid #ddd">Subtotal</th>
         </tr></thead>
         <tbody>${(o.itens&&o.itens.length?o.itens:[{nome:o.produtoNome,qtd:o.qtd,preco:o.preco}]).map(item=>`<tr>
-          <td style="padding:10px 12px;border:1px solid #ddd;font-weight:600;color:#111">${item.nome}</td>
+          <td style="padding:10px 12px;border:1px solid #ddd;font-weight:600;color:#111">${esc(item.nome)}</td>
           <td style="padding:10px 12px;border:1px solid #ddd;text-align:center;color:#111">${item.qtd}</td>
           <td style="padding:10px 12px;border:1px solid #ddd;text-align:right;color:#111">R$ ${(item.preco||0).toFixed(2).replace('.',',')}</td>
           <td style="padding:10px 12px;border:1px solid #ddd;text-align:right;font-weight:700;color:#111">R$ ${((item.qtd||1)*(item.preco||0)).toFixed(2).replace('.',',')}</td>
@@ -4072,12 +4080,12 @@ function verOrcamentoPDF(id){
       </table>
       <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
         <div style="text-align:right">
-          ${o.desc>0?`<div style="font-size:12px;color:#888">Subtotal: R$ ${(o.total/(1-o.desc/100)).toFixed(2).replace('.',',')} — Desconto ${o.desc}%</div>`:''}
+          ${o.desc>0?`<div style="font-size:12px;color:#888">Subtotal: R$ ${(o.total/(1-o.desc/100)).toFixed(2).replace('.',',')} — Desconto ${esc(o.desc)}%</div>`:''}
           <div style="font-size:12px;color:#888">Canal de venda: ${o.marketplace}</div>
           <div style="font-size:20px;font-weight:800;color:#f97316">Total: R$ ${o.total.toFixed(2).replace('.',',')}</div>
         </div>
       </div>
-      ${o.obs?`<div style="background:#fff8f3;border:1px solid #f97316;border-radius:6px;padding:10px 14px;font-size:12px;color:#555"><strong>Observações:</strong> ${o.obs}</div>`:''}
+      ${o.obs?`<div style="background:#fff8f3;border:1px solid #f97316;border-radius:6px;padding:10px 14px;font-size:12px;color:#555"><strong>Observações:</strong> ${esc(o.obs)}</div>`:''}
       <div style="margin-top:24px;padding-top:12px;border-top:1px solid #ddd;font-size:11px;color:#999;text-align:center">
         Orçamento gerado por ${sysname} • ${empresa} • Válido até ${valStr}
       </div>
@@ -4268,13 +4276,13 @@ function abrirDetalheCliente(id){
   document.getElementById('crm-detalhe-body').innerHTML=`
     <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;margin-bottom:20px">
       <div>
-        <div style="font-size:20px;font-weight:800">${c.nome}</div>
+        <div style="font-size:20px;font-weight:800">${esc(c.nome)}</div>
         <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:6px">
-          ${c.wpp?`<a href="https://wa.me/55${c.wpp.replace(/\D/g,'')}" target="_blank" style="color:var(--green);font-size:13px;text-decoration:none">📱 ${c.wpp}</a>`:''}
-          ${c.email?`<a href="mailto:${c.email}" style="color:var(--blue);font-size:13px;text-decoration:none">✉ ${c.email}</a>`:''}
+          ${c.wpp?`<a href="https://wa.me/55${c.wpp.replace(/\D/g,'')}" target="_blank" style="color:var(--green);font-size:13px;text-decoration:none">📱 ${esc(c.wpp)}</a>`:''}
+          ${c.email?`<a href="mailto:${esc(c.email)}" style="color:var(--blue);font-size:13px;text-decoration:none">✉ ${esc(c.email)}</a>`:''}
           ${c.insta?`<span style="color:var(--text2);font-size:13px">📸 ${c.insta}</span>`:''}
         </div>
-        ${c.obs?`<div style="font-size:12px;color:var(--text3);margin-top:6px;font-style:italic">${c.obs}</div>`:''}
+        ${c.obs?`<div style="font-size:12px;color:var(--text3);margin-top:6px;font-style:italic">${esc(c.obs)}</div>`:''}
       </div>
       <div style="display:flex;gap:8px">
         <button class="btn btn-ghost btn-sm" onclick='openClienteModal(${JSON.stringify(c)})'>✏ Editar</button>
@@ -4308,7 +4316,7 @@ function abrirDetalheCliente(id){
             </div>
             <div style="display:flex;align-items:center;gap:10px">
               <span style="font-size:13px;font-weight:700;color:var(--accent)">R$ ${o.total.toFixed(2)}</span>
-              <span style="font-size:11px;font-weight:700;color:${statusCor[o.status]||'var(--text3)'}">${o.status.toUpperCase()}</span>
+              <span style="font-size:11px;font-weight:700;color:${statusCor[o.status]||'var(--text3)'}">${esc(o.status.toUpperCase())}</span>
             </div>
           </div>`).join('')}
       </div>
@@ -4322,11 +4330,11 @@ function abrirDetalheCliente(id){
           const st=FILA_STATUS[p.status]||{label:p.status,cor:'var(--text3)'};
           return`<div style="display:flex;justify-content:space-between;align-items:center;background:var(--bg3);border-radius:6px;padding:10px 14px;flex-wrap:wrap;gap:6px">
             <div>
-              <div style="font-size:13px;font-weight:600">${p.produto}</div>
+              <div style="font-size:13px;font-weight:600">${esc(p.produto)}</div>
               <div style="font-size:11px;color:var(--text3)">Qtd: ${p.qtd} · ${p.criado}</div>
               ${p.rastreio?`<div style="font-size:11px;color:var(--accent);cursor:pointer" onclick="abrirRastreio('${p.transportadora||''}','${p.rastreio}')">📦 ${p.rastreio} ↗</div>`:''}
             </div>
-            <span style="font-size:12px;font-weight:700;color:${st.cor}">${st.label}</span>
+            <span style="font-size:12px;font-weight:700;color:${esc(st.cor)}">${st.label}</span>
           </div>`;
         }).join('')}
       </div>
@@ -4374,9 +4382,9 @@ function renderCRMGrid(clientes){
     return `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:16px;transition:border-color .15s" onmouseenter="this.style.borderColor='var(--accent)'" onmouseleave="this.style.borderColor='var(--border)'">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
         <div style="flex:1;min-width:0">
-          <div style="font-size:14px;font-weight:700;margin-bottom:3px">${c.nome}</div>
+          <div style="font-size:14px;font-weight:700;margin-bottom:3px">${esc(c.nome)}</div>
           ${c.wpp?`<div style="font-size:12px;color:var(--text3)">📱 ${c.wpp}</div>`:''}
-          ${c.email?`<div style="font-size:12px;color:var(--text3)">✉ ${c.email}</div>`:''}
+          ${c.email?`<div style="font-size:12px;color:var(--text3)">✉ ${esc(c.email)}</div>`:''}
           ${c.insta?`<a href="${instaUrl}" target="_blank" style="font-size:12px;color:#e1306c;text-decoration:none;display:block">📸 ${c.insta}</a>`:''}
         </div>
         <div style="display:flex;gap:4px;flex-shrink:0">
@@ -4390,11 +4398,11 @@ function renderCRMGrid(clientes){
         <div style="text-align:center"><div style="font-size:13px;font-weight:700;color:var(--green)">R$${totalGasto.toFixed(0)}</div><div style="font-size:10px;color:var(--text3)">Aprovado</div></div>
       </div>
       ${ultimoOrc?`<div style="font-size:11px;color:var(--text3);margin-bottom:8px">Último orçamento: ${ultimoOrc.data}</div>`:''}
-      ${c.obs?`<div style="font-size:11px;color:var(--text3);margin-bottom:8px;font-style:italic">${c.obs}</div>`:''}
+      ${c.obs?`<div style="font-size:11px;color:var(--text3);margin-bottom:8px;font-style:italic">${esc(c.obs)}</div>`:''}
       <div style="display:flex;gap:6px;flex-wrap:wrap">
         <button class="btn btn-ghost btn-sm" style="flex:1" onclick="abrirDetalheCliente('${c.id}')">📋 Histórico</button>
-        ${c.wpp?`<button class="btn btn-ghost btn-sm" style="color:var(--green)" onclick="window.open('https://wa.me/55'+('${c.wpp}'.replace(/\\D/g,'')), '_blank')" title="WhatsApp">📱</button>`:''}
-        ${c.email?`<button class="btn btn-ghost btn-sm" style="color:var(--blue)" onclick="window.open('mailto:${c.email}')" title="E-mail">✉</button>`:''}
+        ${c.wpp?`<button class="btn btn-ghost btn-sm" style="color:var(--green)" onclick="window.open('https://wa.me/55'+('${escJs(c.wpp)}'.replace(/\\D/g,'')), '_blank')" title="WhatsApp">📱</button>`:''}
+        ${c.email?`<button class="btn btn-ghost btn-sm" style="color:var(--blue)" onclick="window.open('mailto:${escJs(c.email)}')" title="E-mail">✉</button>`:''}
         ${c.insta?`<a href="${instaUrl}" target="_blank" class="btn btn-ghost btn-sm" style="color:#e1306c" title="Instagram">📸</a>`:''}
       </div>
     </div>`;
@@ -4418,10 +4426,10 @@ function renderCRMLista(clientes){
       const totalGasto=(DB.orcamentos||[]).filter(o=>o.clienteId==c.id&&o.status==='aprovado').reduce((s,o)=>s+o.total,0);
       const instaUrl=instaUrlFn(c.insta);
       return`<tr style="border-bottom:1px solid var(--border)" onmouseenter="this.style.background='rgba(255,255,255,.02)'" onmouseleave="this.style.background=''">
-        <td style="padding:11px 14px;font-weight:600">${c.nome}${c.obs?`<div style="font-size:11px;color:var(--text3);font-weight:400;font-style:italic">${c.obs}</div>`:''}</td>
-        <td style="padding:11px 14px">${c.wpp?`<a href="https://wa.me/55${c.wpp.replace(/\D/g,'')}" target="_blank" style="color:var(--green);text-decoration:none">📱 ${c.wpp}</a>`:'—'}</td>
+        <td style="padding:11px 14px;font-weight:600">${esc(c.nome)}${c.obs?`<div style="font-size:11px;color:var(--text3);font-weight:400;font-style:italic">${esc(c.obs)}</div>`:''}</td>
+        <td style="padding:11px 14px">${c.wpp?`<a href="https://wa.me/55${c.wpp.replace(/\D/g,'')}" target="_blank" style="color:var(--green);text-decoration:none">📱 ${esc(c.wpp)}</a>`:'—'}</td>
         <td style="padding:11px 14px">${c.insta?`<a href="${instaUrl}" target="_blank" style="color:#e1306c;text-decoration:none">📸 ${c.insta}</a>`:'—'}</td>
-        <td style="padding:11px 14px">${c.email?`<a href="mailto:${c.email}" style="color:var(--blue);text-decoration:none">✉ ${c.email}</a>`:'—'}</td>
+        <td style="padding:11px 14px">${c.email?`<a href="mailto:${esc(c.email)}" style="color:var(--blue);text-decoration:none">✉ ${esc(c.email)}</a>`:'—'}</td>
         <td style="padding:11px 14px;text-align:center;font-weight:700;color:var(--accent)">${orcCount}</td>
         <td style="padding:11px 14px;text-align:right;font-weight:700;color:var(--green)">R$ ${totalGasto.toFixed(2)}</td>
         <td style="padding:11px 14px"><div style="display:flex;gap:4px">
@@ -4440,7 +4448,7 @@ function renderCRMLista(clientes){
 function openEstoqueModal(item){
   // Popular select de filamentos
   const sf=document.getElementById('est-fil-id');
-  sf.innerHTML='<option value="">Selecione</option>'+DB.filamentos.map(f=>`<option value="${f.id}">${f.nome} — ${f.tipo}</option>`).join('');
+  sf.innerHTML='<option value="">Selecione</option>'+DB.filamentos.map(f=>`<option value="${f.id}">${esc(f.nome)} — ${esc(f.tipo)}</option>`).join('');
   if(item){
     document.getElementById('modal-estoque-title').textContent='Editar estoque';
     document.getElementById('est-edit-id').value=item.id;
@@ -4469,7 +4477,7 @@ function renderEstoque(){
   const alertEl=document.getElementById('est-alertas');
   if(alertas.length){
     alertEl.innerHTML=`<div style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:8px;padding:12px 16px;color:var(--red);font-size:13px">
-      ⚠️ <strong>Estoque baixo:</strong> ${alertas.map(a=>`${a.nome} (${a.qtd} carretel${a.qtd!==1?'s':''})`).join(', ')}
+      ⚠️ <strong>Estoque baixo:</strong> ${alertas.map(a=>`${esc(a.nome)} (${a.qtd} carretel${a.qtd!==1?'s':''})`).join(', ')}
     </div>`;
   } else {alertEl.innerHTML='';}
 
@@ -4486,13 +4494,13 @@ function renderEstoque(){
     const low=i.qtd<=i.min;
     return `<div style="background:var(--bg2);border:1px solid ${low?'rgba(239,68,68,.4)':'var(--border)'};border-radius:var(--radius);padding:14px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-        <span style="font-size:11px;font-weight:700;background:rgba(148,163,184,.15);color:#94a3b8;padding:2px 8px;border-radius:20px">${i.tipo}</span>
+        <span style="font-size:11px;font-weight:700;background:rgba(148,163,184,.15);color:#94a3b8;padding:2px 8px;border-radius:20px">${esc(i.tipo)}</span>
         <div style="display:flex;gap:4px">
           <button class="btn btn-ghost btn-sm" onclick='openEstoqueModal(${JSON.stringify(i)})' title="Editar">✏</button>
           <button class="btn btn-ghost btn-sm" style="color:var(--red)" onclick="delEstoque('${i.id}')">✕</button>
         </div>
       </div>
-      <div style="font-size:13px;font-weight:700;margin-bottom:10px">${i.nome}</div>
+      <div style="font-size:13px;font-weight:700;margin-bottom:10px">${esc(i.nome)}</div>
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
         <button onclick="ajustarQtdEstoque('${i.id}',-1)" style="width:28px;height:28px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;cursor:pointer;font-size:16px;color:var(--text);line-height:1">−</button>
         <div style="text-align:center;flex:1">
@@ -4502,7 +4510,7 @@ function renderEstoque(){
         <button onclick="ajustarQtdEstoque('${i.id}',1)" style="width:28px;height:28px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;cursor:pointer;font-size:16px;color:var(--text);line-height:1">+</button>
       </div>
       <div style="font-size:11px;color:var(--text3)">Alerta em ≤ ${i.min} carretel${i.min!==1?'s':''} ${low?'⚠️':''}</div>
-      ${i.obs?`<div style="font-size:11px;color:var(--text3);margin-top:4px;font-style:italic">${i.obs}</div>`:''}
+      ${i.obs?`<div style="font-size:11px;color:var(--text3);margin-top:4px;font-style:italic">${esc(i.obs)}</div>`:''}
       <div style="font-size:10px;color:var(--text3);margin-top:6px">Atualizado: ${i.atualizado||'—'}</div>
     </div>`;
   }).join('')}</div>`;
@@ -4526,7 +4534,7 @@ const FILA_STATUS={
 function openFilaModal(item){
   if(!DB.clientes)DB.clientes=[];
   const sc=document.getElementById('fp-cliente');
-  sc.innerHTML='<option value="">Sem cliente vinculado</option>'+DB.clientes.map(c=>`<option value="${c.id}">${c.nome}</option>`).join('');
+  sc.innerHTML='<option value="">Sem cliente vinculado</option>'+DB.clientes.map(c=>`<option value="${c.id}">${esc(c.nome)}</option>`).join('');
   if(item){
     document.getElementById('modal-fila-title').textContent='Editar pedido';
     document.getElementById('fila-edit-id').value=item.id;
@@ -4625,7 +4633,7 @@ function renderFila(){
   const statusOrder=['aguardando','fatiando','imprimindo','pos_processo','pronto','ag_envio','enviado','entregue'];
   const resumo=statusOrder.map(s=>`
     <div onclick="document.getElementById('fila-status-filter').value=(document.getElementById('fila-status-filter').value==='${s}'?'':'${s}');renderFila()" style="text-align:center;padding:10px 12px;background:var(--bg2);border:1px solid ${sf===s?FILA_STATUS[s].cor:'var(--border)'};border-radius:8px;cursor:pointer;transition:border-color .15s">
-      <div style="font-size:16px;font-weight:800;color:${FILA_STATUS[s].cor}">${counts[s]||0}</div>
+      <div style="font-size:16px;font-weight:800;color:${esc(FILA_STATUS[s].cor)}">${counts[s]||0}</div>
       <div style="font-size:10px;color:var(--text3);white-space:nowrap">${FILA_STATUS[s].label}</div>
     </div>`).join('');
   const resumoHtml=`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px;margin-bottom:16px">${resumo}</div>`;
@@ -4650,19 +4658,19 @@ function renderFila(){
     return `<div style="background:var(--bg2);border:1px solid ${atrasado?'rgba(239,68,68,.4)':'var(--border)'};border-radius:var(--r);padding:14px 16px">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px">
         <div style="flex:1;min-width:0">
-          <div style="font-size:14px;font-weight:700;margin-bottom:4px">${i.produto}</div>
+          <div style="font-size:14px;font-weight:700;margin-bottom:4px">${esc(i.produto)}</div>
           <div style="font-size:12px;color:var(--text3);display:flex;flex-wrap:wrap;gap:8px;margin-bottom:6px">
             <span>👤 ${i.clienteNome}</span>
             <span>Qtd: ${i.qtd}</span>
             <span>Prazo: ${prazoStr}${atrasado?' ⚠️':''}</span>
             ${i.criado?`<span style="color:var(--text3)">Criado: ${i.criado}</span>`:''}
           </div>
-          ${i.obs?`<div style="font-size:12px;color:var(--text3);font-style:italic;margin-bottom:6px">${i.obs}</div>`:''}
+          ${i.obs?`<div style="font-size:12px;color:var(--text3);font-style:italic;margin-bottom:6px">${esc(i.obs)}</div>`:''}
           ${rastreioHtml}
         </div>
         <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;flex-shrink:0">
-          <select onchange="updateFilaStatus(${i.id},this.value)" style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:5px 8px;color:${st.cor};font-size:12px;outline:none">
-            ${statusOrder.map(s=>`<option value="${s}" ${i.status===s?'selected':''}>${FILA_STATUS[s].label}</option>`).join('')}
+          <select onchange="updateFilaStatus(${i.id},this.value)" style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:5px 8px;color:${esc(st.cor)};font-size:12px;outline:none">
+            ${statusOrder.map(s=>`<option value="${s}" ${esc(i.status===s?'selected':'')}>${FILA_STATUS[s].label}</option>`).join('')}
           </select>
           ${i.status!=='entregue'?`<button class="btn btn-ghost btn-sm" onclick="avancarStatus('${i.id}')" title="Avançar status" style="color:var(--accent)">▶</button>`:''}
           <button class="btn btn-ghost btn-sm" onclick='openFilaModal(${JSON.stringify(i).replace(/'/g,"&#39;").replace(/"/g,"&quot;")})' title="Editar">✏</button>
@@ -4764,12 +4772,12 @@ function renderPedidos(){
         <td style="padding:11px 14px;font-weight:700;color:var(--accent);text-align:right">R$ ${o.total.toFixed(2).replace('.',',')}</td>
         <td style="padding:11px 14px;text-align:center">
           <select onchange="updateOrcStatus('${o.id}',this.value);setTimeout(renderPedidos,100)" style="background:${statusBg[o.status]||'var(--bg3)'};border:1px solid ${statusCores[o.status]||'var(--border)'};border-radius:20px;padding:3px 10px;color:${statusCores[o.status]||'var(--text)'};font-size:11px;font-weight:700;outline:none;cursor:pointer">
-            ${['pendente','aprovado','recusado'].map(s=>`<option value="${s}" ${o.status===s?'selected':''}>${statusLabel[s]}</option>`).join('')}
+            ${['pendente','aprovado','recusado'].map(s=>`<option value="${s}" ${esc(o.status===s?'selected':'')}>${statusLabel[s]}</option>`).join('')}
           </select>
         </td>
         <td style="padding:11px 14px;font-size:12px;color:var(--text2)">${o.marketplace||'—'}</td>
         <td style="padding:11px 14px;font-size:12px;color:var(--text3)">${o.data}</td>
-        <td style="padding:11px 14px"><span style="font-size:11px;font-weight:700;color:${filaStatus.cor}">${filaStatus.label}</span></td>
+        <td style="padding:11px 14px"><span style="font-size:11px;font-weight:700;color:${esc(filaStatus.cor)}">${filaStatus.label}</span></td>
         <td style="padding:11px 14px"><div style="display:flex;gap:4px">
           <button class="btn btn-ghost btn-sm" onclick="verOrcamentoPDF('${o.id}')" title="PDF">📄</button>
           <button class="btn btn-ghost btn-sm" style="color:var(--green)" onclick="wppOrcamento('${o.id}')" title="WhatsApp">📱</button>

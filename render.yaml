@@ -1,0 +1,21 @@
+# Blueprint do Render: cria a API Python a partir deste repositório.
+services:
+  - type: web
+    name: moneyflow3d-api
+    runtime: python
+    plan: free
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: SUPABASE_URL
+        value: https://fqthlewarcqvmqojmzzs.supabase.co
+      - key: SUPABASE_SECRET_KEY
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: APP_URL
+        value: https://moneyflow3d.com.br
+      - key: ALLOWED_ORIGINS
+        value: https://moneyflow3d.com.br

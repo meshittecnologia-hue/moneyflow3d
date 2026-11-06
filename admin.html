@@ -865,11 +865,23 @@
 // CONFIG SUPABASE
 // ============================================================
 const SUPABASE_URL  = 'https://fqthlewarcqvmqojmzzs.supabase.co';
-const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZxdGhsZXdhcmNxdm1xb2ptenpzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0ODgzNjMsImV4cCI6MjA5ODA2NDM2M30.PdRQ0VsUWa4L-ZKSxWyUvQ2sGD0O-cz4Vw3yZ6ZRSgs';
-const SUPABASE_SERVICE = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZxdGhsZXdhcmNxdm1xb2ptenpzIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MjQ4ODM2MywiZXhwIjoyMDk4MDY0MzYzfQ.BS7giskN1rXWIGKG-rRJtsfxdpE_I8Z5kxpo_nuAWW4';
+const SUPABASE_ANON = 'sb_publishable_Y1nupemuEmSd9TIlLGg5cg_rS7cyQK2';
+// URL da API Python (backend/). Preencher após o deploy no Render.
+// Nenhuma chave secreta fica neste arquivo.
+const ADMIN_API_URL = '';
 
 const { createClient } = supabase;
 const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
+
+// Proteção contra XSS (auditoria, problema 10): todo texto vindo do banco
+// passa por esc() antes de ir para innerHTML.
+function esc(v) {
+  return String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+// Para valores dentro de onclick="fn('...')": escapa para string JS e depois para HTML.
+function escJs(v) {
+  return esc(String(v ?? '').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\r?\n/g, ' '));
+}
 
 let currentAdmin = null;
 let allUsers = [];
@@ -1019,7 +1031,7 @@ async function alterarSenhaAdmin() {
   if (nova !== conf)  { msg.innerHTML = '<span style="color:var(--red)">As senhas não coincidem.</span>'; return; }
   if (nova.length < 8){ msg.innerHTML = '<span style="color:var(--red)">Mínimo 8 caracteres.</span>'; return; }
   const { error } = await sb.auth.updateUser({ password: nova });
-  if (error) { msg.innerHTML = `<span style="color:var(--red)">${error.message}</span>`; return; }
+  if (error) { msg.innerHTML = `<span style="color:var(--red)">${esc(error.message)}</span>`; return; }
   msg.innerHTML = '<span style="color:var(--green)">✅ Senha alterada com sucesso!</span>';
   document.getElementById('cfg-nova-senha').value = '';
   document.getElementById('cfg-conf-senha').value = '';
@@ -1255,7 +1267,7 @@ async function loadDashboard() {
   const recent = [...profiles].sort((a,b) => new Date(b.created_at) - new Date(a.created_at)).slice(0,5);
   document.getElementById('dash-recent').innerHTML = recent.map(p =>
     `<tr>
-      <td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.name || p.email}</td>
+      <td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(p.name || p.email)}</td>
       <td><span class="badge badge-${p.plan === 'annual_maker' ? 'annual' : p.plan}">${planLabel(p.plan)}</span></td>
       <td>${fmtDate(p.created_at)}</td>
     </tr>`
@@ -1337,10 +1349,10 @@ function renderUsers(users) {
     ).join(' ') + (mods.length > 3 ? `<span style="font-size:10px;color:var(--text3)">+${mods.length-3}</span>` : '');
     return `<tr>
       <td>
-        <div style="font-weight:600">${u.name || '—'}</div>
-        <div style="font-size:12px;color:var(--text3)">${u.email || '—'}</div>
+        <div style="font-weight:600">${esc(u.name || '—')}</div>
+        <div style="font-size:12px;color:var(--text3)">${esc(u.email || '—')}</div>
       </td>
-      <td><span class="badge badge-${u.plan === 'annual_maker' ? 'annual' : u.plan === 'interno' ? 'interno' : u.plan}">${PLAN_LABELS[u.plan]||u.plan}</span></td>
+      <td><span class="badge badge-${u.plan === 'annual_maker' ? 'annual' : u.plan === 'interno' ? 'interno' : u.plan}">${esc(PLAN_LABELS[u.plan]||u.plan)}</span></td>
       <td>${u.role === 'admin'
         ? '<span class="badge badge-admin">🔑 Admin</span>'
         : '<span style="font-size:12px;color:var(--text3)">👤 Usuário</span>'}</td>
@@ -1351,36 +1363,42 @@ function renderUsers(users) {
       <td style="font-size:12px;color:var(--text3)">${fmtDate(u.created_at)}</td>
       <td style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
         <button class="btn btn-ghost btn-sm" onclick='openEditUser(${JSON.stringify(u).replace(/'/g,"&#39;")})'>Editar</button>
-        <button class="btn btn-sm btn-success" onclick="sendPasswordEmail('${u.email}','${(u.name||'').replace(/'/g,"\\'")}')">📧 Senha</button>
-        <button class="btn btn-sm" style="background:rgba(239,68,68,.15);color:var(--red);border:1px solid rgba(239,68,68,.3)" onclick="confirmarExcluirUser('${u.id}','${(u.name||u.email||'').replace(/'/g,"\\'")}')">✕</button>
+        <button class="btn btn-sm btn-success" onclick="sendPasswordEmail('${escJs(u.email)}','${escJs(u.name)}')">📧 Senha</button>
+        <button class="btn btn-sm" style="background:rgba(239,68,68,.15);color:var(--red);border:1px solid rgba(239,68,68,.3)" onclick="confirmarExcluirUser('${escJs(u.id)}','${escJs(u.name||u.email)}')">✕</button>
       </td>
     </tr>`;
   }).join('');
 }
 
+async function adminApi(path, method, body) {
+  if (!ADMIN_API_URL) {
+    throw new Error('Backend ainda não publicado — função disponível após o deploy da API');
+  }
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) throw new Error('Sessão expirada, faça login de novo');
+  const res = await fetch(ADMIN_API_URL + path, {
+    method,
+    headers: { 'Authorization': `Bearer ${session.access_token}`, 'Content-Type': 'application/json' },
+    body: body ? JSON.stringify(body) : undefined
+  });
+  let data = {};
+  try { data = await res.json(); } catch (e) { /* resposta sem corpo */ }
+  if (!res.ok) {
+    const d = data.detail;
+    const msg = typeof d === 'string' ? d : (Array.isArray(d) ? d.map(x => x.msg).join('; ') : `HTTP ${res.status}`);
+    throw new Error(msg);
+  }
+  return data;
+}
+
 async function confirmarExcluirUser(id, nome) {
   if (!confirm(`Excluir permanentemente o usuário "${nome}"?\n\nEsta ação não pode ser desfeita. Todos os dados do usuário serão removidos.`)) return;
   try {
-    // Excluir via Admin API do Supabase
-    const res = await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${id}`, {
-      method: 'DELETE',
-      headers: {
-        'apikey': SUPABASE_SERVICE,
-        'Authorization': `Bearer ${SUPABASE_SERVICE}`,
-        'Content-Type': 'application/json'
-      }
-    });
-    if (!res.ok) {
-      const err = await res.json();
-      showToast('Erro ao excluir: ' + (err.message || res.status), 'error');
-      return;
-    }
-    // Remover profile manualmente (cascade pode não funcionar sem service key)
-    await sb.from('profiles').delete().eq('id', id);
+    await adminApi(`/admin/users/${encodeURIComponent(String(id))}`, 'DELETE');
     showToast('Usuário excluído com sucesso', 'success');
     loadUsers();
   } catch(e) {
-    showToast('Erro: ' + e.message, 'error');
+    showToast('Erro ao excluir: ' + e.message, 'error');
   }
 }
 
@@ -1388,7 +1406,6 @@ function toggleSemEmail() {
   // Função legada — elementos removidos do modal novo
 }
 
-const RESEND_KEY = 're_AQqrfUwZ_2idKHdJKcNZBJr9B7ACLHRHn';
 
 let modoUsuario = 'convite';
 
@@ -1448,149 +1465,25 @@ async function addUserManual() {
 
   if (!email) { showToast('E-mail obrigatório', 'error'); return; }
 
-  if (modoUsuario === 'convite') {
-    // 1. Criar usuário via Admin API com senha temporária
-    const senhaTemp = 'Temp_' + Math.random().toString(36).slice(2,10) + '!1A';
-    const resCreate = await fetch(`${SUPABASE_URL}/auth/v1/admin/users`, {
-      method: 'POST',
-      headers: {
-        'apikey': SUPABASE_SERVICE,
-        'Authorization': `Bearer ${SUPABASE_SERVICE}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ email, password: senhaTemp, email_confirm: true, user_metadata: { full_name: name } })
-    });
-    const created = await resCreate.json();
-    let userId = created.id;
-    if (!resCreate.ok || created.error) {
-      const isAlreadyExists = resCreate.status === 422
-        || (typeof created.error === 'string' && created.error.includes('already'))
-        || (created.message && created.message.toLowerCase().includes('already'));
-      if (isAlreadyExists) {
-        // Usuário já existe no Auth — busca pelo email e continua
-        const resList = await fetch(`${SUPABASE_URL}/auth/v1/admin/users?email=${encodeURIComponent(email)}`, {
-          headers: { 'apikey': SUPABASE_SERVICE, 'Authorization': `Bearer ${SUPABASE_SERVICE}` }
-        });
-        const listData = await resList.json();
-        const existing = listData?.users?.[0];
-        if (!existing) {
-          showToast('Usuário já existe mas não foi possível localizar no Supabase', 'error');
-          return;
-        }
-        userId = existing.id;
-      } else {
-        const errMsg = created.message || created.msg
-          || (typeof created.error === 'string' ? created.error : created.error?.message)
-          || JSON.stringify(created);
-        showToast('Erro ao criar: ' + errMsg, 'error');
-        return;
-      }
-    }
-
-    // 2. Gerar link de recuperação de senha (usuário define nova senha)
-    const resLink = await fetch(`${SUPABASE_URL}/auth/v1/admin/generate_link`, {
-      method: 'POST',
-      headers: {
-        'apikey': SUPABASE_SERVICE,
-        'Authorization': `Bearer ${SUPABASE_SERVICE}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ type: 'recovery', email })
-    });
-    const linkData = await resLink.json();
-    const actionLink = linkData?.action_link || linkData?.properties?.action_link || '';
-
-    // 3. Enviar email via Resend diretamente
-    const nomeDisplay = name || email.split('@')[0];
-    const htmlEmail = `
-      <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#0f0f0f;color:#f0f0f0;border-radius:12px;overflow:hidden">
-        <div style="background:#ff6b2b;padding:24px;text-align:center">
-          <h1 style="margin:0;color:#fff;font-size:24px">⬡ MoneyFlow 3D</h1>
-          <p style="margin:6px 0 0;color:rgba(255,255,255,.8);font-size:14px">Precificação Inteligente para Makers</p>
-        </div>
-        <div style="padding:32px">
-          <h2 style="color:#ff6b2b;margin-top:0">Você foi convidado!</h2>
-          <p style="color:#ccc;line-height:1.6">Olá <strong style="color:#fff">${nomeDisplay}</strong>,</p>
-          <p style="color:#ccc;line-height:1.6">Você recebeu acesso ao <strong style="color:#fff">MoneyFlow 3D</strong> — o sistema completo de precificação e gestão para makers de impressão 3D FDM.</p>
-          <p style="color:#ccc;line-height:1.6">Clique no botão abaixo para definir sua senha e acessar o sistema:</p>
-          <div style="text-align:center;margin:32px 0">
-            <a href="${actionLink}" style="background:#ff6b2b;color:#fff;padding:14px 32px;border-radius:8px;text-decoration:none;font-weight:700;font-size:16px;display:inline-block">Acessar MoneyFlow 3D →</a>
-          </div>
-          <p style="color:#666;font-size:12px;text-align:center">Link válido por 24 horas. Se não solicitou este acesso, ignore este email.</p>
-        </div>
-        <div style="background:#1a1a1a;padding:16px;text-align:center">
-          <p style="color:#555;font-size:11px;margin:0">MoneyFlow 3D · MeshIT Tecnologia · <a href="https://moneyflow3d.com.br" style="color:#ff6b2b;text-decoration:none">moneyflow3d.com.br</a></p>
-        </div>
-      </div>`;
-
-    const resEmail = await fetch(`${SUPABASE_URL}/functions/v1/send-email`, {
-      method: 'POST',
-      headers: {
-        'apikey': SUPABASE_SERVICE,
-        'Authorization': `Bearer ${SUPABASE_SERVICE}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        to: email,
-        subject: 'Você foi convidado para o MoneyFlow 3D',
-        html: htmlEmail
-      })
-    });
-
-    const emailResult = await resEmail.json();
-    if (!resEmail.ok || emailResult.error) {
-      showToast('Usuário criado mas erro ao enviar email: ' + (emailResult.message || emailResult.error?.message), 'error');
-    } else {
-      showToast('Convite enviado para ' + email + '!', 'success');
-    }
-
-    // 4. Atualizar profile
-    await sb.from('profiles').update({ name, plan, role }).eq('id', userId);
-    await sb.from('admin_logs').insert({ admin_id: currentAdmin.id, action: 'invite_user', target_user: userId, details: { plan, role } });
-
-  } else {
-    // Criar com senha imediata via Admin API
+  const payload = { email, name, plan, role, modules: mods, mode: modoUsuario === 'convite' ? 'invite' : 'password' };
+  if (payload.mode === 'password') {
     const senha = document.getElementById('new-user-senha').value;
     if (!senha) { showToast('Defina uma senha ou gere automaticamente', 'error'); return; }
     if (!validarForcaSenha(senha)) { showToast('Senha não atende aos critérios de segurança', 'error'); return; }
+    payload.password = senha;
+  }
 
-    const res = await fetch(`${SUPABASE_URL}/auth/v1/admin/users`, {
-      method: 'POST',
-      headers: {
-        'apikey': SUPABASE_SERVICE,
-        'Authorization': `Bearer ${SUPABASE_SERVICE}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ email, password: senha, email_confirm: true, user_metadata: { full_name: name } })
-    });
-    const result = await res.json();
-    let userId = result.id;
-    if (!res.ok || result.error) {
-      const isAlreadyExists = res.status === 422
-        || (typeof result.error === 'string' && result.error.includes('already'))
-        || (result.message && result.message.toLowerCase().includes('already'));
-      if (isAlreadyExists) {
-        const resList2 = await fetch(`${SUPABASE_URL}/auth/v1/admin/users?email=${encodeURIComponent(email)}`, {
-          headers: { 'apikey': SUPABASE_SERVICE, 'Authorization': `Bearer ${SUPABASE_SERVICE}` }
-        });
-        const listData2 = await resList2.json();
-        const existing2 = listData2?.users?.[0];
-        if (!existing2) {
-          showToast('Usuário já existe mas não foi possível localizar no Supabase', 'error');
-          return;
-        }
-        userId = existing2.id;
-      } else {
-        const errMsg = result.message || result.msg
-          || (typeof result.error === 'string' ? result.error : result.error?.message)
-          || JSON.stringify(result);
-        showToast('Erro ao criar: ' + errMsg, 'error');
-        return;
-      }
+  try {
+    const r = await adminApi('/admin/users', 'POST', payload);
+    if (payload.mode === 'invite') {
+      if (r.email_sent) showToast('Convite enviado para ' + email + '!', 'success');
+      else showToast('Usuário salvo, mas o e-mail NÃO foi enviado: ' + (r.email_error || 'erro desconhecido'), 'error');
+    } else {
+      showToast(r.existed ? 'Usuário já existia — dados atualizados.' : 'Usuário criado! Compartilhe o email e senha.', 'success');
     }
-    await sb.from('profiles').update({ name, plan, role }).eq('id', userId);
-    await sb.from('admin_logs').insert({ admin_id: currentAdmin.id, action: 'create_user', target_user: userId, details: { plan, role, mods } });
-    showToast('Usuário criado! Compartilhe o email e senha.', 'success');
+  } catch (e) {
+    showToast('Erro ao salvar usuário: ' + e.message, 'error');
+    return;
   }
 
   closeModal('modal-add-user');
@@ -1600,68 +1493,11 @@ async function addUserManual() {
 async function sendPasswordEmail(email, name) {
   if (!email) { showToast('Email não encontrado', 'error'); return; }
   showToast('Gerando link de acesso...', 'success');
-
-  // Gerar link de recuperação de senha via Admin API
-  const resLink = await fetch(`${SUPABASE_URL}/auth/v1/admin/generate_link`, {
-    method: 'POST',
-    headers: {
-      'apikey': SUPABASE_SERVICE,
-      'Authorization': `Bearer ${SUPABASE_SERVICE}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ type: 'recovery', email })
-  });
-  const linkData = await resLink.json();
-  if (!resLink.ok || linkData.error) {
-    const errMsg = linkData.message || linkData.msg
-      || (typeof linkData.error === 'string' ? linkData.error : linkData.error?.message)
-      || JSON.stringify(linkData);
-    showToast('Erro ao gerar link: ' + errMsg, 'error');
-    return;
-  }
-  const actionLink = linkData?.action_link || linkData?.properties?.action_link || '';
-  if (!actionLink) { showToast('Link não gerado pelo Supabase', 'error'); return; }
-
-  const nomeDisplay = name || email.split('@')[0];
-  const htmlEmail = `
-    <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#0f0f0f;color:#f0f0f0;border-radius:12px;overflow:hidden">
-      <div style="background:#ff6b2b;padding:24px;text-align:center">
-        <h1 style="margin:0;color:#fff;font-size:24px">⬡ MoneyFlow 3D</h1>
-        <p style="margin:6px 0 0;color:rgba(255,255,255,.8);font-size:14px">Precificação Inteligente para Makers</p>
-      </div>
-      <div style="padding:32px">
-        <h2 style="color:#ff6b2b;margin-top:0">Acesse sua conta</h2>
-        <p style="color:#ccc;line-height:1.6">Olá <strong style="color:#fff">${nomeDisplay}</strong>,</p>
-        <p style="color:#ccc;line-height:1.6">Clique no botão abaixo para definir ou redefinir sua senha e acessar o <strong style="color:#fff">MoneyFlow 3D</strong>:</p>
-        <div style="text-align:center;margin:32px 0">
-          <a href="${actionLink}" style="background:#ff6b2b;color:#fff;padding:14px 32px;border-radius:8px;text-decoration:none;font-weight:700;font-size:16px;display:inline-block">Acessar MoneyFlow 3D →</a>
-        </div>
-        <p style="color:#666;font-size:12px;text-align:center">Link válido por 24 horas. Se não solicitou este acesso, ignore este email.</p>
-      </div>
-      <div style="background:#1a1a1a;padding:16px;text-align:center">
-        <p style="color:#555;font-size:11px;margin:0">MoneyFlow 3D · MeshIT Tecnologia · <a href="https://moneyflow3d.com.br" style="color:#ff6b2b;text-decoration:none">moneyflow3d.com.br</a></p>
-      </div>
-    </div>`;
-
-  const resEmail = await fetch(`${SUPABASE_URL}/functions/v1/send-email`, {
-    method: 'POST',
-    headers: {
-      'apikey': SUPABASE_SERVICE,
-      'Authorization': `Bearer ${SUPABASE_SERVICE}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      to: email,
-      subject: 'Acesse o MoneyFlow 3D — link de acesso',
-      html: htmlEmail
-    })
-  });
-  const emailResult = await resEmail.json();
-  if (!resEmail.ok || emailResult.error) {
-    showToast('Erro ao enviar email: ' + (emailResult.message || emailResult.error?.message || JSON.stringify(emailResult)), 'error');
-  } else {
+  try {
+    await adminApi('/admin/users/access-email', 'POST', { email, name: name || '' });
     showToast('✅ Email de acesso enviado para ' + email, 'success');
-    await sb.from('admin_logs').insert({ admin_id: currentAdmin.id, action: 'send_password_email', details: { email } });
+  } catch (e) {
+    showToast('Erro ao enviar email: ' + e.message, 'error');
   }
 }
 
@@ -1727,7 +1563,7 @@ function renderSubs(subs) {
   if (!subs.length) { tbody.innerHTML = '<tr><td colspan="6" class="empty-row">Nenhuma assinatura encontrada</td></tr>'; return; }
   tbody.innerHTML = subs.map(s => `
     <tr>
-      <td>${s.profiles?.name || s.profiles?.email || '—'}</td>
+      <td>${esc(s.profiles?.name || s.profiles?.email || '—')}</td>
       <td><span class="badge badge-${s.plan === 'annual_maker' ? 'annual' : s.plan || 'free'}">${planLabel(s.plan)}</span></td>
       <td style="text-transform:capitalize;">${s.platform || '—'}</td>
       <td><span class="badge badge-${s.status}">${statusLabel(s.status)}</span></td>
@@ -1780,9 +1616,9 @@ async function loadModules() {
   if (!data || !data.length) { tbody.innerHTML = '<tr><td colspan="6" class="empty-row">Nenhum módulo</td></tr>'; return; }
   tbody.innerHTML = data.map(m => `
     <tr>
-      <td><code style="background:var(--bg3);padding:2px 8px;border-radius:4px;font-size:12px;">${m.slug}</code></td>
-      <td style="font-weight:600;">${m.name}</td>
-      <td style="color:var(--text3);">${m.description || '—'}</td>
+      <td><code style="background:var(--bg3);padding:2px 8px;border-radius:4px;font-size:12px;">${esc(m.slug)}</code></td>
+      <td style="font-weight:600;">${esc(m.name)}</td>
+      <td style="color:var(--text3);">${esc(m.description || '—')}</td>
       <td>${m.price_monthly > 0 ? 'R$ ' + Number(m.price_monthly).toFixed(2) : 'Grátis'}</td>
       <td><span class="badge ${m.active ? 'badge-active' : 'badge-cancelled'}">${m.active ? 'Ativo' : 'Inativo'}</span></td>
       <td>
@@ -1843,11 +1679,11 @@ async function loadLogs() {
   el.innerHTML = data.map(l => `
     <div class="log-entry">
       <div>
-        <span class="log-action">${l.action}</span>
-        ${l.target ? `→ <strong>${l.target.name || l.target.email}</strong>` : ''}
-        <span style="color:var(--text3);font-size:12px;">por ${l.admin?.name || l.admin?.email || '—'}</span>
+        <span class="log-action">${esc(l.action)}</span>
+        ${l.target ? `→ <strong>${esc(l.target.name || l.target.email)}</strong>` : ''}
+        <span style="color:var(--text3);font-size:12px;">por ${esc(l.admin?.name || l.admin?.email || '—')}</span>
       </div>
-      ${l.details ? `<div style="font-size:12px;color:var(--text3);margin-top:2px;">${JSON.stringify(l.details)}</div>` : ''}
+      ${l.details ? `<div style="font-size:12px;color:var(--text3);margin-top:2px;">${esc(JSON.stringify(l.details))}</div>` : ''}
       <div class="log-time">${fmtDateTime(l.created_at)}</div>
     </div>
   `).join('');
@@ -1865,10 +1701,10 @@ async function loadWebhooks() {
   }
   tbody.innerHTML = data.map(w => `
     <tr>
-      <td style="text-transform:capitalize">${w.platform || 'kiwify'}</td>
-      <td>${w.event || '—'}</td>
-      <td style="font-size:12px;color:var(--text3)">${w.email || '—'}</td>
-      <td><span class="badge badge-${w.status === 'processed' ? 'active' : w.status === 'ignored' ? 'overdue' : 'blocked'}">${w.status || '—'}</span></td>
+      <td style="text-transform:capitalize">${esc(w.platform || 'kiwify')}</td>
+      <td>${esc(w.event || '—')}</td>
+      <td style="font-size:12px;color:var(--text3)">${esc(w.email || '—')}</td>
+      <td><span class="badge badge-${w.status === 'processed' ? 'active' : w.status === 'ignored' ? 'overdue' : 'blocked'}">${esc(w.status || '—')}</span></td>
       <td>${fmtDateTime(w.created_at)}</td>
     </tr>
   `).join('');
