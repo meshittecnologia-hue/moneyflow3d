@@ -23,6 +23,15 @@ for arq in sys.argv[1:]:
         if re.search(padrao, code):
             print(f"  ERRO: {nome} encontrada no arquivo")
             falhou = True
+    # Item 22: todo script externo com versão exata e assinatura de integridade (SRI).
+    for tag in re.findall(r"<script[^>]*\bsrc=\"https?://[^\"]+\"[^>]*>", code):
+        src = re.search(r'src="([^"]+)"', tag).group(1)
+        if "integrity=" not in tag:
+            print(f"  ERRO: script externo sem integrity (SRI): {src}")
+            falhou = True
+        if re.search(r"@\d+(/|$)|@latest", src):
+            print(f"  ERRO: script externo sem versão exata: {src}")
+            falhou = True
     js = "\n".join(re.findall(r"<script>(.*?)</script>", code, re.DOTALL))
     with tempfile.NamedTemporaryFile("w", suffix=".js", delete=False) as t:
         t.write(js)

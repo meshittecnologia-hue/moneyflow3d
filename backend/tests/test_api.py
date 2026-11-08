@@ -149,3 +149,64 @@ def test_falha_no_email_aparece_para_o_admin(client):
     r = client.post("/admin/users/access-email", headers=AUTH, json={"email": "a@b.com"})
     assert r.status_code == 502
     assert "Resend" in r.json()["detail"]
+
+
+# ---------- /auth/recover (item 19) ----------
+@respx.mock
+def test_recover_envia_link_para_email_existente(client):
+    respx.post(f"{SB}/auth/v1/admin/generate_link").mock(
+        return_value=httpx.Response(200, json={"action_link": "https://link-recover"})
+    )
+    resend = respx.post("https://api.resend.com/emails").mock(
+        return_value=httpx.Response(200, json={"id": "e1"})
+    )
+    r = client.post("/auth/recover", json={"email": "Cliente@X.com"})
+    assert r.status_code == 200 and r.json() == {"ok": True}
+    sent = resend.calls.last.request.content.decode()
+    assert "cliente@x.com" in sent and "https://link-recover" in sent
+
+
+@respx.mock
+def test_recover_email_inexistente_mesma_resposta_sem_envio(client):
+    respx.post(f"{SB}/auth/v1/admin/generate_link").mock(
+        return_value=httpx.Response(404, json={"msg": "User not found"})
+    )
+    resend = respx.post("https://api.resend.com/emails").mock(
+        return_value=httpx.Response(200, json={"id": "e1"})
+    )
+    r = client.post("/auth/recover", json={"email": "nao-existe@x.com"})
+    assert r.status_code == 200 and r.json() == {"ok": True}
+    assert not resend.called
+
+
+@respx.mock
+def test_recover_limite_por_email(client):
+    respx.post(f"{SB}/auth/v1/admin/generate_link").mock(
+        return_value=httpx.Response(404, json={"msg": "User not found"})
+    )
+    codes = [client.post("/auth/recover", json={"email": "spam@x.com"}).status_code for _ in range(4)]
+    assert codes == [200, 200, 200, 429]
+
+
+@respx.mock
+def test_recover_falha_de_envio_e_visivel(client):
+    respx.post(f"{SB}/auth/v1/admin/generate_link").mock(
+        return_value=httpx.Response(200, json={"action_link": "https://link"})
+    )
+    respx.post("https://api.resend.com/emails").mock(
+        return_value=httpx.Response(500, json={"message": "down"})
+    )
+    r = client.post("/auth/recover", json={"email": "a@x.com"})
+    assert r.status_code == 502
+
+
+def test_recover_email_invalido(client):
+    assert client.post("/auth/recover", json={"email": "nao-e-email"}).status_code == 422
+
+
+def test_rate_limiter_libera_depois_da_janela():
+    from app.rate_limit import RateLimiter
+    rl = RateLimiter(2, 60)
+    assert rl.allow("k", now=0) and rl.allow("k", now=1)
+    assert not rl.allow("k", now=2)
+    assert rl.allow("k", now=61)
