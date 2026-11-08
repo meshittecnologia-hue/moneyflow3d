@@ -41,6 +41,11 @@ TEMPLATES = {
         "Você foi convidado!",
         "Você recebeu acesso ao <strong style=\"color:#fff\">MoneyFlow 3D</strong> — o sistema completo de precificação e gestão para makers de impressão 3D FDM. Clique no botão abaixo para definir sua senha e acessar o sistema:",
     ),
+    "recover": (
+        "MoneyFlow 3D — redefinir sua senha",
+        "Redefinir senha",
+        "Recebemos um pedido para redefinir a senha da sua conta no <strong style=\"color:#fff\">MoneyFlow 3D</strong>. Clique no botão abaixo para criar uma nova senha:",
+    ),
     "access": (
         "Acesse o MoneyFlow 3D — link de acesso",
         "Acesse sua conta",

@@ -16,6 +16,7 @@ from pydantic import BaseModel, EmailStr, Field
 
 from .config import Settings, get_settings
 from .emails import EmailError, send_template
+from .rate_limit import RateLimiter
 from .supabase_client import SupabaseAdmin, SupabaseError
 
 PLANOS = {"free", "pro", "interno"}
@@ -33,6 +34,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     settings = settings or get_settings()
     app = FastAPI(title="MoneyFlow 3D API", version="0.1.0", lifespan=lifespan)
     app.state.settings = settings
+    # Recuperação de senha: 3 pedidos por e-mail a cada 15 min e 10 por IP a cada hora.
+    app.state.recover_email_limit = RateLimiter(3, 15 * 60)
+    app.state.recover_ip_limit = RateLimiter(10, 60 * 60)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.allowed_origins,
@@ -75,6 +79,10 @@ class CreateUserIn(BaseModel):
     modules: list[str] = []
 
 
+class RecoverIn(BaseModel):
+    email: EmailStr
+
+
 class AccessEmailIn(BaseModel):
     email: EmailStr
     name: str = Field(default="", max_length=120)
@@ -93,6 +101,29 @@ def _sb_error(e: SupabaseError) -> HTTPException:
 def register_routes(app: FastAPI) -> None:
     @app.get("/health")
     async def health():
+        return {"ok": True}
+
+    @app.post("/auth/recover")
+    async def recover(body: RecoverIn, request: Request, sb: SupabaseAdmin = Depends(get_sb)):
+        """Envia o link de nova senha. Resposta sempre igual: não revela se o e-mail existe."""
+        settings: Settings = app.state.settings
+        email = body.email.lower()
+        ip = request.headers.get("x-forwarded-for", "").split(",")[0].strip() or (
+            request.client.host if request.client else "?"
+        )
+        if not app.state.recover_ip_limit.allow(ip) or not app.state.recover_email_limit.allow(email):
+            raise HTTPException(429, "Muitas tentativas. Aguarde alguns minutos e tente de novo.")
+        try:
+            link = await sb.generate_recovery_link(email, settings.app_url)
+        except SupabaseError:
+            return {"ok": True}  # e-mail inexistente: mesma resposta, nada enviado
+        try:
+            await send_template(
+                settings, app.state.http, "recover", email, email.split("@")[0], link
+            )
+        except EmailError as e:
+            # Falha real de envio aparece para quem pediu (erro silencioso é proibido).
+            raise HTTPException(502, "Não foi possível enviar o e-mail agora. Tente de novo em instantes.") from e
         return {"ok": True}
 
     @app.post("/admin/users")
