@@ -1,0 +1,57 @@
+name: Backup diário do banco
+
+# Item 13 da auditoria. Roda todo dia às 03:00 (horário de Brasília) e pode ser
+# disparado à mão em Actions → "Backup diário do banco" → Run workflow.
+# O repositório é público: o arquivo é CRIPTOGRAFADO antes de ser guardado.
+# Para restaurar: gpg --decrypt backup.sql.gz.gpg | gunzip | psql "<url do banco>"
+on:
+  schedule:
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Conferir segredos
+        id: segredos
+        env:
+          DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          PASS: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          if [ -z "$DB_URL" ] || [ -z "$PASS" ]; then
+            echo "::warning::Backup desligado: cadastre SUPABASE_DB_URL e BACKUP_PASSPHRASE em Settings → Secrets and variables → Actions."
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Gerar cópia do banco (pg_dump 17) e criptografar
+        if: steps.segredos.outputs.ok == 'true'
+        env:
+          DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          PASS: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          set -euo pipefail
+          STAMP=$(date -u +%Y-%m-%d)
+          echo "STAMP=$STAMP" >> "$GITHUB_ENV"
+          docker run --rm -e DB_URL postgres:17 \
+            pg_dump "$DB_URL" --no-owner --no-privileges --schema=public --schema=auth \
+            | gzip -9 > backup.sql.gz
+          test "$(stat -c %s backup.sql.gz)" -gt 1000 || { echo "::error::Cópia vazia ou muito pequena"; exit 1; }
+          gpg --batch --yes --pinentry-mode loopback --passphrase "$PASS" \
+            --symmetric --cipher-algo AES256 -o "moneyflow3d-$STAMP.sql.gz.gpg" backup.sql.gz
+          rm backup.sql.gz
+          ls -l "moneyflow3d-$STAMP.sql.gz.gpg"
+
+      - name: Guardar por 30 dias
+        if: steps.segredos.outputs.ok == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: backup-${{ env.STAMP }}
+          path: moneyflow3d-*.sql.gz.gpg
+          retention-days: 30
+          if-no-files-found: error
