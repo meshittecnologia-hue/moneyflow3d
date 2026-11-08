@@ -4,7 +4,7 @@ Atualizado em 08/11/2026 (tarde) · Versão viva (editável, com diagramas): htt
 
 ## Resumo
 
-Dos 34 problemas da auditoria de 04/11/2026, **13 estão resolvidos, 9 parcialmente e 12 pendentes**. Os 5 urgentes de segurança estão fechados ou mitigados; o que falta é colocar o backend Python no ar, separar o restante do frontend e criar o ambiente de homologação. Previsão de conclusão: **19/12/2026**, em 6 fases.
+Dos 34 problemas da auditoria de 04/11/2026, **14 estão resolvidos, 8 parcialmente e 12 pendentes**. Os 5 urgentes de segurança estão fechados ou mitigados; o que falta é colocar o backend Python no ar, separar o restante do frontend e criar o ambiente de homologação. Previsão de conclusão: **19/12/2026**, em 6 fases.
 
 Como usamos este plano:
 
@@ -28,7 +28,7 @@ Como usamos este plano:
 | 10 | XSS em nomes | Alto | Feito | Escape no admin e no app; testado com nome malicioso |
 | 11 | Logo só no navegador | Alto | Pendente | Guardar logo no Supabase Storage e nome da empresa no banco |
 | 12 | Sem servidor próprio | Alto | Parcial | Backend FastAPI criado com 9 testes; falta publicar |
-| 13 | Sem backup automático | Alto | Parcial | Backup diário criptografado pronto e testado (08/11); liga quando os 2 segredos forem cadastrados no GitHub |
+| 13 | Sem backup automático | Alto | Feito | Backup diário criptografado ativo; primeira execução em 08/11 com sucesso (27,4 KB, guardado 30 dias) |
 | 14 | Sem ambiente de testes | Alto | Parcial | Branch `Desenvolvimento` e verificação automática prontas; falta banco e endereço de homologação |
 | 15 | Código no ar diferente do guardado | Alto | Parcial | Migração do banco versionada; faltam as Edge Functions no GitHub |
 | 16 | App em um arquivo de 5 mil linhas | Alto | Pendente | Dividir em módulos |
@@ -132,8 +132,9 @@ Alterações no banco: o SQL vai para `supabase/migrations/`, roda primeiro em h
 - [ ] 2.1 Projeto Supabase `moneyflow3d-dev` com a mesma estrutura de banco · item 14
 - [ ] 2.2 Backend e site de homologação a partir da branch `Desenvolvimento` · item 14
 - [ ] 2.3 Proxy do Cloudflare e cabeçalhos de segurança · itens 21 e 29
-- [ ] 2.4 Backup diário do banco por GitHub Actions · item 13 (pronto; falta cadastrar `SUPABASE_DB_URL` e `BACKUP_PASSPHRASE`)
+- [x] 2.4 Backup diário do banco por GitHub Actions · item 13 (ativo desde 08/11)
 - [x] 2.5 Liberar o zoom no celular · item 34 (08/11)
+- [ ] 2.6 Trocar a senha do banco (apareceu numa pesquisa do Google em 08/11) e atualizar o segredo `SUPABASE_DB_URL`
 
 **Fase 3 · Regras no backend Python**
 
