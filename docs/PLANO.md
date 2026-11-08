@@ -1,10 +1,10 @@
 # MoneyFlow 3D — Plano de Correção e Separação Front/Back
 
-Atualizado em 08/11/2026 · Versão viva (editável, com diagramas): https://claude.ai/artifact/A5yhyA9VDmnz4pSLtQXwHt
+Atualizado em 08/11/2026 (tarde) · Versão viva (editável, com diagramas): https://claude.ai/artifact/A5yhyA9VDmnz4pSLtQXwHt
 
 ## Resumo
 
-Dos 34 problemas da auditoria de 04/11/2026, **11 estão resolvidos, 6 parcialmente e 17 pendentes**. Os 5 urgentes de segurança estão fechados ou mitigados; o que falta é colocar o backend Python no ar, separar o restante do frontend e criar o ambiente de homologação. Previsão de conclusão: **19/12/2026**, em 6 fases.
+Dos 34 problemas da auditoria de 04/11/2026, **13 estão resolvidos, 9 parcialmente e 12 pendentes**. Os 5 urgentes de segurança estão fechados ou mitigados; o que falta é colocar o backend Python no ar, separar o restante do frontend e criar o ambiente de homologação. Previsão de conclusão: **19/12/2026**, em 6 fases.
 
 Como usamos este plano:
 
@@ -28,28 +28,28 @@ Como usamos este plano:
 | 10 | XSS em nomes | Alto | Feito | Escape no admin e no app; testado com nome malicioso |
 | 11 | Logo só no navegador | Alto | Pendente | Guardar logo no Supabase Storage e nome da empresa no banco |
 | 12 | Sem servidor próprio | Alto | Parcial | Backend FastAPI criado com 9 testes; falta publicar |
-| 13 | Sem backup automático | Alto | Pendente | Rotina diária de cópia do banco (GitHub Actions) |
+| 13 | Sem backup automático | Alto | Parcial | Backup diário criptografado pronto e testado (08/11); liga quando os 2 segredos forem cadastrados no GitHub |
 | 14 | Sem ambiente de testes | Alto | Parcial | Branch `Desenvolvimento` e verificação automática prontas; falta banco e endereço de homologação |
 | 15 | Código no ar diferente do guardado | Alto | Parcial | Migração do banco versionada; faltam as Edge Functions no GitHub |
 | 16 | App em um arquivo de 5 mil linhas | Alto | Pendente | Dividir em módulos |
-| 17 | Fórmula sem testes | Alto | Pendente | Fórmula em Python com testes que provam resultado idêntico ao atual |
+| 17 | Fórmula sem testes | Alto | Feito | Fórmula em Python com teste de paridade: 503 casos contra o JavaScript real; teste de mutação confirmou (08/11) |
 | 18 | Chave antiga do Resend no código | Moderado | Feito | Removida do `admin.html`; varredura automática bloqueia chaves em todo PR |
-| 19 | Recuperação de senha improvisada | Moderado | Pendente | A rota chamada pelo app não existe; criar `/auth/recover` no backend com limite de tentativas |
+| 19 | Recuperação de senha improvisada | Moderado | Parcial | `/auth/recover` pronto e testado, app já ligado a ele; ativa com o endereço do Render (item 1.3) |
 | 20 | Biometria só visual | Moderado | Pendente | Decidir: login real por passkey ou renomear para bloqueio de tela |
 | 21 | Sem cabeçalhos de segurança | Moderado | Pendente | Cloudflare com proxy ligado e regras de cabeçalho |
-| 22 | Bibliotecas sem versão fixa | Moderado | Pendente | Fixar versões com verificação de integridade; atualizar jsPDF |
+| 22 | Bibliotecas sem versão fixa | Moderado | Parcial | supabase-js 2.118.0 e jsPDF 2.5.1 fixos com SRI, em produção; falta atualizar o jsPDF para 4.x |
 | 23 | Sem Política de Privacidade e Termos | Moderado | Pendente | Textos LGPD (revisão jurídica recomendada) |
 | 24 | Preços repetidos e MRR errado | Moderado | Pendente | Planos e preços num único lugar, servidos pelo backend |
 | 25 | 245 onclick no HTML | Moderado | Pendente | Trocar por eventos registrados no JavaScript |
 | 26 | Sem verificação automática | Moderado | Feito | GitHub Actions: JS, IDs, segredos e testes do backend em todo PR |
 | 27 | Sem monitoramento de erros | Moderado | Pendente | Sentry (plano gratuito) no front e no backend |
-| 28 | Publicação manual direto no ar | Moderado | Feito | `main` protegida; push direto recusado no teste de 08/11 |
+| 28 | Publicação manual direto no ar | Moderado | Feito | `main` protegida; push direto recusado e PR #2 mesclado com verificação verde (08/11) |
 | 29 | Hospedagem limitada | Moderado | Pendente | Decidir: GitHub Pages + Cloudflare na frente, ou Cloudflare Pages |
 | 30 | Funções esquecidas no servidor | Moderado | Pendente | Baixar o código de `bright-api`, `clever-endpoint`, `dynamic-handler` e `admin-ops`, guardar e remover |
 | 31 | Commits sem descrição | Baixo | Parcial | Commits descritivos desde 06/11; faltam marcações de versão |
 | 32 | Itens do orçamento como texto | Baixo | Pendente | Coluna JSON estruturada e erro visível na leitura |
 | 33 | DMARC em observação | Baixo | Pendente | Subir para `quarantine` depois de 2 semanas de relatórios limpos |
-| 34 | Zoom bloqueado no celular | Baixo | Pendente | Remover `maximum-scale=1.0` |
+| 34 | Zoom bloqueado no celular | Baixo | Feito | Removido `maximum-scale`; em produção desde 08/11 |
 
 Encontrados durante o trabalho, fora da lista original:
 
@@ -121,8 +121,8 @@ Alterações no banco: o SQL vai para `supabase/migrations/`, roda primeiro em h
 
 - [ ] 1.1 Criar a secret key nova do Supabase e a chave nova do Resend; apagar a antiga (Antonio) · itens 4 e 18
 - [ ] 1.2 Publicar o backend no Render e enviar o endereço (Antonio; validação depois) · item 12
-- [ ] 1.3 Ligar o painel admin ao backend (`ADMIN_API_URL`) por Pull Request · itens 4 e 5
-- [ ] 1.4 Recuperação de senha `/auth/recover`, com limite de tentativas · item 19
+- [ ] 1.3 Ligar o painel admin e o app ao backend (`ADMIN_API_URL` e `API_URL`) por Pull Request · itens 4, 5 e 19
+- [x] 1.4 Recuperação de senha `/auth/recover`, com limite de tentativas · item 19 (08/11, PR #2; ativa no 1.3)
 - [ ] 1.5 Webhook: segredo para os segredos do Supabase, gravar em `webhook_logs`, código no GitHub · item 15
 - [ ] 1.6 Baixar o código das 4 funções esquecidas, revisar e remover · item 30
 - [ ] 1.7 Remover o usuário de teste `@example.com`
@@ -132,12 +132,12 @@ Alterações no banco: o SQL vai para `supabase/migrations/`, roda primeiro em h
 - [ ] 2.1 Projeto Supabase `moneyflow3d-dev` com a mesma estrutura de banco · item 14
 - [ ] 2.2 Backend e site de homologação a partir da branch `Desenvolvimento` · item 14
 - [ ] 2.3 Proxy do Cloudflare e cabeçalhos de segurança · itens 21 e 29
-- [ ] 2.4 Backup diário do banco por GitHub Actions · item 13
-- [ ] 2.5 Liberar o zoom no celular · item 34
+- [ ] 2.4 Backup diário do banco por GitHub Actions · item 13 (pronto; falta cadastrar `SUPABASE_DB_URL` e `BACKUP_PASSPHRASE`)
+- [x] 2.5 Liberar o zoom no celular · item 34 (08/11)
 
 **Fase 3 · Regras no backend Python**
 
-- [ ] 3.1 Fórmula de precificação em Python com testes de paridade; a fórmula não muda · item 17
+- [x] 3.1 Fórmula de precificação em Python com testes de paridade; a fórmula não muda · item 17 (08/11)
 - [ ] 3.2 Planos e preços num só lugar; MRR correto no admin · item 24
 - [ ] 3.3 Logo e nome da empresa salvos no Supabase · item 11
 - [ ] 3.4 Itens do orçamento como dado estruturado · item 32
@@ -147,7 +147,7 @@ Alterações no banco: o SQL vai para `supabase/migrations/`, roda primeiro em h
 
 - [ ] 4.1 Dividir o `index.html` em módulos · item 16
 - [ ] 4.2 Trocar os 245 onclick por eventos no JavaScript · item 25
-- [ ] 4.3 Fixar versões das bibliotecas e atualizar o jsPDF · item 22
+- [ ] 4.3 Fixar versões das bibliotecas e atualizar o jsPDF · item 22 (versões fixas com SRI em 08/11; falta jsPDF 4.x)
 - [ ] 4.4 Monitoramento de erros (Sentry) · item 27
 - [ ] 4.5 Biometria: aplicar a decisão tomada · item 20
 
