@@ -208,11 +208,15 @@ def register_routes(app: FastAPI) -> None:
         if user_id == admin["id"]:
             raise HTTPException(400, "Você não pode excluir a própria conta")
         try:
+            alvo = await sb.get_profile(user_id) or {}
+            # O registro vem ANTES da exclusão: admin_logs.target_user aponta para profiles
+            # (ON DELETE SET NULL). Gravar depois falhava e mostrava erro com a exclusão feita.
+            await sb.insert_admin_log(
+                {"admin_id": admin["id"], "action": "delete_user", "target_user": user_id,
+                 "details": {"email": alvo.get("email"), "name": alvo.get("name")}}
+            )
             await sb.delete_user(user_id)
             await sb.delete_profile(user_id)
-            await sb.insert_admin_log(
-                {"admin_id": admin["id"], "action": "delete_user", "target_user": user_id, "details": {}}
-            )
         except SupabaseError as e:
             raise _sb_error(e)
         return {"deleted": True}

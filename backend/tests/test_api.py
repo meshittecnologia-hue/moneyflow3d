@@ -220,3 +220,21 @@ def test_recover_chave_supabase_errada_nao_e_silencioso(client):
     )
     r = client.post("/auth/recover", json={"email": "a@x.com"})
     assert r.status_code == 502
+
+
+@respx.mock
+def test_exclusao_grava_log_antes_de_apagar(client):
+    """Bug de 08/11: o log depois da exclusão violava a FK e mostrava erro com a exclusão feita."""
+    ordem = []
+    respx.get(f"{SB}/auth/v1/user").mock(return_value=httpx.Response(200, json={"id": ADMIN_ID}))
+    def perfil(request):
+        if f"eq.{ADMIN_ID}" in str(request.url):
+            return httpx.Response(200, json=[{"id": ADMIN_ID, "role": "admin"}])
+        return httpx.Response(200, json=[{"id": USER_ID, "email": "alvo@x.com", "name": "Alvo"}])
+    respx.get(f"{SB}/rest/v1/profiles").mock(side_effect=perfil)
+    respx.post(f"{SB}/rest/v1/admin_logs").mock(side_effect=lambda r: (ordem.append("log"), httpx.Response(201))[1])
+    respx.delete(f"{SB}/auth/v1/admin/users/{USER_ID}").mock(side_effect=lambda r: (ordem.append("auth"), httpx.Response(200, json={}))[1])
+    respx.delete(f"{SB}/rest/v1/profiles").mock(side_effect=lambda r: (ordem.append("perfil"), httpx.Response(204))[1])
+    r = client.delete(f"/admin/users/{USER_ID}", headers=AUTH)
+    assert r.status_code == 200, r.text
+    assert ordem == ["log", "auth", "perfil"]
