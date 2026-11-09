@@ -10,6 +10,7 @@ let env;
 let calls;
 let fail; // { "POST /rest/v1/subscriptions": 500 }
 let users; // usuários do Auth, em páginas de 200
+let jaProcessado; // existe log "processed" para o pedido?
 
 globalThis.Deno = {
   env: { get: (k) => env[k] },
@@ -29,6 +30,7 @@ globalThis.fetch = async (url, opt = {}) => {
   if (key === "POST /auth/v1/admin/users") return Response.json({ id: "novo-id", email: calls.at(-1).body.email });
   if (key === "POST /auth/v1/admin/generate_link") return Response.json({ action_link: "https://link" });
   if (key === "GET /rest/v1/subscriptions") return Response.json([]);
+  if (key === "GET /rest/v1/webhook_logs") return Response.json(jaProcessado ? [{ id: 1 }] : []);
   if (key === "POST /rest/v1/webhook_logs") return Response.json([{ id: 42 }], { status: 201 });
   if (key === "POST /rest/v1/subscriptions") return Response.json([{ id: "s1" }], { status: 201 });
   if (key.startsWith("PATCH ")) return new Response(null, { status: 204 });
@@ -59,7 +61,7 @@ async function enviar(body, { assinar = true, assinatura } = {}) {
 const feitas = (k) => calls.filter((c) => c.key === k);
 
 beforeEach(() => {
-  calls = []; fail = {}; users = [];
+  calls = []; fail = {}; users = []; jaProcessado = false;
   env.KIWIFY_WEBHOOK_TOKEN = TOKEN;
 });
 
@@ -112,23 +114,45 @@ test("falha ao gravar assinatura: 500 (Kiwify tenta de novo) e histórico com er
   assert.equal(feitas("PATCH /rest/v1/webhook_logs").at(-1).body.status, "error");
 });
 
-test("pedido duplicado: não processa de novo", async () => {
-  const orig = globalThis.fetch;
-  globalThis.fetch = async (url, opt = {}) => {
-    if ((opt.method || "GET") === "GET" && new URL(url).pathname === "/rest/v1/subscriptions") {
-      calls.push({ key: "GET /rest/v1/subscriptions" });
-      return Response.json([{ id: "já" }]);
-    }
-    return orig(url, opt);
+function comAssinaturaExistente(fn) {
+  return async () => {
+    const orig = globalThis.fetch;
+    globalThis.fetch = async (url, opt = {}) => {
+      if ((opt.method || "GET") === "GET" && new URL(url).pathname === "/rest/v1/subscriptions") {
+        calls.push({ key: "GET /rest/v1/subscriptions" });
+        return Response.json([{ id: "já" }]);
+      }
+      return orig(url, opt);
+    };
+    try { await fn(); } finally { globalThis.fetch = orig; }
   };
-  try {
-    const r = await enviar(pedido());
-    assert.equal(r.status, 200);
-    assert.equal(feitas("POST /rest/v1/subscriptions").length, 0);
-    assert.equal(feitas("PATCH /rest/v1/webhook_logs").at(-1).body.status, "duplicate");
-  } finally {
-    globalThis.fetch = orig;
-  }
+}
+
+test("pedido duplicado já processado: não faz nada de novo", comAssinaturaExistente(async () => {
+  jaProcessado = true;
+  const r = await enviar(pedido());
+  assert.equal(r.status, 200);
+  assert.equal(feitas("POST /rest/v1/subscriptions").length, 0);
+  assert.equal(feitas("POST /emails").length, 0);
+  assert.equal(feitas("PATCH /rest/v1/webhook_logs").at(-1).body.status, "duplicate");
+}));
+
+test("acesso liberado mas e-mail falhou: nova tentativa reenvia só o e-mail", comAssinaturaExistente(async () => {
+  jaProcessado = false;
+  const r = await enviar(pedido());
+  assert.equal(r.status, 200);
+  assert.equal(feitas("POST /rest/v1/subscriptions").length, 0);
+  assert.equal(feitas("POST /auth/v1/admin/users").length, 0);
+  assert.equal(feitas("POST /emails").length, 1);
+  assert.equal(feitas("PATCH /rest/v1/webhook_logs").at(-1).body.status, "processed");
+}));
+
+test("e-mail falha (chave Resend inválida): 500 e histórico com erro, acesso já liberado", async () => {
+  fail["POST /emails"] = 401;
+  const r = await enviar(pedido());
+  assert.equal(r.status, 500);
+  assert.equal(feitas("POST /rest/v1/subscriptions").length, 1);
+  assert.equal(feitas("PATCH /rest/v1/webhook_logs").at(-1).body.status, "error");
 });
 
 test("falha no histórico não derruba a liberação do acesso", async () => {

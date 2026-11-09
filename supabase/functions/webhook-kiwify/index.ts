@@ -185,18 +185,28 @@ Deno.serve(async (req: Request) => {
     const plan: string = body?.Product?.metadata?.plan ?? body?.product?.metadata?.plan ?? "maker";
     console.log(`Pedido: ${orderId} | Plano: ${plan}`);
 
-    // Deduplicação: ignora pedido já processado
-    if (orderId) {
-      const dup = await sbFetch(`/rest/v1/subscriptions?external_id=eq.${encodeURIComponent(orderId)}&select=id`);
-      if (Array.isArray(dup) && dup.length > 0) {
-        await marcarLog(logId, "duplicate");
-        return new Response("OK - duplicado ignorado", { status: 200 });
-      }
-    }
-
     if (!email) {
       await marcarLog(logId, "error");
       return new Response("Email nao encontrado", { status: 400 });
+    }
+
+    // Deduplicação: pedido já processado não cria nada de novo.
+    // Se o acesso foi liberado mas o e-mail falhou, a nova tentativa da Kiwify reenvia só o e-mail.
+    if (orderId) {
+      const oid = encodeURIComponent(orderId);
+      const dup = await sbFetch(`/rest/v1/subscriptions?external_id=eq.${oid}&select=id`);
+      if (Array.isArray(dup) && dup.length > 0) {
+        const ok = await sbFetch(`/rest/v1/webhook_logs?payload->>order_id=eq.${oid}&status=eq.processed&select=id&limit=1`);
+        if (Array.isArray(ok) && ok.length > 0) {
+          await marcarLog(logId, "duplicate");
+          return new Response("OK - duplicado ignorado", { status: 200 });
+        }
+        const link = await generatePasswordLink(email);
+        if (!link) throw new Error("Não foi possível gerar o link de acesso");
+        await sendEmail(email, name, plan, link);
+        await marcarLog(logId, "processed");
+        return new Response("Done - e-mail reenviado", { status: 200 });
+      }
     }
 
     let user = await getUserByEmail(email);
