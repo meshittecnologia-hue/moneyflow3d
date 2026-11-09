@@ -158,6 +158,85 @@ async function assinaturaValida(url: URL, req: Request, rawBody: string) {
   return signature === esperado || tokenLegado === WEBHOOK_TOKEN;
 }
 
+// ---------- Regras de assinatura ----------
+type Sub = { id: string; user_id: string; external_id: string | null; plan: string; status: string; next_billing_at: string | null; started_at: string | null };
+type Tipo = "compra" | "renovacao" | "reembolso" | "chargeback" | "cancelamento" | "atraso" | "ignorar";
+
+const PLANOS_PAGOS = ["pro", "maker", "annual_maker"];
+
+// O tipo vem primeiro do webhook_event_type (no cancelamento o order_status pode continuar "paid").
+function classificar(evento: string, orderStatus: string): Tipo {
+  const e = (evento || "").toLowerCase();
+  const st = (orderStatus || "").toLowerCase();
+  if (e === "order_refunded" || e === "compra_reembolsada" || st === "refunded") return "reembolso";
+  if (e === "chargeback" || st === "chargedback" || st === "chargeback") return "chargeback";
+  if (e === "subscription_canceled" || e === "subscription_cancelled") return "cancelamento";
+  if (e === "subscription_late") return "atraso";
+  if (e === "subscription_renewed") return "renovacao";
+  if (st === "paid") return "compra";
+  return "ignorar";
+}
+
+function dataValida(v: unknown): Date | null {
+  if (!v) return null;
+  const d = new Date(String(v).replace(" ", "T"));
+  return isNaN(d.getTime()) ? null : d;
+}
+
+function umMesDepois(base: string | null): Date | null {
+  const d = dataValida(base);
+  if (!d) return null;
+  d.setMonth(d.getMonth() + 1);
+  return d;
+}
+
+async function buscarAssinatura(subId: string, orderId: string, email: string): Promise<Sub | null> {
+  const sel = "select=id,user_id,external_id,plan,status,next_billing_at,started_at&order=created_at.desc&limit=1";
+  if (subId) {
+    const r = await sbFetch(`/rest/v1/subscriptions?external_subscription_id=eq.${encodeURIComponent(subId)}&${sel}`);
+    if (Array.isArray(r) && r[0]) return r[0];
+  }
+  if (orderId) {
+    const r = await sbFetch(`/rest/v1/subscriptions?external_id=eq.${encodeURIComponent(orderId)}&${sel}`);
+    if (Array.isArray(r) && r[0]) return r[0];
+  }
+  if (email) {
+    const u = await getUserByEmail(email);
+    if (u?.id) {
+      const r = await sbFetch(`/rest/v1/subscriptions?user_id=eq.${u.id}&status=eq.active&platform=eq.kiwify&${sel}`);
+      if (Array.isArray(r) && r[0]) return r[0];
+    }
+  }
+  return null;
+}
+
+// Admin e plano interno nunca perdem acesso por evento da Kiwify.
+async function perfilProtegido(userId: string) {
+  const r = await sbFetch(`/rest/v1/profiles?id=eq.${userId}&select=role,plan`);
+  const p = Array.isArray(r) ? r[0] : null;
+  return !!p && (p.role === "admin" || p.plan === "interno");
+}
+
+async function outraAssinaturaAtiva(userId: string, exceto: string) {
+  const r = await sbFetch(`/rest/v1/subscriptions?user_id=eq.${userId}&status=eq.active&id=neq.${exceto}&select=id&limit=1`);
+  return Array.isArray(r) && r.length > 0;
+}
+
+async function bloquearAcesso(userId: string, subIdInterno: string) {
+  if (await perfilProtegido(userId)) return "protegido";
+  if (await outraAssinaturaAtiva(userId, subIdInterno)) return "outra_ativa";
+  await sbFetch(`/rest/v1/profiles?id=eq.${userId}`, "PATCH", { plan: "free", plan_expires_at: null });
+  return "bloqueado";
+}
+
+async function jaProcessado(orderId: string, evento: string) {
+  if (!orderId) return false;
+  const r = await sbFetch(
+    `/rest/v1/webhook_logs?payload->>order_id=eq.${encodeURIComponent(orderId)}&event=eq.${encodeURIComponent(evento)}&status=eq.processed&select=id&limit=1`,
+  );
+  return Array.isArray(r) && r.length > 0;
+}
+
 Deno.serve(async (req: Request) => {
   let logId: number | null = null;
   try {
@@ -174,33 +253,90 @@ Deno.serve(async (req: Request) => {
     const email: string = (body?.Customer?.email ?? body?.customer?.email ?? "").trim();
     logId = await gravarLog(evento, email, "received", body);
 
-    if (orderStatus !== "paid") {
-      console.log("Status nao e paid, ignorando:", orderStatus);
+    const tipo = classificar(evento, orderStatus);
+    if (tipo === "ignorar") {
+      console.log("Evento sem acao:", evento, orderStatus);
       await marcarLog(logId, "ignored");
       return new Response("OK", { status: 200 });
     }
 
     const orderId: string = body?.order_id ?? body?.id ?? "";
+    const subKiwify: string = body?.subscription_id ?? body?.Subscription?.id ?? "";
     const name: string = body?.Customer?.full_name ?? body?.customer?.full_name ?? body?.customer?.name ?? "Cliente";
-    const plan: string = body?.Product?.metadata?.plan ?? body?.product?.metadata?.plan ?? "maker";
-    console.log(`Pedido: ${orderId} | Plano: ${plan}`);
+    const planMeta: string = body?.Product?.metadata?.plan ?? body?.product?.metadata?.plan ?? "";
+    const proximaCobranca = dataValida(body?.Subscription?.next_payment);
+    console.log(`Evento: ${evento} | Tipo: ${tipo} | Pedido: ${orderId} | Assinatura Kiwify: ${subKiwify}`);
+
+    if (await jaProcessado(orderId, evento)) {
+      await marcarLog(logId, "duplicate");
+      return new Response("OK - duplicado ignorado", { status: 200 });
+    }
+
+    // Reembolso, chargeback, cancelamento e atraso mexem numa assinatura que já existe.
+    if (tipo === "reembolso" || tipo === "chargeback" || tipo === "cancelamento" || tipo === "atraso") {
+      const sub = await buscarAssinatura(subKiwify, orderId, email);
+      if (!sub) {
+        console.error("Assinatura nao encontrada para", tipo, orderId, subKiwify);
+        await marcarLog(logId, "not_found");
+        return new Response("Assinatura nao encontrada", { status: 200 });
+      }
+      const agora = new Date();
+      if (tipo === "atraso") {
+        await sbFetch(`/rest/v1/subscriptions?id=eq.${sub.id}`, "PATCH", { status: "overdue" });
+      } else if (tipo === "cancelamento") {
+        // Usa até o fim do período pago; depois a rotina de hora em hora bloqueia.
+        const ate = dataValida(body?.Subscription?.customer_access?.access_until) ?? proximaCobranca ??
+          dataValida(sub.next_billing_at) ?? umMesDepois(sub.started_at);
+        await sbFetch(`/rest/v1/subscriptions?id=eq.${sub.id}`, "PATCH", {
+          status: "cancelled", cancelled_at: agora.toISOString(), next_billing_at: ate ? ate.toISOString() : null,
+        });
+        if (!ate || ate <= agora) {
+          console.log("Cancelamento sem periodo restante:", await bloquearAcesso(sub.user_id, sub.id));
+        } else if (!(await perfilProtegido(sub.user_id)) && !(await outraAssinaturaAtiva(sub.user_id, sub.id))) {
+          await sbFetch(`/rest/v1/profiles?id=eq.${sub.user_id}`, "PATCH", { plan_expires_at: ate.toISOString() });
+        }
+      } else {
+        await sbFetch(`/rest/v1/subscriptions?id=eq.${sub.id}`, "PATCH", {
+          status: tipo === "reembolso" ? "refunded" : "chargeback", cancelled_at: agora.toISOString(),
+        });
+        console.log("Acesso:", await bloquearAcesso(sub.user_id, sub.id));
+      }
+      await marcarLog(logId, "processed");
+      return new Response("Done", { status: 200 });
+    }
+
+    // Renovação: reativa a assinatura existente, sem criar outra e sem e-mail de boas-vindas.
+    const existente = subKiwify ? await buscarAssinatura(subKiwify, "", "") : null;
+    // Mesmo pedido da compra original (nova tentativa) não é renovação.
+    if (tipo === "renovacao" || (existente && existente.external_id !== orderId)) {
+      const sub = existente ?? await buscarAssinatura("", orderId, email);
+      if (sub) {
+        await sbFetch(`/rest/v1/subscriptions?id=eq.${sub.id}`, "PATCH", {
+          status: "active", cancelled_at: null, next_billing_at: proximaCobranca ? proximaCobranca.toISOString() : null,
+        });
+        if (!(await perfilProtegido(sub.user_id))) {
+          await sbFetch(`/rest/v1/profiles?id=eq.${sub.user_id}`, "PATCH", { plan: sub.plan, plan_expires_at: null });
+        }
+        await marcarLog(logId, "processed");
+        return new Response("Done - renovado", { status: 200 });
+      }
+      if (tipo === "renovacao") {
+        await marcarLog(logId, "not_found");
+        return new Response("Assinatura nao encontrada", { status: 200 });
+      }
+    }
+
+    const plan: string = planMeta || "maker";
 
     if (!email) {
       await marcarLog(logId, "error");
       return new Response("Email nao encontrado", { status: 400 });
     }
 
-    // Deduplicação: pedido já processado não cria nada de novo.
-    // Se o acesso foi liberado mas o e-mail falhou, a nova tentativa da Kiwify reenvia só o e-mail.
+    // Compra repetida: se o acesso já foi liberado mas o e-mail falhou, reenvia só o e-mail.
     if (orderId) {
-      const oid = encodeURIComponent(orderId);
-      const dup = await sbFetch(`/rest/v1/subscriptions?external_id=eq.${oid}&select=id`);
+      const dup = await sbFetch(`/rest/v1/subscriptions?external_id=eq.${encodeURIComponent(orderId)}&select=id`);
       if (Array.isArray(dup) && dup.length > 0) {
-        const ok = await sbFetch(`/rest/v1/webhook_logs?payload->>order_id=eq.${oid}&status=eq.processed&select=id&limit=1`);
-        if (Array.isArray(ok) && ok.length > 0) {
-          await marcarLog(logId, "duplicate");
-          return new Response("OK - duplicado ignorado", { status: 200 });
-        }
         const link = await generatePasswordLink(email);
         if (!link) throw new Error("Não foi possível gerar o link de acesso");
         await sendEmail(email, name, plan, link);
@@ -221,13 +357,17 @@ Deno.serve(async (req: Request) => {
     await sbFetch("/rest/v1/subscriptions", "POST", {
       user_id: userId,
       external_id: orderId || null,
+      external_subscription_id: subKiwify || null,
       platform: "kiwify",
       plan,
       status: "active",
       amount: body?.Commissions?.charge_amount ?? body?.payment?.charge_amount ?? body?.amount ?? null,
       started_at: new Date().toISOString(),
+      next_billing_at: proximaCobranca ? proximaCobranca.toISOString() : null,
     });
-    await sbFetch(`/rest/v1/profiles?id=eq.${userId}`, "PATCH", { plan });
+    if (!(await perfilProtegido(userId))) {
+      await sbFetch(`/rest/v1/profiles?id=eq.${userId}`, "PATCH", { plan, plan_expires_at: null });
+    }
     await sendEmail(email, name, plan, link);
 
     await marcarLog(logId, "processed");
