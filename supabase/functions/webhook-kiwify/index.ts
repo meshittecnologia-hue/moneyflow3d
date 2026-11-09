@@ -150,12 +150,12 @@ async function assinaturaValida(url: URL, req: Request, rawBody: string) {
     return false;
   }
   // Kiwify assina o corpo bruto com HMAC-SHA1 usando o token do webhook e envia em ?signature=
+  // Token na URL (?token=) não é mais aceito: ele aparecia nos logs do Supabase.
   const signature = (url.searchParams.get("signature") || "").toLowerCase();
-  const tokenLegado = url.searchParams.get("token") || req.headers.get("X-Kiwify-Token") || "";
   const chave = await crypto.subtle.importKey("raw", new TextEncoder().encode(WEBHOOK_TOKEN), { name: "HMAC", hash: "SHA-1" }, false, ["sign"]);
   const esperado = Array.from(new Uint8Array(await crypto.subtle.sign("HMAC", chave, new TextEncoder().encode(rawBody))))
     .map((b) => b.toString(16).padStart(2, "0")).join("");
-  return signature === esperado || tokenLegado === WEBHOOK_TOKEN;
+  return signature.length === 40 && signature === esperado;
 }
 
 // ---------- Regras de assinatura ----------
