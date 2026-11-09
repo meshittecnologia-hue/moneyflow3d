@@ -1,6 +1,6 @@
 # MoneyFlow 3D — Plano de Correção e Separação Front/Back
 
-Atualizado em 09/11/2026 (15h) · Versão viva (editável, com diagramas): https://claude.ai/artifact/A5yhyA9VDmnz4pSLtQXwHt
+Atualizado em 09/11/2026 (16h50) · Versão viva (editável, com diagramas): https://claude.ai/artifact/A5yhyA9VDmnz4pSLtQXwHt
 
 ## Resumo
 
@@ -70,6 +70,8 @@ Encontrados durante o trabalho, fora da lista original:
 | Usuário de teste `@example.com` no banco | Feito | Removido em 08/11 |
 | Backend e admin sem permissão no banco (`permission denied`) | Feito | Permissões restauradas em 08/11; telas de Logs, Webhooks, Módulos e Assinaturas voltaram |
 | Exclusão mostrava erro mesmo concluída | Feito | Corrigido no PR #4 |
+| `/auth/recover` devolvia 502 sem registrar a causa | Feito | PR #11: resposta do Supabase/Resend vai para o log (foi assim que se achou a chave antiga ainda no Render) |
+| Chaves sobrando: Resend "MoneyFlow3D Webhook" (acesso total, era das funções apagadas) e "Onboarding"; secret `RESEND_API_KEY` no Supabase sem uso | Pendente | Autorização do Antonio para apagar |
 
 ## Arquitetura: frontend e backend Python
 
@@ -145,7 +147,7 @@ Alterações no banco: o SQL vai para `supabase/migrations/`, roda primeiro em h
 - [ ] 2.3 Proxy do Cloudflare e cabeçalhos de segurança · itens 21 e 29
 - [x] 2.4 Backup diário do banco por GitHub Actions · item 13 (ativo desde 08/11)
 - [x] 2.5 Liberar o zoom no celular · item 34 (08/11)
-- [ ] 2.6 Trocar a senha do banco (apareceu numa pesquisa do Google) e as chaves `backend_render` do Supabase e do Resend (apareceram no chat) em 08/11; atualizar `SUPABASE_DB_URL` e o Render; ~~token do webhook da Kiwify~~ (trocado em 09/11)
+- [x] 2.6 Trocar credenciais expostas (09/11): senha do banco (backup testado), Supabase `backend_render_v2` e Resend `backend_render_v2` no Render (recuperação de senha testada), Resend `supabase_webhook_v2` no webhook (compra testada), token da Kiwify; antigas apagadas. Valores em `claude/credenciais.md` (decisão do Antonio)
 
 **Fase 3 · Regras no backend Python**
 
