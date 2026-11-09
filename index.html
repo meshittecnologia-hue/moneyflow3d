@@ -3603,7 +3603,7 @@ function limparDados(){
 const SUPABASE_URL = 'https://fqthlewarcqvmqojmzzs.supabase.co';
 const SUPABASE_ANON = 'sb_publishable_Y1nupemuEmSd9TIlLGg5cg_rS7cyQK2';
 // URL da API Python (backend/). Preencher após o deploy no Render (item 1.3). Vazia = recursos do backend desligados.
-const API_URL = '';
+const API_URL = 'https://moneyflow3d-api.onrender.com';
 const _supa = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 // Proteção contra XSS (auditoria, problema 10): texto vindo do banco passa por esc() antes de ir para innerHTML.
 function esc(v){ return String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
