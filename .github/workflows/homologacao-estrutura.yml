@@ -1,0 +1,90 @@
+name: Homologação — copiar estrutura do banco
+
+# Copia a ESTRUTURA do banco de produção (tabelas, funções, regras de segurança,
+# permissões, gatilhos) para o Supabase de homologação (moneyflow3d-dev).
+# Nenhum dado de cliente é copiado. Da produção só vêm as linhas da tabela
+# `modules` (cadastro de módulos, sem dado pessoal).
+#
+# Rodar à mão: Actions → "Homologação — copiar estrutura do banco" → Run workflow.
+# ATENÇÃO: apaga e recria o schema public da HOMOLOGAÇÃO (os dados de teste de lá somem).
+on:
+  workflow_dispatch:
+    inputs:
+      confirmar:
+        description: 'Digite HOMOLOGACAO para confirmar (apaga os dados de teste da homologação)'
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  copiar:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Conferir confirmação e segredos
+        env:
+          PROD: ${{ secrets.SUPABASE_DB_URL }}
+          DEV: ${{ secrets.SUPABASE_DEV_DB_URL }}
+          CONFIRMAR: ${{ github.event.inputs.confirmar }}
+        run: |
+          [ "$CONFIRMAR" = "HOMOLOGACAO" ] || { echo "::error::Confirmação incorreta"; exit 1; }
+          [ -n "$PROD" ] && [ -n "$DEV" ] || { echo "::error::Cadastre SUPABASE_DB_URL e SUPABASE_DEV_DB_URL"; exit 1; }
+          # Trava de segurança: o destino nunca pode ser a produção.
+          case "$DEV" in *fqthlewarcqvmqojmzzs*) echo "::error::SUPABASE_DEV_DB_URL aponta para a PRODUÇÃO"; exit 1;; esac
+
+      - name: Exportar estrutura da produção (sem dados)
+        env:
+          PROD: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          set -euo pipefail
+          docker run --rm -e PROD postgres:17 sh -c '
+            pg_dump "$PROD" --schema-only --no-owner --schema=public
+          ' > estrutura.sql
+          # Gatilhos que a produção tem em auth.users (ex.: criar o perfil no cadastro).
+          docker run --rm -e PROD postgres:17 psql "$PROD" -At -c "
+            select pg_get_triggerdef(t.oid) || ';'
+            from pg_trigger t
+            where t.tgrelid = 'auth.users'::regclass and not t.tgisinternal" > gatilhos_auth.sql
+          # Dados de referência sem informação pessoal.
+          docker run --rm -e PROD postgres:17 sh -c '
+            pg_dump "$PROD" --data-only --no-owner --table=public.modules
+          ' > referencia.sql
+          # O schema public é recriado no passo seguinte; evita "already exists".
+          sed -i '/^CREATE SCHEMA public;$/d' estrutura.sql
+          wc -l estrutura.sql gatilhos_auth.sql referencia.sql
+          test "$(wc -l < estrutura.sql)" -gt 100 || { echo "::error::Estrutura vazia"; exit 1; }
+
+      - name: Recriar a estrutura na homologação
+        env:
+          DEV: ${{ secrets.SUPABASE_DEV_DB_URL }}
+        run: |
+          set -euo pipefail
+          cat > reset.sql <<'SQL'
+          drop schema if exists public cascade;
+          create schema public;
+          grant usage on schema public to postgres, anon, authenticated, service_role;
+          grant all on schema public to postgres, service_role;
+          create extension if not exists pg_cron;
+          SQL
+          # Gatilhos antigos em auth.users da homologação saem antes (dependem do schema public).
+          docker run --rm -e DEV -v "$PWD:/w" -w /w postgres:17 sh -c '
+            psql "$DEV" -v ON_ERROR_STOP=1 -q -f reset.sql &&
+            psql "$DEV" -v ON_ERROR_STOP=1 -q -f estrutura.sql &&
+            psql "$DEV" -v ON_ERROR_STOP=1 -q -f gatilhos_auth.sql &&
+            psql "$DEV" -v ON_ERROR_STOP=1 -q -f referencia.sql
+          '
+
+      - name: Conferir resultado
+        env:
+          PROD: ${{ secrets.SUPABASE_DB_URL }}
+          DEV: ${{ secrets.SUPABASE_DEV_DB_URL }}
+        run: |
+          set -euo pipefail
+          Q="select (select count(*) from information_schema.tables where table_schema='public'),
+                    (select count(*) from pg_policies where schemaname='public'),
+                    (select count(*) from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public')"
+          P=$(docker run --rm -e PROD postgres:17 psql "$PROD" -At -c "$Q")
+          D=$(docker run --rm -e DEV postgres:17 psql "$DEV" -At -c "$Q")
+          echo "produção  (tabelas|regras|funções): $P"
+          echo "homologação (tabelas|regras|funções): $D"
+          [ "$P" = "$D" ] || { echo "::error::Estruturas diferentes"; exit 1; }
