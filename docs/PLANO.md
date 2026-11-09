@@ -1,6 +1,6 @@
 # MoneyFlow 3D — Plano de Correção e Separação Front/Back
 
-Atualizado em 09/11/2026 (manhã) · Versão viva (editável, com diagramas): https://claude.ai/artifact/A5yhyA9VDmnz4pSLtQXwHt
+Atualizado em 09/11/2026 (10h40) · Versão viva (editável, com diagramas): https://claude.ai/artifact/A5yhyA9VDmnz4pSLtQXwHt
 
 ## Resumo
 
@@ -59,7 +59,9 @@ Encontrados durante o trabalho, fora da lista original:
 | Segredo do webhook gravado no log | Feito | Removido do log |
 | Segredo do webhook escrito no código da função | Feito | Lido de `KIWIFY_WEBHOOK_TOKEN` nos Secrets (09/11) |
 | Webhook não grava em `webhook_logs` | Feito | Grava evento, e-mail e status, sem CPF/telefone; provado em 09/11 (processed, duplicate) |
-| Token do webhook escrito no `admin.html` publicado | Feito, falta trocar | Removido do arquivo (PR #6); como ficou público e no histórico do git, gerar token novo na Kiwify (2.6) |
+| Token do webhook escrito no `admin.html` publicado | Feito | Removido do arquivo (PR #6) e trocado em 09/11: webhook novo "MoneyFlow 3D - Producao" (6 eventos, URL sem token); os 2 antigos apagados; token antigo recusado (testado) |
+| Webhook duplicado ("Todos que sou produtor") com token na URL, que aparecia nos logs | Feito | Apagado; a função só aceita assinatura HMAC (`?token=` recusado, testado) |
+| Comprador do produto "MoneyFlow 3D Pro" recebe plano `maker` (a Kiwify não manda o plano; padrão do código) | Pendente | Decisão do Antonio: qual plano o produto libera |
 | E-mail de boas-vindas da compra não saía (chave `RESEND_KEY` inválida desde 01/11) | Feito | Chave nova `supabase_webhook` (só envio) em 09/11; e-mail entregue no teste |
 | Se o e-mail falhava, a nova tentativa da Kiwify virava "duplicado" e o cliente nunca recebia o link | Feito | Nova tentativa reenvia só o e-mail; teste automático cobre o caso |
 | Reembolso, chargeback e cancelamento não tiram o acesso | Feito | Regra do Antonio (09/11): reembolso e chargeback bloqueiam na hora; cancelamento mantém até o fim do período pago; pagamento atrasado bloqueia na hora e o pagamento depois reativa (rotina `expirar-planos` de hora em hora + `tem_acesso` respeita `plan_expires_at`). Provado em produção: compra → renovação → cancelamento (pro até 29/11) → reembolso (free na hora) |
@@ -143,7 +145,7 @@ Alterações no banco: o SQL vai para `supabase/migrations/`, roda primeiro em h
 - [ ] 2.3 Proxy do Cloudflare e cabeçalhos de segurança · itens 21 e 29
 - [x] 2.4 Backup diário do banco por GitHub Actions · item 13 (ativo desde 08/11)
 - [x] 2.5 Liberar o zoom no celular · item 34 (08/11)
-- [ ] 2.6 Trocar a senha do banco (apareceu numa pesquisa do Google) e as chaves `backend_render` do Supabase e do Resend (apareceram no chat) em 08/11; atualizar `SUPABASE_DB_URL` e o Render; gerar token novo do webhook na Kiwify (o atual ficou público no `admin.html`) e atualizar `KIWIFY_WEBHOOK_TOKEN`
+- [ ] 2.6 Trocar a senha do banco (apareceu numa pesquisa do Google) e as chaves `backend_render` do Supabase e do Resend (apareceram no chat) em 08/11; atualizar `SUPABASE_DB_URL` e o Render; ~~token do webhook da Kiwify~~ (trocado em 09/11)
 
 **Fase 3 · Regras no backend Python**
 
