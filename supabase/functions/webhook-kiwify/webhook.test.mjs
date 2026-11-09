@@ -108,6 +108,13 @@ beforeEach(() => {
   db = { users: [], profiles: [], subscriptions: [], logs: [] };
 });
 
+test("token na URL (?token=) não é mais aceito", async () => {
+  const raw = JSON.stringify(pedido());
+  const r = await handler(new Request(`https://fn.test/webhook-kiwify?token=${TOKEN}`, { method: "POST", body: raw }));
+  assert.equal(r.status, 401);
+  assert.equal(calls.length, 0);
+});
+
 // ---------- Compra ----------
 test("assinatura inválida: 401 e nada é gravado", async () => {
   const r = await enviar(pedido(), { assinatura: "abc" });
