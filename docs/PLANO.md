@@ -1,10 +1,10 @@
 # MoneyFlow 3D — Plano de Correção e Separação Front/Back
 
-Atualizado em 08/11/2026 (tarde) · Versão viva (editável, com diagramas): https://claude.ai/artifact/A5yhyA9VDmnz4pSLtQXwHt
+Atualizado em 08/11/2026 (noite) · Versão viva (editável, com diagramas): https://claude.ai/artifact/A5yhyA9VDmnz4pSLtQXwHt
 
 ## Resumo
 
-Dos 34 problemas da auditoria de 04/11/2026, **14 estão resolvidos, 8 parcialmente e 12 pendentes**. Os 5 urgentes de segurança estão fechados ou mitigados; o que falta é colocar o backend Python no ar, separar o restante do frontend e criar o ambiente de homologação. Previsão de conclusão: **19/12/2026**, em 6 fases.
+Dos 34 problemas da auditoria de 04/11/2026, **16 estão resolvidos, 6 parcialmente e 12 pendentes**. Os 5 urgentes de segurança estão fechados ou mitigados; o que falta é colocar o backend Python no ar, separar o restante do frontend e criar o ambiente de homologação. Previsão de conclusão: **19/12/2026**, em 6 fases.
 
 Como usamos este plano:
 
@@ -19,22 +19,22 @@ Como usamos este plano:
 | 1 | Chave mestra exposta | Urgente | Feito | Chaves legadas desativadas e segredo JWT revogado; a chave vazada recebe 401 em todos os testes |
 | 2 | Envio de e-mail aberto | Urgente | Feito | `send-email` desativada; responde 410 (log de 06/11 15:29) |
 | 3 | Repositório público com chaves no histórico | Urgente | Feito | Todas as chaves do histórico estão revogadas; repositório segue público por decisão (ver item 29) |
-| 4 | E-mail de novas contas não chega | Urgente | Parcial | Código pronto no backend, com erro visível; falta publicar no Render e criar chave nova do Resend |
-| 5 | Painel altera o usuário errado | Urgente | Parcial | Corrigido e testado no backend (busca por e-mail exato); vale após publicar no Render |
+| 4 | E-mail de novas contas não chega | Urgente | Parcial | Backend no ar e e-mail entregue pelo Resend (08/11); falta o teste de convite pelo painel admin |
+| 5 | Painel altera o usuário errado | Urgente | Parcial | Correção em produção desde 08/11; falta o teste pelo painel admin |
 | 6 | Lista de usuários completa | Alto | Feito | Teste como usuário comum: 0 perfis de outros visíveis |
 | 7 | Regras de acesso incompletas | Alto | Feito | RLS em todas as tabelas; acesso sem login devolve 401 ou vazio |
 | 8 | Usuário se promove sozinho | Alto | Feito | Trava no banco; teste bloqueou virar admin, trocar plano e renovar teste |
 | 9 | Plano Pro e teste burláveis | Alto | Feito | Função `tem_acesso()` no banco, incluindo conta bloqueada |
 | 10 | XSS em nomes | Alto | Feito | Escape no admin e no app; testado com nome malicioso |
 | 11 | Logo só no navegador | Alto | Pendente | Guardar logo no Supabase Storage e nome da empresa no banco |
-| 12 | Sem servidor próprio | Alto | Parcial | Backend FastAPI criado com 9 testes; falta publicar |
+| 12 | Sem servidor próprio | Alto | Feito | Backend Python no Render (moneyflow3d-api.onrender.com) desde 08/11; publica a cada merge na main |
 | 13 | Sem backup automático | Alto | Feito | Backup diário criptografado ativo; primeira execução em 08/11 com sucesso (27,4 KB, guardado 30 dias) |
 | 14 | Sem ambiente de testes | Alto | Parcial | Branch `Desenvolvimento` e verificação automática prontas; falta banco e endereço de homologação |
 | 15 | Código no ar diferente do guardado | Alto | Parcial | Migração do banco versionada; faltam as Edge Functions no GitHub |
 | 16 | App em um arquivo de 5 mil linhas | Alto | Pendente | Dividir em módulos |
 | 17 | Fórmula sem testes | Alto | Feito | Fórmula em Python com teste de paridade: 503 casos contra o JavaScript real; teste de mutação confirmou (08/11) |
 | 18 | Chave antiga do Resend no código | Moderado | Feito | Removida do `admin.html`; varredura automática bloqueia chaves em todo PR |
-| 19 | Recuperação de senha improvisada | Moderado | Parcial | `/auth/recover` pronto e testado, app já ligado a ele; ativa com o endereço do Render (item 1.3) |
+| 19 | Recuperação de senha improvisada | Moderado | Feito | Recuperação pelo backend em produção; e-mail entregue (Resend, 08/11); erro de configuração não fica silencioso |
 | 20 | Biometria só visual | Moderado | Pendente | Decidir: login real por passkey ou renomear para bloqueio de tela |
 | 21 | Sem cabeçalhos de segurança | Moderado | Pendente | Cloudflare com proxy ligado e regras de cabeçalho |
 | 22 | Bibliotecas sem versão fixa | Moderado | Parcial | supabase-js 2.118.0 e jsPDF 2.5.1 fixos com SRI, em produção; falta atualizar o jsPDF para 4.x |
@@ -119,13 +119,14 @@ Alterações no banco: o SQL vai para `supabase/migrations/`, roda primeiro em h
 
 **Fase 1 · Backend no ar**
 
-- [ ] 1.1 Criar a secret key nova do Supabase e a chave nova do Resend; apagar a antiga (Antonio) · itens 4 e 18
-- [ ] 1.2 Publicar o backend no Render e enviar o endereço (Antonio; validação depois) · item 12
-- [ ] 1.3 Ligar o painel admin e o app ao backend (`ADMIN_API_URL` e `API_URL`) por Pull Request · itens 4, 5 e 19
+- [x] 1.1 Criar a secret key nova do Supabase e a chave nova do Resend · itens 4 e 18 (08/11, `backend_render`)
+- [x] 1.2 Publicar o backend no Render · item 12 (08/11, https://moneyflow3d-api.onrender.com)
+- [x] 1.3 Ligar o painel admin e o app ao backend por Pull Request · itens 4, 5 e 19 (PR #3, 08/11)
 - [x] 1.4 Recuperação de senha `/auth/recover`, com limite de tentativas · item 19 (08/11, PR #2; ativa no 1.3)
 - [ ] 1.5 Webhook: segredo para os segredos do Supabase, gravar em `webhook_logs`, código no GitHub · item 15
 - [ ] 1.6 Baixar o código das 4 funções esquecidas, revisar e remover · item 30
 - [ ] 1.7 Remover o usuário de teste `@example.com`
+- [ ] 1.8 Testar pelo painel admin: convidar um usuário e enviar link de acesso (Antonio logado) · itens 4 e 5
 
 **Fase 2 · Homologação e proteção**
 
@@ -134,7 +135,7 @@ Alterações no banco: o SQL vai para `supabase/migrations/`, roda primeiro em h
 - [ ] 2.3 Proxy do Cloudflare e cabeçalhos de segurança · itens 21 e 29
 - [x] 2.4 Backup diário do banco por GitHub Actions · item 13 (ativo desde 08/11)
 - [x] 2.5 Liberar o zoom no celular · item 34 (08/11)
-- [ ] 2.6 Trocar a senha do banco (apareceu numa pesquisa do Google em 08/11) e atualizar o segredo `SUPABASE_DB_URL`
+- [ ] 2.6 Trocar a senha do banco (apareceu numa pesquisa do Google) e as chaves `backend_render` do Supabase e do Resend (apareceram no chat) em 08/11; atualizar `SUPABASE_DB_URL` e o Render
 
 **Fase 3 · Regras no backend Python**
 
