@@ -12,9 +12,11 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
       - name: Regras 1 e 2 + varredura de segredos
         run: python3 scripts/validar_html.py admin.html index.html lp.html
+      - name: Testes do webhook da Kiwify
+        run: node --experimental-strip-types --no-warnings --test supabase/functions/webhook-kiwify/webhook.test.mjs
 
   backend:
     runs-on: ubuntu-latest
