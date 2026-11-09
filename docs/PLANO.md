@@ -71,7 +71,7 @@ Encontrados durante o trabalho, fora da lista original:
 | Backend e admin sem permissão no banco (`permission denied`) | Feito | Permissões restauradas em 08/11; telas de Logs, Webhooks, Módulos e Assinaturas voltaram |
 | Exclusão mostrava erro mesmo concluída | Feito | Corrigido no PR #4 |
 | `/auth/recover` devolvia 502 sem registrar a causa | Feito | PR #11: resposta do Supabase/Resend vai para o log (foi assim que se achou a chave antiga ainda no Render) |
-| Chaves sobrando: Resend "MoneyFlow3D Webhook" (acesso total, era das funções apagadas) e "Onboarding"; secret `RESEND_API_KEY` no Supabase sem uso | Pendente | Autorização do Antonio para apagar |
+| Chaves sobrando: Resend "MoneyFlow3D Webhook" (acesso total, era das funções apagadas) e "Onboarding"; secret `RESEND_API_KEY` no Supabase sem uso | Feito | Apagadas com autorização em 09/11; compra de teste depois disso enviou o e-mail normalmente |
 
 ## Arquitetura: frontend e backend Python
 
