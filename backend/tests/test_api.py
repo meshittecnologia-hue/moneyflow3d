@@ -213,13 +213,14 @@ def test_rate_limiter_libera_depois_da_janela():
 
 
 @respx.mock
-def test_recover_chave_supabase_errada_nao_e_silencioso(client):
-    """Erro de configuração (401 do Supabase) precisa aparecer, não virar 'ok'."""
+def test_recover_chave_supabase_errada_nao_e_silencioso(client, caplog):
+    """Erro de configuração (401 do Supabase) precisa aparecer, não virar 'ok', e ficar no log."""
     respx.post(f"{SB}/auth/v1/admin/generate_link").mock(
         return_value=httpx.Response(401, json={"message": "Invalid API key"})
     )
     r = client.post("/auth/recover", json={"email": "a@x.com"})
     assert r.status_code == 502
+    assert "401" in caplog.text and "Invalid API key" in caplog.text
 
 
 @respx.mock

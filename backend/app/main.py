@@ -4,6 +4,7 @@ Regra central: o navegador nunca recebe chave secreta. Ele manda só o token
 de sessão do usuário logado; aqui conferimos quem é e se é admin antes de
 usar a secret key do Supabase.
 """
+import logging
 import secrets
 import string
 from contextlib import asynccontextmanager
@@ -18,6 +19,9 @@ from .config import Settings, get_settings
 from .emails import EmailError, send_template
 from .rate_limit import RateLimiter
 from .supabase_client import SupabaseAdmin, SupabaseError
+
+logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
+log = logging.getLogger("moneyflow3d")
 
 PLANOS = {"free", "pro", "interno"}
 ROLES = {"user", "admin"}
@@ -94,6 +98,7 @@ def _temp_password() -> str:
 
 
 def _sb_error(e: SupabaseError) -> HTTPException:
+    log.error("Supabase respondeu %s: %s", e.status, e.message[:300])
     status = e.status if 400 <= e.status < 500 else 502
     return HTTPException(status, e.message)
 
@@ -119,6 +124,7 @@ def register_routes(app: FastAPI) -> None:
             if e.status in (400, 404, 422):
                 return {"ok": True}  # e-mail inexistente: mesma resposta, nada enviado
             # Chave errada, Supabase fora do ar etc.: erro visível, nunca silencioso.
+            log.error("recover: Supabase respondeu %s: %s", e.status, e.message[:300])
             raise HTTPException(502, "Não foi possível gerar o link agora. Tente de novo em instantes.") from e
         try:
             await send_template(
@@ -126,6 +132,7 @@ def register_routes(app: FastAPI) -> None:
             )
         except EmailError as e:
             # Falha real de envio aparece para quem pediu (erro silencioso é proibido).
+            log.error("recover: envio falhou: %s", str(e)[:300])
             raise HTTPException(502, "Não foi possível enviar o e-mail agora. Tente de novo em instantes.") from e
         return {"ok": True}
 
