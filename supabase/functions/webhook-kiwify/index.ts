@@ -162,8 +162,6 @@ async function assinaturaValida(url: URL, req: Request, rawBody: string) {
 type Sub = { id: string; user_id: string; external_id: string | null; plan: string; status: string; next_billing_at: string | null; started_at: string | null };
 type Tipo = "compra" | "renovacao" | "reembolso" | "chargeback" | "cancelamento" | "atraso" | "ignorar";
 
-const PLANOS_PAGOS = ["pro", "maker", "annual_maker"];
-
 // O tipo vem primeiro do webhook_event_type (no cancelamento o order_status pode continuar "paid").
 function classificar(evento: string, orderStatus: string): Tipo {
   const e = (evento || "").toLowerCase();
@@ -282,7 +280,9 @@ Deno.serve(async (req: Request) => {
       }
       const agora = new Date();
       if (tipo === "atraso") {
+        // Regra do Antonio (09/11): pagamento atrasado bloqueia na hora; o pagamento depois reativa (renovação).
         await sbFetch(`/rest/v1/subscriptions?id=eq.${sub.id}`, "PATCH", { status: "overdue" });
+        console.log("Acesso:", await bloquearAcesso(sub.user_id, sub.id));
       } else if (tipo === "cancelamento") {
         // Usa até o fim do período pago; depois a rotina de hora em hora bloqueia.
         const ate = dataValida(body?.Subscription?.customer_access?.access_until) ?? proximaCobranca ??

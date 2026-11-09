@@ -252,11 +252,23 @@ test("cancelamento com período já vencido: bloqueia na hora", async () => {
   assert.equal(perfil("u1").plan, "free");
 });
 
-test("atraso: assinatura overdue, acesso mantido", async () => {
+test("atraso: assinatura overdue e acesso bloqueado na hora", async () => {
   clienteAtivo();
   await enviar(pedido({ webhook_event_type: "subscription_late", order_status: "waiting_payment" }));
   assert.equal(db.subscriptions[0].status, "overdue");
+  assert.equal(perfil("u1").plan, "free");
+});
+
+test("atrasou e pagou depois: a cobrança paga reativa o acesso", async () => {
+  clienteAtivo();
+  await enviar(pedido({ webhook_event_type: "subscription_late", order_status: "waiting_payment" }));
+  assert.equal(perfil("u1").plan, "free");
+  const r = await enviar(pedido({ order_id: "ped-atrasado-pago", webhook_event_type: "order_approved" }));
+  assert.equal(r.status, 200);
+  assert.equal(db.subscriptions.length, 1);
+  assert.equal(db.subscriptions[0].status, "active");
   assert.equal(perfil("u1").plan, "pro");
+  assert.equal(feitas("POST /emails").length, 0);
 });
 
 // ---------- Renovação ----------

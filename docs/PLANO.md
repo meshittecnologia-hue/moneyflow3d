@@ -62,9 +62,9 @@ Encontrados durante o trabalho, fora da lista original:
 | Token do webhook escrito no `admin.html` publicado | Feito, falta trocar | Removido do arquivo (PR #6); como ficou público e no histórico do git, gerar token novo na Kiwify (2.6) |
 | E-mail de boas-vindas da compra não saía (chave `RESEND_KEY` inválida desde 01/11) | Feito | Chave nova `supabase_webhook` (só envio) em 09/11; e-mail entregue no teste |
 | Se o e-mail falhava, a nova tentativa da Kiwify virava "duplicado" e o cliente nunca recebia o link | Feito | Nova tentativa reenvia só o e-mail; teste automático cobre o caso |
-| Reembolso, chargeback e cancelamento não tiram o acesso | Feito | Regra do Antonio (09/11): reembolso e chargeback bloqueiam na hora; cancelamento mantém até o fim do período pago (rotina `expirar-planos` de hora em hora + `tem_acesso` respeita `plan_expires_at`). Provado em produção: compra → renovação → cancelamento (pro até 29/11) → reembolso (free na hora) |
+| Reembolso, chargeback e cancelamento não tiram o acesso | Feito | Regra do Antonio (09/11): reembolso e chargeback bloqueiam na hora; cancelamento mantém até o fim do período pago; pagamento atrasado bloqueia na hora e o pagamento depois reativa (rotina `expirar-planos` de hora em hora + `tem_acesso` respeita `plan_expires_at`). Provado em produção: compra → renovação → cancelamento (pro até 29/11) → reembolso (free na hora) |
 | Renovação mensal criaria assinatura nova e reenviaria boas-vindas | Feito | Assinatura ligada à da Kiwify (`external_subscription_id`); renovação reativa a mesma |
-| 12 assinaturas "ativas" sem usuário (pedidos de teste de jul e nov) | Pendente | Lista mostrada ao Antonio para autorizar a exclusão |
+| 12 assinaturas "ativas" sem usuário (pedidos de teste de jul e nov) | Feito | Apagadas com autorização do Antonio em 09/11; restam 6 assinaturas reais ativas |
 | Usuário de teste `@example.com` no banco | Feito | Removido em 08/11 |
 | Backend e admin sem permissão no banco (`permission denied`) | Feito | Permissões restauradas em 08/11; telas de Logs, Webhooks, Módulos e Assinaturas voltaram |
 | Exclusão mostrava erro mesmo concluída | Feito | Corrigido no PR #4 |
