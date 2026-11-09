@@ -326,7 +326,8 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    const plan: string = planMeta || "maker";
+    // Único produto hoje é o "MoneyFlow 3D Pro": quem compra recebe o plano pro (decisão do Antonio, 09/11).
+    const plan: string = planMeta || "pro";
 
     if (!email) {
       await marcarLog(logId, "error");
