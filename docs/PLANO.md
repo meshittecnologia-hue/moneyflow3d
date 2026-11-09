@@ -4,7 +4,7 @@ Atualizado em 08/11/2026 (noite) · Versão viva (editável, com diagramas): htt
 
 ## Resumo
 
-Dos 34 problemas da auditoria de 04/11/2026, **16 estão resolvidos, 6 parcialmente e 12 pendentes**. Os 5 urgentes de segurança estão fechados ou mitigados; o que falta é colocar o backend Python no ar, separar o restante do frontend e criar o ambiente de homologação. Previsão de conclusão: **19/12/2026**, em 6 fases.
+Dos 34 problemas da auditoria de 04/11/2026, **18 estão resolvidos, 4 parcialmente e 12 pendentes**. Os 5 urgentes de segurança estão fechados ou mitigados; o que falta é colocar o backend Python no ar, separar o restante do frontend e criar o ambiente de homologação. Previsão de conclusão: **19/12/2026**, em 6 fases.
 
 Como usamos este plano:
 
@@ -19,8 +19,8 @@ Como usamos este plano:
 | 1 | Chave mestra exposta | Urgente | Feito | Chaves legadas desativadas e segredo JWT revogado; a chave vazada recebe 401 em todos os testes |
 | 2 | Envio de e-mail aberto | Urgente | Feito | `send-email` desativada; responde 410 (log de 06/11 15:29) |
 | 3 | Repositório público com chaves no histórico | Urgente | Feito | Todas as chaves do histórico estão revogadas; repositório segue público por decisão (ver item 29) |
-| 4 | E-mail de novas contas não chega | Urgente | Parcial | Backend no ar e e-mail entregue pelo Resend (08/11); falta o teste de convite pelo painel admin |
-| 5 | Painel altera o usuário errado | Urgente | Parcial | Correção em produção desde 08/11; falta o teste pelo painel admin |
+| 4 | E-mail de novas contas não chega | Urgente | Feito | Convite pelo painel admin testado em produção em 08/11: e-mail enviado |
+| 5 | Painel altera o usuário errado | Urgente | Feito | Testado em 08/11: recadastro mudou só o usuário-alvo, nenhuma outra conta |
 | 6 | Lista de usuários completa | Alto | Feito | Teste como usuário comum: 0 perfis de outros visíveis |
 | 7 | Regras de acesso incompletas | Alto | Feito | RLS em todas as tabelas; acesso sem login devolve 401 ou vazio |
 | 8 | Usuário se promove sozinho | Alto | Feito | Trava no banco; teste bloqueou virar admin, trocar plano e renovar teste |
@@ -59,7 +59,9 @@ Encontrados durante o trabalho, fora da lista original:
 | Segredo do webhook gravado no log | Feito | Removido do log |
 | Segredo do webhook escrito no código da função | Pendente | Mover para os segredos do Supabase |
 | Webhook não grava em `webhook_logs` | Pendente | A tela de webhooks do admin fica vazia |
-| Usuário de teste `@example.com` no banco | Pendente | Remover |
+| Usuário de teste `@example.com` no banco | Feito | Removido em 08/11 |
+| Backend e admin sem permissão no banco (`permission denied`) | Feito | Permissões restauradas em 08/11; telas de Logs, Webhooks, Módulos e Assinaturas voltaram |
+| Exclusão mostrava erro mesmo concluída | Feito | Corrigido no PR #4 |
 
 ## Arquitetura: frontend e backend Python
 
@@ -125,8 +127,8 @@ Alterações no banco: o SQL vai para `supabase/migrations/`, roda primeiro em h
 - [x] 1.4 Recuperação de senha `/auth/recover`, com limite de tentativas · item 19 (08/11, PR #2; ativa no 1.3)
 - [ ] 1.5 Webhook: segredo para os segredos do Supabase, gravar em `webhook_logs`, código no GitHub · item 15
 - [ ] 1.6 Baixar o código das 4 funções esquecidas, revisar e remover · item 30
-- [ ] 1.7 Remover o usuário de teste `@example.com`
-- [ ] 1.8 Testar pelo painel admin: convidar um usuário e enviar link de acesso (Antonio logado) · itens 4 e 5
+- [x] 1.7 Remover o usuário de teste `@example.com` (08/11)
+- [x] 1.8 Testar pelo painel admin · itens 4 e 5 (08/11; corrigidos no caminho: permissões do banco e exclusão, PR #4)
 
 **Fase 2 · Homologação e proteção**
 
