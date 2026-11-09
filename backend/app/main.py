@@ -115,8 +115,11 @@ def register_routes(app: FastAPI) -> None:
             raise HTTPException(429, "Muitas tentativas. Aguarde alguns minutos e tente de novo.")
         try:
             link = await sb.generate_recovery_link(email, settings.app_url)
-        except SupabaseError:
-            return {"ok": True}  # e-mail inexistente: mesma resposta, nada enviado
+        except SupabaseError as e:
+            if e.status in (400, 404, 422):
+                return {"ok": True}  # e-mail inexistente: mesma resposta, nada enviado
+            # Chave errada, Supabase fora do ar etc.: erro visível, nunca silencioso.
+            raise HTTPException(502, "Não foi possível gerar o link agora. Tente de novo em instantes.") from e
         try:
             await send_template(
                 settings, app.state.http, "recover", email, email.split("@")[0], link
