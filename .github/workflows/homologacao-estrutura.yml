@@ -51,6 +51,8 @@ jobs:
           ' > referencia.sql
           # O schema public é recriado no passo seguinte; evita "already exists".
           sed -i '/^CREATE SCHEMA public;$/d' estrutura.sql
+          # Permissões padrão de usuários internos do Supabase (supabase_admin) não podem ser alteradas por nós.
+          sed -i '/^ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin/d' estrutura.sql
           wc -l estrutura.sql gatilhos_auth.sql referencia.sql
           test "$(wc -l < estrutura.sql)" -gt 100 || { echo "::error::Estrutura vazia"; exit 1; }
 
