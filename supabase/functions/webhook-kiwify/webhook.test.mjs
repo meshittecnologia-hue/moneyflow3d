@@ -191,6 +191,15 @@ test("falha no histórico não derruba a liberação do acesso", async () => {
   assert.equal(db.subscriptions.length, 1);
 });
 
+test("Kiwify não manda o plano: comprador recebe pro", async () => {
+  const p = pedido();
+  delete p.Product.metadata;
+  const r = await enviar(p);
+  assert.equal(r.status, 200);
+  assert.equal(db.subscriptions[0].plan, "pro");
+  assert.equal(perfil("novo-id").plan, "pro");
+});
+
 // ---------- Reembolso e chargeback: bloqueia na hora ----------
 test("reembolso: assinatura refunded e acesso bloqueado na hora", async () => {
   clienteAtivo();

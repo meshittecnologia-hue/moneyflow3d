@@ -1,10 +1,10 @@
 # MoneyFlow 3D — Plano de Correção e Separação Front/Back
 
-Atualizado em 09/11/2026 (10h40) · Versão viva (editável, com diagramas): https://claude.ai/artifact/A5yhyA9VDmnz4pSLtQXwHt
+Atualizado em 09/11/2026 (15h) · Versão viva (editável, com diagramas): https://claude.ai/artifact/A5yhyA9VDmnz4pSLtQXwHt
 
 ## Resumo
 
-Dos 34 problemas da auditoria de 04/11/2026, **18 estão resolvidos, 4 parcialmente e 12 pendentes**. Os 5 urgentes de segurança estão fechados ou mitigados; o que falta é colocar o backend Python no ar, separar o restante do frontend e criar o ambiente de homologação. Previsão de conclusão: **19/12/2026**, em 6 fases.
+Dos 34 problemas da auditoria de 04/11/2026, **20 estão resolvidos, 3 parcialmente e 11 pendentes**. Os 5 urgentes de segurança estão fechados ou mitigados; o backend Python está no ar e a Fase 1 foi concluída em 09/11; o que falta é o ambiente de homologação, a troca das chaves que passaram pelo chat e separar o restante do frontend. Previsão de conclusão: **19/12/2026**, em 6 fases.
 
 Como usamos este plano:
 
@@ -30,7 +30,7 @@ Como usamos este plano:
 | 12 | Sem servidor próprio | Alto | Feito | Backend Python no Render (moneyflow3d-api.onrender.com) desde 08/11; publica a cada merge na main |
 | 13 | Sem backup automático | Alto | Feito | Backup diário criptografado ativo; primeira execução em 08/11 com sucesso (27,4 KB, guardado 30 dias) |
 | 14 | Sem ambiente de testes | Alto | Parcial | Branch `Desenvolvimento` e verificação automática prontas; falta banco e endereço de homologação |
-| 15 | Código no ar diferente do guardado | Alto | Parcial | Banco e `webhook-kiwify` versionados (PR #6, 09/11); faltam as 4 funções esquecidas (1.6) |
+| 15 | Código no ar diferente do guardado | Alto | Feito | `webhook-kiwify` no ar = GitHub (conferido por hash a cada publicação); 4 funções esquecidas apagadas; cópia antiga e aberta da `send-email` removida do GitHub (no ar ela só responde 410) |
 | 16 | App em um arquivo de 5 mil linhas | Alto | Pendente | Dividir em módulos |
 | 17 | Fórmula sem testes | Alto | Feito | Fórmula em Python com teste de paridade: 503 casos contra o JavaScript real; teste de mutação confirmou (08/11) |
 | 18 | Chave antiga do Resend no código | Moderado | Feito | Removida do `admin.html`; varredura automática bloqueia chaves em todo PR |
@@ -45,7 +45,7 @@ Como usamos este plano:
 | 27 | Sem monitoramento de erros | Moderado | Pendente | Sentry (plano gratuito) no front e no backend |
 | 28 | Publicação manual direto no ar | Moderado | Feito | `main` protegida; push direto recusado e PR #2 mesclado com verificação verde (08/11) |
 | 29 | Hospedagem limitada | Moderado | Pendente | Decidir: GitHub Pages + Cloudflare na frente, ou Cloudflare Pages |
-| 30 | Funções esquecidas no servidor | Moderado | Pendente | Baixar o código de `bright-api`, `clever-endpoint`, `dynamic-handler` e `admin-ops`, guardar e remover |
+| 30 | Funções esquecidas no servidor | Moderado | Feito | 09/11: código revisado (sem segredo escrito; `bright-api` mostrava o início da chave mestra, `admin-ops` enviava e-mail livre) e as 4 apagadas com autorização; restam só `webhook-kiwify` e `send-email` (desativada) |
 | 31 | Commits sem descrição | Baixo | Parcial | Commits descritivos desde 06/11; faltam marcações de versão |
 | 32 | Itens do orçamento como texto | Baixo | Pendente | Coluna JSON estruturada e erro visível na leitura |
 | 33 | DMARC em observação | Baixo | Pendente | Subir para `quarantine` depois de 2 semanas de relatórios limpos |
@@ -61,7 +61,7 @@ Encontrados durante o trabalho, fora da lista original:
 | Webhook não grava em `webhook_logs` | Feito | Grava evento, e-mail e status, sem CPF/telefone; provado em 09/11 (processed, duplicate) |
 | Token do webhook escrito no `admin.html` publicado | Feito | Removido do arquivo (PR #6) e trocado em 09/11: webhook novo "MoneyFlow 3D - Producao" (6 eventos, URL sem token); os 2 antigos apagados; token antigo recusado (testado) |
 | Webhook duplicado ("Todos que sou produtor") com token na URL, que aparecia nos logs | Feito | Apagado; a função só aceita assinatura HMAC (`?token=` recusado, testado) |
-| Comprador do produto "MoneyFlow 3D Pro" recebe plano `maker` (a Kiwify não manda o plano; padrão do código) | Pendente | Decisão do Antonio: qual plano o produto libera |
+| Comprador do produto "MoneyFlow 3D Pro" recebia plano `maker` | Feito | Decisão do Antonio (09/11): recebe `pro` |
 | E-mail de boas-vindas da compra não saía (chave `RESEND_KEY` inválida desde 01/11) | Feito | Chave nova `supabase_webhook` (só envio) em 09/11; e-mail entregue no teste |
 | Se o e-mail falhava, a nova tentativa da Kiwify virava "duplicado" e o cliente nunca recebia o link | Feito | Nova tentativa reenvia só o e-mail; teste automático cobre o caso |
 | Reembolso, chargeback e cancelamento não tiram o acesso | Feito | Regra do Antonio (09/11): reembolso e chargeback bloqueiam na hora; cancelamento mantém até o fim do período pago; pagamento atrasado bloqueia na hora e o pagamento depois reativa (rotina `expirar-planos` de hora em hora + `tem_acesso` respeita `plan_expires_at`). Provado em produção: compra → renovação → cancelamento (pro até 29/11) → reembolso (free na hora) |
@@ -134,7 +134,7 @@ Alterações no banco: o SQL vai para `supabase/migrations/`, roda primeiro em h
 - [x] 1.3 Ligar o painel admin e o app ao backend por Pull Request · itens 4, 5 e 19 (PR #3, 08/11)
 - [x] 1.4 Recuperação de senha `/auth/recover`, com limite de tentativas · item 19 (08/11, PR #2; ativa no 1.3)
 - [x] 1.5 Webhook: segredo para os segredos do Supabase, gravar em `webhook_logs`, código no GitHub · item 15 (09/11, PR #6; 9 testes no CI)
-- [ ] 1.6 Baixar o código das 4 funções esquecidas, revisar e remover · item 30
+- [x] 1.6 Baixar o código das 4 funções esquecidas, revisar e remover · item 30 (09/11)
 - [x] 1.7 Remover o usuário de teste `@example.com` (08/11)
 - [x] 1.8 Testar pelo painel admin · itens 4 e 5 (08/11; corrigidos no caminho: permissões do banco e exclusão, PR #4)
 
