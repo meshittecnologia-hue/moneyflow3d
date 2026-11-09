@@ -1,6 +1,6 @@
 # MoneyFlow 3D — Plano de Correção e Separação Front/Back
 
-Atualizado em 08/11/2026 (noite) · Versão viva (editável, com diagramas): https://claude.ai/artifact/A5yhyA9VDmnz4pSLtQXwHt
+Atualizado em 09/11/2026 (manhã) · Versão viva (editável, com diagramas): https://claude.ai/artifact/A5yhyA9VDmnz4pSLtQXwHt
 
 ## Resumo
 
@@ -30,7 +30,7 @@ Como usamos este plano:
 | 12 | Sem servidor próprio | Alto | Feito | Backend Python no Render (moneyflow3d-api.onrender.com) desde 08/11; publica a cada merge na main |
 | 13 | Sem backup automático | Alto | Feito | Backup diário criptografado ativo; primeira execução em 08/11 com sucesso (27,4 KB, guardado 30 dias) |
 | 14 | Sem ambiente de testes | Alto | Parcial | Branch `Desenvolvimento` e verificação automática prontas; falta banco e endereço de homologação |
-| 15 | Código no ar diferente do guardado | Alto | Parcial | Migração do banco versionada; faltam as Edge Functions no GitHub |
+| 15 | Código no ar diferente do guardado | Alto | Parcial | Banco e `webhook-kiwify` versionados (PR #6, 09/11); faltam as 4 funções esquecidas (1.6) |
 | 16 | App em um arquivo de 5 mil linhas | Alto | Pendente | Dividir em módulos |
 | 17 | Fórmula sem testes | Alto | Feito | Fórmula em Python com teste de paridade: 503 casos contra o JavaScript real; teste de mutação confirmou (08/11) |
 | 18 | Chave antiga do Resend no código | Moderado | Feito | Removida do `admin.html`; varredura automática bloqueia chaves em todo PR |
@@ -57,8 +57,12 @@ Encontrados durante o trabalho, fora da lista original:
 | --- | --- | --- |
 | Webhook rejeitava toda compra real (esperava `?token=`, a Kiwify envia `?signature=`) | Feito | Teste de compra em 06/11: usuário e assinatura gravados |
 | Segredo do webhook gravado no log | Feito | Removido do log |
-| Segredo do webhook escrito no código da função | Pendente | Mover para os segredos do Supabase |
-| Webhook não grava em `webhook_logs` | Pendente | A tela de webhooks do admin fica vazia |
+| Segredo do webhook escrito no código da função | Feito | Lido de `KIWIFY_WEBHOOK_TOKEN` nos Secrets (09/11) |
+| Webhook não grava em `webhook_logs` | Feito | Grava evento, e-mail e status, sem CPF/telefone; provado em 09/11 (processed, duplicate) |
+| Token do webhook escrito no `admin.html` publicado | Feito, falta trocar | Removido do arquivo (PR #6); como ficou público e no histórico do git, gerar token novo na Kiwify (2.6) |
+| E-mail de boas-vindas da compra não saía (chave `RESEND_KEY` inválida desde 01/11) | Feito | Chave nova `supabase_webhook` (só envio) em 09/11; e-mail entregue no teste |
+| Se o e-mail falhava, a nova tentativa da Kiwify virava "duplicado" e o cliente nunca recebia o link | Feito | Nova tentativa reenvia só o e-mail; teste automático cobre o caso |
+| Reembolso, chargeback e cancelamento não tiram o acesso | Pendente | Regra de negócio a decidir com o Antonio |
 | Usuário de teste `@example.com` no banco | Feito | Removido em 08/11 |
 | Backend e admin sem permissão no banco (`permission denied`) | Feito | Permissões restauradas em 08/11; telas de Logs, Webhooks, Módulos e Assinaturas voltaram |
 | Exclusão mostrava erro mesmo concluída | Feito | Corrigido no PR #4 |
@@ -125,7 +129,7 @@ Alterações no banco: o SQL vai para `supabase/migrations/`, roda primeiro em h
 - [x] 1.2 Publicar o backend no Render · item 12 (08/11, https://moneyflow3d-api.onrender.com)
 - [x] 1.3 Ligar o painel admin e o app ao backend por Pull Request · itens 4, 5 e 19 (PR #3, 08/11)
 - [x] 1.4 Recuperação de senha `/auth/recover`, com limite de tentativas · item 19 (08/11, PR #2; ativa no 1.3)
-- [ ] 1.5 Webhook: segredo para os segredos do Supabase, gravar em `webhook_logs`, código no GitHub · item 15
+- [x] 1.5 Webhook: segredo para os segredos do Supabase, gravar em `webhook_logs`, código no GitHub · item 15 (09/11, PR #6; 9 testes no CI)
 - [ ] 1.6 Baixar o código das 4 funções esquecidas, revisar e remover · item 30
 - [x] 1.7 Remover o usuário de teste `@example.com` (08/11)
 - [x] 1.8 Testar pelo painel admin · itens 4 e 5 (08/11; corrigidos no caminho: permissões do banco e exclusão, PR #4)
@@ -137,7 +141,7 @@ Alterações no banco: o SQL vai para `supabase/migrations/`, roda primeiro em h
 - [ ] 2.3 Proxy do Cloudflare e cabeçalhos de segurança · itens 21 e 29
 - [x] 2.4 Backup diário do banco por GitHub Actions · item 13 (ativo desde 08/11)
 - [x] 2.5 Liberar o zoom no celular · item 34 (08/11)
-- [ ] 2.6 Trocar a senha do banco (apareceu numa pesquisa do Google) e as chaves `backend_render` do Supabase e do Resend (apareceram no chat) em 08/11; atualizar `SUPABASE_DB_URL` e o Render
+- [ ] 2.6 Trocar a senha do banco (apareceu numa pesquisa do Google) e as chaves `backend_render` do Supabase e do Resend (apareceram no chat) em 08/11; atualizar `SUPABASE_DB_URL` e o Render; gerar token novo do webhook na Kiwify (o atual ficou público no `admin.html`) e atualizar `KIWIFY_WEBHOOK_TOKEN`
 
 **Fase 3 · Regras no backend Python**
 
