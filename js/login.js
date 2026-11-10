@@ -183,7 +183,7 @@ function renderBioStatus(){
           <div style="font-weight:500;color:var(--green)">✅ Bloqueio ligado neste aparelho</div>
           <div style="font-size:12px;color:var(--text3);margin-top:3px">Ao abrir o app, pede Face ID, digital ou Windows Hello</div>
         </div>
-        <button class="btn btn-danger btn-sm" onclick="removerBiometria()">Desligar</button>
+        <button class="btn btn-danger btn-sm" data-click="removerBiometria()">Desligar</button>
       </div>`;
   } else {
     el.innerHTML=`
@@ -192,7 +192,7 @@ function renderBioStatus(){
           <div style="font-weight:500">🔐 Bloqueio desligado</div>
           <div style="font-size:12px;color:var(--text3);margin-top:3px">Ligue para pedir a biometria ao abrir o app</div>
         </div>
-        <button class="btn btn-primary btn-sm" id="btn-ativar-bio" onclick="ativarBiometriaConfig(this)">Ligar bloqueio</button>
+        <button class="btn btn-primary btn-sm" id="btn-ativar-bio" data-click="ativarBiometriaConfig(this)">Ligar bloqueio</button>
       </div>`;
   }
 }

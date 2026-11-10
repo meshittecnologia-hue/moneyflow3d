@@ -69,9 +69,14 @@ function renderResult(){
   renderAllMP(r.base,r.total,r.baseFinal,r.desconto);
 }
 
+// Item 25: clique no marketplace (antes era código solto no HTML).
+function escolherMarketplace(id, base, total){
+  selMP=id; renderMPGrid(base,total); renderBreakdown(base,total,lastCalc);
+}
+
 function renderMPGrid(base,total){
   document.getElementById('c-mpgrid').innerHTML=MPs.map(mp=>`
-    <div class="mp-btn ${mp.id===selMP?'active':''}" onclick="selMP='${mp.id}';renderMPGrid(${base},${total});renderBreakdown(${base},${total},lastCalc)">
+    <div class="mp-btn ${mp.id===selMP?'active':''}" data-click="escolherMarketplace('${mp.id}',${base},${total})">
       <div class="mp-name">${esc(mp.name)}</div>
       <div class="mp-fee">${mp.fee>0?(mp.fee*100).toFixed(2)+'%':'0%'}</div>
     </div>`).join('');
@@ -209,7 +214,7 @@ function filPickerRenderList(q){
   list.innerHTML=Object.entries(grupos).map(([tipo,itens])=>`
     <div style="padding:4px 14px 2px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:${FIL_COLORS[tipo]||'#888'};background:var(--bg2);border-top:1px solid var(--border)">${tipo}</div>
     ${itens.map(i=>`
-      <div onclick="filPickerSelect('${i.value}')" style="padding:9px 14px;font-size:13px;cursor:pointer;color:var(--text);${i.selected?'background:var(--bg3);font-weight:600;color:var(--accent)':''}"
+      <div data-click="filPickerSelect('${i.value}')" style="padding:9px 14px;font-size:13px;cursor:pointer;color:var(--text);${i.selected?'background:var(--bg3);font-weight:600;color:var(--accent)':''}"
         onmouseenter="this.style.background='var(--bg3)'" onmouseleave="this.style.background='${i.selected?'var(--bg3)':''}'">${i.text}</div>`).join('')}
   `).join('');
 }
@@ -249,9 +254,9 @@ function renderDashboard(){
     <div class="metric"><div class="metric-label">Melhor produto</div><div class="metric-value" style="font-size:14px;line-height:1.3">${best?best.nome:'—'}</div></div>
     <div class="metric"><div class="metric-label">Filamentos</div><div class="metric-value">${DB.filamentos.length}</div></div>
     <div class="metric"><div class="metric-label">Pedidos ativos</div><div class="metric-value ${pedidosAtivos>0?'yellow':''}">${pedidosAtivos}</div></div>
-    <div class="metric" onclick="showPage('fila')" style="cursor:pointer" title="Ver fila"><div class="metric-label">Aguardando</div><div class="metric-value">${pedidosAguardando}</div></div>
-    <div class="metric" onclick="showPage('fila')" style="cursor:pointer" title="Ver fila"><div class="metric-label">Imprimindo</div><div class="metric-value blue">${pedidosImprimindo}</div></div>
-    <div class="metric" onclick="showPage('fila')" style="cursor:pointer" title="Ver fila"><div class="metric-label">Prontos/Envio</div><div class="metric-value green">${pedidosProntos}</div></div>`;
+    <div class="metric" data-click="showPage('fila')" style="cursor:pointer" title="Ver fila"><div class="metric-label">Aguardando</div><div class="metric-value">${pedidosAguardando}</div></div>
+    <div class="metric" data-click="showPage('fila')" style="cursor:pointer" title="Ver fila"><div class="metric-label">Imprimindo</div><div class="metric-value blue">${pedidosImprimindo}</div></div>
+    <div class="metric" data-click="showPage('fila')" style="cursor:pointer" title="Ver fila"><div class="metric-label">Prontos/Envio</div><div class="metric-value green">${pedidosProntos}</div></div>`;
   const sorted=[...ps].sort((a,b)=>b.margem-a.margem).slice(0,6);
   const maxM=sorted.length?Math.max(...sorted.map(x=>x.margem)):1;
   document.getElementById('dash-chart').innerHTML=sorted.length?sorted.map(p=>{

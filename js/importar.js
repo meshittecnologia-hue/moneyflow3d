@@ -56,21 +56,14 @@ function parseCSV(text){
 function previewImport(rows,filename){
   const el=document.getElementById('imp-preview');
   if(!rows.length){el.innerHTML='<div style="color:var(--red);font-size:13px">Arquivo vazio ou formato inválido.</div>';return;}
-  el.innerHTML=`
-    <div style="background:var(--bg3);border-radius:var(--rsm);padding:14px;margin-bottom:10px">
-      <div style="font-size:13px;color:var(--text2);margin-bottom:6px">📄 <strong>${filename}</strong> — ${rows.length} linha(s) encontradas</div>
-      <div style="font-size:12px;color:var(--text3)">Colunas: ${Object.keys(rows[0]).join(', ')}</div>
-    </div>
-    <button class="btn btn-primary" onclick="confirmarImport(${JSON.stringify(rows).replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/'/g,"\'")})">✅ Importar ${rows.length} item(s) como <strong>${impTipo}</strong></button>
-  `;
-  // safer: store globally
+  // Item 25: as linhas ficam guardadas aqui e o botão só chama confirmarImport() (antes iam escritas no HTML).
   window._importRows=rows;
   el.innerHTML=`
     <div style="background:var(--bg3);border-radius:var(--rsm);padding:14px;margin-bottom:10px">
-      <div style="font-size:13px;color:var(--text2);margin-bottom:6px">📄 <strong>${filename}</strong> — ${rows.length} linha(s) encontradas</div>
-      <div style="font-size:12px;color:var(--text3)">Colunas detectadas: ${Object.keys(rows[0]).join(' | ')}</div>
+      <div style="font-size:13px;color:var(--text2);margin-bottom:6px">📄 <strong>${esc(filename)}</strong> — ${rows.length} linha(s) encontradas</div>
+      <div style="font-size:12px;color:var(--text3)">Colunas detectadas: ${esc(Object.keys(rows[0]).join(' | '))}</div>
     </div>
-    <button class="btn btn-primary" onclick="confirmarImport()">✅ Importar ${rows.length} item(s) como ${impTipo}</button>
+    <button class="btn btn-primary" data-click="confirmarImport()">✅ Importar ${rows.length} item(s) como ${esc(impTipo)}</button>
   `;
 }
 

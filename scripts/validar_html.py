@@ -52,6 +52,30 @@ for arq in sys.argv[1:]:
     print("  " + r.stdout.strip())
     if r.returncode:
         falhou = True
+    # Item 25: nada de código no HTML (onclick=, onchange=...) e toda ação data-* aponta para função que existe.
+    # Bloco <script> sem src ou link javascript: também quebram com a CSP ligada.
+    for m in re.finditer(r"<script(?![^>]*\bsrc=)[^>]*>\s*\S", code):
+        print(f"  ERRO: <script> com código dentro do HTML (linha {code[:m.start()].count(chr(10)) + 1}); mova para js/")
+        falhou = True
+    if re.search(r"""(?:href|src)\s*=\s*["']\s*javascript:""", code, re.I):
+        print("  ERRO: link javascript: no HTML (bloqueado pela CSP)")
+        falhou = True
+    tudo = code_js_e_html
+    for m in re.finditer(r"\son(click|change|input|keydown|keyup|submit|load|error|mouseover|mouseout|dragover|drop|dragleave|paste|focus|blur)\s*=\s*[\"']", tudo):
+        trecho = tudo[max(0, m.start() - 40):m.end() + 40].replace("\n", " ")
+        print(f"  ERRO: evento escrito no HTML (use data-{m.group(1)}): ...{trecho}...")
+        falhou = True
+    definidas = set(re.findall(r"\bfunction\s+([A-Za-z_$][\w$]*)", tudo)) | set(re.findall(r"window\.([A-Za-z_$][\w$]*)\s*=", tudo))
+    usadas = set()
+    for attr in re.findall(r"data-(?:click|change|input|enter|keydown|drop|dragover|dragleave|mouseover|mouseout)=([\"'])(.*?)\1", tudo, re.S):
+        for nome in re.findall(r"(?:^|;)\s*([A-Za-z_$][\w$]*)\s*\(", attr[1].replace("&#39;", "'")):
+            usadas.add(nome)
+    faltam = sorted(usadas - definidas - {"event"})
+    if faltam:
+        print("  ERRO: ação data-* chama função que não existe:", faltam)
+        falhou = True
+    elif usadas:
+        print(f"  ações data-*: {len(usadas)} funções, todas existem")
     js_ids = set(re.findall(r"getElementById\('([^']+)'\)", code_js_e_html))
     html_ids = set(re.findall(r'\bid=["\']([^"\']+)["\']', code))
     faltando = js_ids - html_ids

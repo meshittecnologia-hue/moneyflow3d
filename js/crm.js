@@ -51,7 +51,7 @@ function abrirDetalheCliente(id){
         ${c.obs?`<div style="font-size:12px;color:var(--text3);margin-top:6px;font-style:italic">${esc(c.obs)}</div>`:''}
       </div>
       <div style="display:flex;gap:8px">
-        <button class="btn btn-ghost btn-sm" onclick='openClienteModal(${JSON.stringify(c)})'>✏ Editar</button>
+        <button class="btn btn-ghost btn-sm" data-click="abrirClientePorId('${c.id}')">✏ Editar</button>
       </div>
     </div>
 
@@ -98,7 +98,7 @@ function abrirDetalheCliente(id){
             <div>
               <div style="font-size:13px;font-weight:600">${esc(p.produto)}</div>
               <div style="font-size:11px;color:var(--text3)">Qtd: ${p.qtd} · ${p.criado}</div>
-              ${p.rastreio?`<div style="font-size:11px;color:var(--accent);cursor:pointer" onclick="abrirRastreio('${p.transportadora||''}','${p.rastreio}')">📦 ${p.rastreio} ↗</div>`:''}
+              ${p.rastreio?`<div style="font-size:11px;color:var(--accent);cursor:pointer" data-click="abrirRastreio('${p.transportadora||''}','${p.rastreio}')">📦 ${p.rastreio} ↗</div>`:''}
             </div>
             <span style="font-size:12px;font-weight:700;color:${esc(st.cor)}">${st.label}</span>
           </div>`;
@@ -124,7 +124,7 @@ function renderCRM(){
     <div style="display:flex;gap:16px;flex:1">
       <div style="font-size:12px;color:var(--text3)">${totalClientes} cliente${totalClientes!==1?'s':''} · ${comOrc} com orçamento</div>
     </div>
-    <button class="btn btn-ghost btn-sm" onclick="exportarClientesCSV()">⬇ Exportar CSV</button>
+    <button class="btn btn-ghost btn-sm" data-click="exportarClientesCSV()">⬇ Exportar CSV</button>
   </div>`;
 
   if(!clientes.length){
@@ -154,8 +154,8 @@ function renderCRMGrid(clientes){
           ${c.insta?`<a href="${instaUrl}" target="_blank" style="font-size:12px;color:#e1306c;text-decoration:none;display:block">📸 ${c.insta}</a>`:''}
         </div>
         <div style="display:flex;gap:4px;flex-shrink:0">
-          <button class="btn btn-ghost btn-sm" onclick='event.stopPropagation();openClienteModal(${JSON.stringify(c)})' title="Editar">✏</button>
-          <button class="btn btn-ghost btn-sm" style="color:var(--red)" onclick="event.stopPropagation();delCliente('${c.id}')" title="Remover">✕</button>
+          <button class="btn btn-ghost btn-sm" data-click="event.stopPropagation();abrirClientePorId('${c.id}')" title="Editar">✏</button>
+          <button class="btn btn-ghost btn-sm" style="color:var(--red)" data-click="event.stopPropagation();delCliente('${c.id}')" title="Remover">✕</button>
         </div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;border-top:1px solid var(--border);padding-top:10px;margin-bottom:10px">
@@ -166,9 +166,9 @@ function renderCRMGrid(clientes){
       ${ultimoOrc?`<div style="font-size:11px;color:var(--text3);margin-bottom:8px">Último orçamento: ${ultimoOrc.data}</div>`:''}
       ${c.obs?`<div style="font-size:11px;color:var(--text3);margin-bottom:8px;font-style:italic">${esc(c.obs)}</div>`:''}
       <div style="display:flex;gap:6px;flex-wrap:wrap">
-        <button class="btn btn-ghost btn-sm" style="flex:1" onclick="abrirDetalheCliente('${c.id}')">📋 Histórico</button>
-        ${c.wpp?`<button class="btn btn-ghost btn-sm" style="color:var(--green)" onclick="window.open('https://wa.me/55'+('${escJs(c.wpp)}'.replace(/\\D/g,'')), '_blank')" title="WhatsApp">📱</button>`:''}
-        ${c.email?`<button class="btn btn-ghost btn-sm" style="color:var(--blue)" onclick="window.open('mailto:${escJs(c.email)}')" title="E-mail">✉</button>`:''}
+        <button class="btn btn-ghost btn-sm" style="flex:1" data-click="abrirDetalheCliente('${c.id}')">📋 Histórico</button>
+        ${c.wpp?`<button class="btn btn-ghost btn-sm" style="color:var(--green)" data-click="abrirWppCliente('${c.id}')" title="WhatsApp">📱</button>`:''}
+        ${c.email?`<button class="btn btn-ghost btn-sm" style="color:var(--blue)" data-click="abrirEmailCliente('${c.id}')" title="E-mail">✉</button>`:''}
         ${c.insta?`<a href="${instaUrl}" target="_blank" class="btn btn-ghost btn-sm" style="color:#e1306c" title="Instagram">📸</a>`:''}
       </div>
     </div>`;
@@ -199,12 +199,25 @@ function renderCRMLista(clientes){
         <td style="padding:11px 14px;text-align:center;font-weight:700;color:var(--accent)">${orcCount}</td>
         <td style="padding:11px 14px;text-align:right;font-weight:700;color:var(--green)">R$ ${totalGasto.toFixed(2)}</td>
         <td style="padding:11px 14px"><div style="display:flex;gap:4px">
-          <button class="btn btn-ghost btn-sm" onclick="abrirDetalheCliente('${c.id}')" title="Histórico">📋</button>
-          <button class="btn btn-ghost btn-sm" onclick='openClienteModal(${JSON.stringify(c)})' title="Editar">✏</button>
-          <button class="btn btn-ghost btn-sm" style="color:var(--red)" onclick="delCliente('${c.id}')" title="Remover">✕</button>
+          <button class="btn btn-ghost btn-sm" data-click="abrirDetalheCliente('${c.id}')" title="Histórico">📋</button>
+          <button class="btn btn-ghost btn-sm" data-click="abrirClientePorId('${c.id}')" title="Editar">✏</button>
+          <button class="btn btn-ghost btn-sm" style="color:var(--red)" data-click="delCliente('${c.id}')" title="Remover">✕</button>
         </div></td>
       </tr>`;
     }).join('')}</tbody>
   </table></div>`;
 }
 
+
+
+/* Item 25: ações dos botões do CRM pelo id (antes iam como código e objeto escritos no HTML). */
+function clientePorId(id){ return (DB.clientes||[]).find(c=>String(c.id)===String(id)); }
+function abrirClientePorId(id){ const c=clientePorId(id); if(c) openClienteModal(c); }
+function abrirWppCliente(id){
+  const c=clientePorId(id); if(!c||!c.wpp) return;
+  window.open('https://wa.me/55'+String(c.wpp).replace(/\D/g,''),'_blank','noopener');
+}
+function abrirEmailCliente(id){
+  const c=clientePorId(id); if(!c||!c.email) return;
+  window.open('mailto:'+encodeURIComponent(c.email).replace(/%40/g,'@'));
+}

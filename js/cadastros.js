@@ -36,7 +36,7 @@ function renderProdutos(){
         <td style="font-weight:600">R$ ${(p.precoBase||0).toFixed(2)}</td>
         <td><span class="badge ${mc}">${(p.margem||0).toFixed(1)}%</span></td>
         <td style="color:var(--text3)">${p.data}</td>
-        <td><div style="display:flex;gap:5px"><button class="btn btn-ghost btn-sm" onclick="editarProduto('${p.id}')" title="Editar">✏</button><button class="btn btn-danger btn-sm" onclick="delProd('${p.id}')">✕</button></div></td>
+        <td><div style="display:flex;gap:5px"><button class="btn btn-ghost btn-sm" data-click="editarProduto('${p.id}')" title="Editar">✏</button><button class="btn btn-danger btn-sm" data-click="delProd('${p.id}')">✕</button></div></td>
       </tr>`;}).join('');
   } else {
     const mc2=(m)=>m>30?'var(--green)':m>15?'var(--yellow)':'var(--red)';
@@ -55,9 +55,9 @@ function renderProdutos(){
           <div style="color:var(--text3)">Data</div><div>${p.data}</div>
         </div>
         <div style="display:flex;gap:6px;justify-content:flex-end">
-          <button class="btn btn-ghost btn-sm" onclick="criarOrcamentoProduto('${p.id}')">📄 Orçar</button>
-          <button class="btn btn-ghost btn-sm" onclick="editarProduto('${p.id}')" title="Editar">✏</button>
-          <button class="btn btn-danger btn-sm" onclick="delProd('${p.id}')">✕</button>
+          <button class="btn btn-ghost btn-sm" data-click="criarOrcamentoProduto('${p.id}')">📄 Orçar</button>
+          <button class="btn btn-ghost btn-sm" data-click="editarProduto('${p.id}')" title="Editar">✏</button>
+          <button class="btn btn-danger btn-sm" data-click="delProd('${p.id}')">✕</button>
         </div>
       </div>`).join('');
   }
@@ -116,8 +116,8 @@ function renderFilamentos(){
       <td>${f.custo>0?'R$ '+(f.custo/(f.peso/1000)).toFixed(2):'<span style="color:var(--accent);font-size:11px">cadastrar preço</span>'}</td>
       <td style="color:var(--text2)">${f.custo>0?'R$ '+(f.custo/f.peso).toFixed(4):'—'}</td>
       <td style="display:flex;gap:6px;flex-wrap:wrap">
-        <button class="btn btn-ghost btn-sm" onclick="editFil('${f.id}')">Editar</button>
-        <button class="btn btn-danger btn-sm" onclick="delFil('${f.id}')">✕</button>
+        <button class="btn btn-ghost btn-sm" data-click="editFil('${f.id}')">Editar</button>
+        <button class="btn btn-danger btn-sm" data-click="delFil('${f.id}')">✕</button>
       </td>
     </tr>`;
   }).join('');
@@ -158,7 +158,7 @@ function renderConfig(){
         <div style="font-weight:500">${esc(i.nome)}</div>
         <div style="font-size:11px;color:var(--text3);margin-top:2px">R$ ${i.inv} | ROI ${i.roi}m | ${i.watts}W | ${i.hpd}h/dia | ${i.fail}% falhas</div>
       </div>
-      <button class="btn btn-danger btn-sm" onclick="delImp('${i.id}')">Excluir</button>
+      <button class="btn btn-danger btn-sm" data-click="delImp('${i.id}')">Excluir</button>
     </div>`).join('')||'<div style="color:var(--text3);font-size:13px">Nenhuma impressora cadastrada</div>';
 }
 
@@ -363,8 +363,8 @@ function renderConcList(){
         const obsHtml = (!col&&conc.obs)?'<div style="font-size:11px;color:var(--text3);margin-top:4px">'+conc.obs+'</div>':'';
         const urlHtml = (!col&&conc.url)?'<a href="'+conc.url+'" target="_blank" style="font-size:11px;color:var(--accent);text-decoration:none;margin-top:6px;display:inline-block">\u{1F517} Ver produto</a>':'';
         const metaHtml = (!col&&(conc.loja||conc.mp))?'<div style="font-size:11px;color:var(--text2);margin-top:2px">'+(conc.loja||'')+(conc.mp?' \u00B7 '+conc.mp:'')+'</div>':'';
-        const btnToggle = '<button class="btn btn-ghost btn-sm" style="padding:2px 7px;font-size:11px" onclick="toggleConcCard(\''+conc.id+'\')">'+(col?'\u25BC':'\u25B2')+'</button>';
-        const btnDel = '<button class="btn btn-danger btn-sm" onclick="delConc(\''+conc.id+'\')">\u2715</button>';
+        const btnToggle = '<button class="btn btn-ghost btn-sm" style="padding:2px 7px;font-size:11px" data-click="toggleConcCard(\''+conc.id+'\')">'+(col?'\u25BC':'\u25B2')+'</button>';
+        const btnDel = '<button class="btn btn-danger btn-sm" data-click="delConc(\''+conc.id+'\')">\u2715</button>';
         return '<div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:12px">'
           +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">'
           +'<div style="font-weight:600;font-size:13px;flex:1;line-height:1.3">'+conc.nome+'</div>'
@@ -381,8 +381,8 @@ function renderConcList(){
       const obsHtml = (!col&&conc.obs)?'<div style="font-size:11px;color:var(--text3);margin-top:2px">'+conc.obs+'</div>':'';
       const urlHtml = (!col&&conc.url)?'<a href="'+conc.url+'" target="_blank" style="font-size:11px;color:var(--accent);text-decoration:none;margin-top:2px;display:inline-block">\u{1F517} Ver produto</a>':'';
       const metaHtml = (!col)?'<div style="font-size:12px;color:var(--text2)">'+(conc.loja||'')+(conc.mp?' \u00B7 '+conc.mp:'')+'</div>':'';
-      const btnToggle = '<button class="btn btn-ghost btn-sm" style="padding:2px 7px;font-size:11px" onclick="toggleConcCard(\''+conc.id+'\')">'+(col?'\u25BC':'\u25B2')+'</button>';
-      const btnDel = '<button class="btn btn-danger btn-sm" onclick="delConc(\''+conc.id+'\')">\u2715</button>';
+      const btnToggle = '<button class="btn btn-ghost btn-sm" style="padding:2px 7px;font-size:11px" data-click="toggleConcCard(\''+conc.id+'\')">'+(col?'\u25BC':'\u25B2')+'</button>';
+      const btnDel = '<button class="btn btn-danger btn-sm" data-click="delConc(\''+conc.id+'\')">\u2715</button>';
       return '<div style="display:flex;justify-content:space-between;align-items:flex-start;padding:12px 0;border-bottom:1px solid var(--border);gap:10px">'
         +'<div style="flex:1;min-width:0">'
         +'<div style="font-weight:600;color:var(--text);margin-bottom:2px">'+conc.nome+'</div>'
@@ -461,7 +461,7 @@ function renderCatalogo(){
         ${p.marketplace?`<div style="color:var(--text3)">Marketplace</div><div>${p.marketplace}</div>`:''}
       </div>
       <div style="margin-top:10px;display:flex;justify-content:flex-end">
-        <button class="btn btn-danger btn-sm" onclick="delCatalogo('${p.id}')">✕ Remover</button>
+        <button class="btn btn-danger btn-sm" data-click="delCatalogo('${p.id}')">✕ Remover</button>
       </div>
     </div>`;
   }).join('');

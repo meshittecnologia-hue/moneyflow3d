@@ -9,11 +9,11 @@ function addOrcItem(nome='', qtd=1, preco=0){
   const row=document.createElement('div');
   row.className='orc-item-row';
   row.style.cssText='display:grid;grid-template-columns:1fr 56px 90px 70px 28px;gap:4px;align-items:center;margin-bottom:6px';
-  row.innerHTML=`<input class="orc-item-nome" value="${nome.replace(/"/g,'&quot;')}" placeholder="Nome do item" style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--rsm);padding:6px 8px;color:var(--text);font-size:12px;width:100%" oninput="calcOrcTotal()">`
-    +`<input type="number" class="orc-item-qtd" value="${qtd}" min="1" style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--rsm);padding:6px 6px;color:var(--text);font-size:12px;width:100%;text-align:center" oninput="calcOrcTotal()">`
-    +`<input type="number" class="orc-item-preco" value="${preco||''}" placeholder="0.00" step="0.01" min="0" style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--rsm);padding:6px 8px;color:var(--text);font-size:12px;width:100%;text-align:right" oninput="calcOrcTotal()">`
+  row.innerHTML=`<input class="orc-item-nome" value="${nome.replace(/"/g,'&quot;')}" placeholder="Nome do item" style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--rsm);padding:6px 8px;color:var(--text);font-size:12px;width:100%" data-input="calcOrcTotal()">`
+    +`<input type="number" class="orc-item-qtd" value="${qtd}" min="1" style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--rsm);padding:6px 6px;color:var(--text);font-size:12px;width:100%;text-align:center" data-input="calcOrcTotal()">`
+    +`<input type="number" class="orc-item-preco" value="${preco||''}" placeholder="0.00" step="0.01" min="0" style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--rsm);padding:6px 8px;color:var(--text);font-size:12px;width:100%;text-align:right" data-input="calcOrcTotal()">`
     +`<span class="orc-item-sub" style="font-size:12px;color:var(--text2);text-align:right">—</span>`
-    +`<button type="button" onclick="this.closest('.orc-item-row').remove();calcOrcTotal()" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:15px;padding:0;line-height:1;width:28px;text-align:center">✕</button>`;
+    +`<button type="button" data-click="removerMaisProximo(this,'.orc-item-row');calcOrcTotal()" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:15px;padding:0;line-height:1;width:28px;text-align:center">✕</button>`;
   container.appendChild(row);
   calcOrcTotal();
 }
@@ -105,18 +105,18 @@ function renderOrcamentos(){
         <td style="padding:12px 14px;font-size:13px;color:var(--text2)">${o.itensErro?'<span title="Itens ilegíveis: confira antes de enviar" style="color:var(--red)">⚠ </span>':''}${esc(o.produtoNome)} × ${o.qtd}</td>
         <td style="padding:12px 14px;font-size:13px;font-weight:700;color:var(--accent)">R$ ${o.total.toFixed(2).replace('.',',')}</td>
         <td style="padding:12px 14px">
-          <select onchange="updateOrcStatus('${o.id}',this.value)" style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:4px 8px;color:${statusCores[o.status]||'var(--text)'};font-size:12px;outline:none">
+          <select data-change="updateOrcStatus('${o.id}',this.value)" style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:4px 8px;color:${statusCores[o.status]||'var(--text)'};font-size:12px;outline:none">
             ${['pendente','aprovado','recusado'].map(s=>`<option value="${s}" ${esc(o.status===s?'selected':'')}>${statusLabel[s]}</option>`).join('')}
           </select>
         </td>
         <td style="padding:12px 14px;font-size:12px;color:var(--text3)">${o.data}</td>
         <td style="padding:12px 14px">
           <div style="display:flex;gap:6px;flex-wrap:wrap">
-            <button class="btn btn-ghost btn-sm" onclick="verOrcamentoPDF('${o.id}')" title="Gerar PDF">📄 PDF</button>
-            <button class="btn btn-ghost btn-sm" style="color:var(--green);border-color:rgba(34,197,94,.3)" onclick="wppOrcamento('${o.id}')" title="WhatsApp">📱 WPP</button>
-            <button class="btn btn-ghost btn-sm" style="color:var(--blue);border-color:rgba(59,130,246,.3)" onclick="emailOrcamento('${o.id}')" title="E-mail">✉ Email</button>
-            <button class="btn btn-ghost btn-sm" style="color:var(--accent);border-color:rgba(255,107,43,.3)" onclick="editarOrcamento('${o.id}')" title="Editar">✏ Editar</button>
-            <button class="btn btn-ghost btn-sm" style="color:var(--red);border-color:rgba(239,68,68,.3)" onclick="delOrcamento('${o.id}')" title="Remover">✕</button>
+            <button class="btn btn-ghost btn-sm" data-click="verOrcamentoPDF('${o.id}')" title="Gerar PDF">📄 PDF</button>
+            <button class="btn btn-ghost btn-sm" style="color:var(--green);border-color:rgba(34,197,94,.3)" data-click="wppOrcamento('${o.id}')" title="WhatsApp">📱 WPP</button>
+            <button class="btn btn-ghost btn-sm" style="color:var(--blue);border-color:rgba(59,130,246,.3)" data-click="emailOrcamento('${o.id}')" title="E-mail">✉ Email</button>
+            <button class="btn btn-ghost btn-sm" style="color:var(--accent);border-color:rgba(255,107,43,.3)" data-click="editarOrcamento('${o.id}')" title="Editar">✏ Editar</button>
+            <button class="btn btn-ghost btn-sm" style="color:var(--red);border-color:rgba(239,68,68,.3)" data-click="delOrcamento('${o.id}')" title="Remover">✕</button>
           </div>
         </td>
       </tr>`).join('')}
