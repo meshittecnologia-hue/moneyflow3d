@@ -23,6 +23,11 @@ class Settings:
             "EMAIL_FROM", "MoneyFlow 3D <noreply@moneyflow3d.com.br>"
         )
         self.app_url = os.environ.get("APP_URL", "https://moneyflow3d.com.br")
+        # Tarefas agendadas (GitHub Actions): token próprio, só para /tarefas/*.
+        self.tarefa_token = os.environ.get("TAREFA_TOKEN", "").strip()
+        # Exclusão de contas inativas: só apaga de verdade com LIMPEZA_EXCLUIR=1.
+        # Sem isso, conta quantas excluiria (relatório) e não apaga nada.
+        self.limpeza_excluir = os.environ.get("LIMPEZA_EXCLUIR", "").strip() == "1"
         # Origens do navegador autorizadas a chamar a API (separadas por vírgula).
         self.allowed_origins = [
             o.strip()

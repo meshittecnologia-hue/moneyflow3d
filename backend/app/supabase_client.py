@@ -94,6 +94,31 @@ class SupabaseAdmin:
         )
         await self._check(resp)
 
+    async def contas_para_limpeza(self, dias_aviso: int) -> list[dict]:
+        resp = await self.http.post(
+            f"{self.url}/rest/v1/rpc/contas_para_limpeza",
+            json={"dias_aviso": dias_aviso},
+            headers=self._headers(),
+        )
+        await self._check(resp)
+        return resp.json()
+
+    async def delete_logos(self, user_id: str) -> None:
+        """Apaga a pasta do usuário no bucket "logos" (o Storage não apaga junto com a conta)."""
+        resp = await self.http.post(
+            f"{self.url}/storage/v1/object/list/logos",
+            json={"prefix": user_id, "limit": 100},
+            headers=self._headers(),
+        )
+        await self._check(resp)
+        nomes = [f"{user_id}/{o['name']}" for o in resp.json() if o.get("name")]
+        if nomes:
+            resp = await self.http.request(
+                "DELETE", f"{self.url}/storage/v1/object/logos",
+                json={"prefixes": nomes}, headers=self._headers(),
+            )
+            await self._check(resp)
+
     # ---------- Usuários (Auth Admin API) ----------
     async def create_user(self, email: str, password: str, name: str) -> dict:
         resp = await self.http.post(
