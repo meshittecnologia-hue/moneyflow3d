@@ -287,3 +287,9 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   .topbar-title{font-size:14px}
   .btn{padding:8px 12px;font-size:13px}
 }
+
+/* Item 25: efeitos de passar o mouse em CSS (antes eram onmouseenter/onmouseleave no HTML).
+   !important porque o elemento tem a cor no style="" e o :hover precisa vencer. */
+.hover-fundo:hover{background:var(--bg3)!important}
+.hover-borda:hover{border-color:var(--accent)!important}
+.hover-linha:hover{background:rgba(255,255,255,.02)}

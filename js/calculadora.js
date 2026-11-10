@@ -214,8 +214,7 @@ function filPickerRenderList(q){
   list.innerHTML=Object.entries(grupos).map(([tipo,itens])=>`
     <div style="padding:4px 14px 2px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:${FIL_COLORS[tipo]||'#888'};background:var(--bg2);border-top:1px solid var(--border)">${tipo}</div>
     ${itens.map(i=>`
-      <div data-click="filPickerSelect('${i.value}')" style="padding:9px 14px;font-size:13px;cursor:pointer;color:var(--text);${i.selected?'background:var(--bg3);font-weight:600;color:var(--accent)':''}"
-        onmouseenter="this.style.background='var(--bg3)'" onmouseleave="this.style.background='${i.selected?'var(--bg3)':''}'">${i.text}</div>`).join('')}
+      <div class="hover-fundo" data-click="filPickerSelect('${i.value}')" style="padding:9px 14px;font-size:13px;cursor:pointer;color:var(--text);${i.selected?'background:var(--bg3);font-weight:600;color:var(--accent)':''}">${i.text}</div>`).join('')}
   `).join('');
 }
 

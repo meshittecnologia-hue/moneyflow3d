@@ -1,10 +1,10 @@
 # MoneyFlow 3D — Plano de Correção e Separação Front/Back
 
-Atualizado em 10/11/2026 (14h05) · Versão viva (editável, com diagramas): https://claude.ai/artifact/A5yhyA9VDmnz4pSLtQXwHt
+Atualizado em 10/11/2026 (14h45) · Versão viva (editável, com diagramas): https://claude.ai/artifact/A5yhyA9VDmnz4pSLtQXwHt
 
 ## Resumo
 
-Dos 34 problemas da auditoria de 04/11/2026, **29 estão resolvidos, 2 parcialmente e 3 pendentes**. Os 5 urgentes de segurança estão fechados ou mitigados; o backend Python está no ar e a Fase 1 foi concluída em 09/11; homologação, troca de chaves e Cloudflare na frente do site estão prontos; o que falta é separar o restante do frontend e os itens de polimento. Previsão de conclusão: **19/12/2026**, em 6 fases.
+Dos 34 problemas da auditoria de 04/11/2026, **30 estão resolvidos, 2 parcialmente e 2 pendentes**. Os 5 urgentes de segurança estão fechados ou mitigados; o backend Python está no ar e a Fase 1 foi concluída em 09/11; homologação, troca de chaves e Cloudflare na frente do site estão prontos; o que falta é separar o restante do frontend e os itens de polimento. Previsão de conclusão: **19/12/2026**, em 6 fases.
 
 Como usamos este plano:
 
@@ -40,7 +40,7 @@ Como usamos este plano:
 | 22 | Bibliotecas sem versão fixa | Moderado | Parcial | supabase-js 2.118.0 e jsPDF 2.5.1 fixos com SRI, em produção; falta atualizar o jsPDF para 4.x |
 | 23 | Sem Política de Privacidade e Termos | Moderado | Pendente | Textos LGPD (revisão jurídica recomendada) |
 | 24 | Preços repetidos e MRR errado | Moderado | Feito | 10/11: `planos.js` é a fonte única (Pro R$ 23,50, depois R$ 47; maker e anual como planos antigos); index e admin leem dele; CI barra preço/link/vagas divergentes (`validar_precos.py`); MRR pela função `mrr_atual()` com o valor real cobrado pela Kiwify. Assinaturas de teste do Antonio apagadas e as de Willer/Eder canceladas (decisão de 10/11) |
-| 25 | 245 onclick no HTML | Moderado | Pendente | Trocar por eventos registrados no JavaScript |
+| 25 | 245 onclick no HTML | Moderado | Feito | 10/11: 349 ações viraram data-* chamadas por js/eventos.js (sem eval); scripts do admin/lp em js/; validador e teste no navegador (com CSP de scripts/csp.txt, app e menu do admin) reprovam regressão. Próximo: ligar CSP script-src em modo aviso e depois bloqueio |
 | 26 | Sem verificação automática | Moderado | Feito | GitHub Actions: JS, IDs, segredos e testes do backend em todo PR |
 | 27 | Sem monitoramento de erros | Moderado | Feito | 10/11: Sentry (org `meshit`, projeto `moneyflow3d-web`, plano grátis) no app e no admin; v11.9.0 com SRI; ambientes produção/homologação; sem IP/usuário, e-mails e tokens apagados, sem gravação de tela; no painel: data scrubbing + bloqueio de IP; aviso por e-mail. Painel: https://meshit.sentry.io/issues/ |
 | 28 | Publicação manual direto no ar | Moderado | Feito | `main` protegida; push direto recusado e PR #2 mesclado com verificação verde (08/11) |
@@ -164,7 +164,8 @@ Alterações no banco: o SQL vai para `supabase/migrations/`, roda primeiro em h
 **Fase 4 · Frontend organizado**
 
 - [x] 4.1 Dividir o `index.html` em módulos · item 16 (10/11)
-- [ ] 4.2 Trocar os 245 onclick por eventos no JavaScript · item 25
+- [x] 4.2 Trocar os 245 onclick por eventos no JavaScript · item 25 (10/11, PR #23)
+- [ ] 4.2b Ligar CSP script-src: Report-Only (Sentry) → bloqueio, após alguns dias sem aviso
 - [ ] 4.3 Fixar versões das bibliotecas e atualizar o jsPDF · item 22 (versões fixas com SRI em 08/11; falta jsPDF 4.x)
 - [x] 4.4 Monitoramento de erros (Sentry) · item 27 (10/11; backend Python fica para quando houver uso real da API)
 - [x] 4.5 Biometria: bloqueio de tela deste aparelho · item 20 (10/11)

@@ -53,3 +53,8 @@ services:
       - path: /*
         name: X-Robots-Tag
         value: noindex, nofollow
+      # Item 25: CSP em modo aviso (não bloqueia; manda violações ao Sentry). Igual a scripts/csp.txt
+      # + report-uri. O painel do Render NÃO lê este arquivo sozinho: mudou aqui, mude lá também.
+      - path: /*
+        name: Content-Security-Policy-Report-Only
+        value: "default-src 'self'; script-src 'self' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://browser.sentry-cdn.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://moneyflow3d-api.onrender.com https://moneyflow3d-api-dev.onrender.com https://*.ingest.us.sentry.io https://docs.google.com https://*.googleusercontent.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; report-uri https://o4512408484577280.ingest.us.sentry.io/api/4512408490868736/security/?sentry_key=2b7ba99e3331b79cbf989b58c48ea14b&sentry_environment=homologacao"
