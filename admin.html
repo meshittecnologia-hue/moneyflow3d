@@ -864,11 +864,22 @@
 // ============================================================
 // CONFIG SUPABASE
 // ============================================================
-const SUPABASE_URL  = 'https://fqthlewarcqvmqojmzzs.supabase.co';
-const SUPABASE_ANON = 'sb_publishable_Y1nupemuEmSd9TIlLGg5cg_rS7cyQK2';
-// URL da API Python (backend/). Preencher após o deploy no Render.
-// Nenhuma chave secreta fica neste arquivo.
-const ADMIN_API_URL = 'https://moneyflow3d-api.onrender.com';
+// Ambiente escolhido pelo endereço do site. Homologação usa banco e backend separados (item 2.2).
+const AMBIENTES = {
+  producao:    { supabase: 'https://fqthlewarcqvmqojmzzs.supabase.co', anon: 'sb_publishable_Y1nupemuEmSd9TIlLGg5cg_rS7cyQK2', api: 'https://moneyflow3d-api.onrender.com' },
+  homologacao: { supabase: 'https://ilpjwzbiqbngimnsonfv.supabase.co', anon: 'sb_publishable_RivUXUH7Vlo0hF1XtlMbag_TFR9HN_4', api: 'https://moneyflow3d-api-dev.onrender.com' },
+};
+const AMBIENTE = ['moneyflow3d-web-dev.onrender.com', 'localhost', '127.0.0.1'].includes(location.hostname) ? 'homologacao' : 'producao';
+if (AMBIENTE === 'homologacao') document.addEventListener('DOMContentLoaded', () => {
+  const faixa = document.createElement('div');
+  faixa.textContent = 'HOMOLOGAÇÃO — ambiente de testes, sem dados reais';
+  faixa.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#f59e0b;color:#000;font:700 12px/22px sans-serif;text-align:center;pointer-events:none';
+  document.body.appendChild(faixa);
+});
+const SUPABASE_URL  = AMBIENTES[AMBIENTE].supabase;
+const SUPABASE_ANON = AMBIENTES[AMBIENTE].anon;
+// URL da API Python (backend/). Nenhuma chave secreta fica neste arquivo.
+const ADMIN_API_URL = AMBIENTES[AMBIENTE].api;
 
 const { createClient } = supabase;
 const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
