@@ -147,7 +147,7 @@ Alterações no banco: o SQL vai para `supabase/migrations/`, roda primeiro em h
 - [x] 2.2b Webhook da Kiwify na homologação (função + segredos no `moneyflow3d-dev`) e um usuário admin de teste (10/11; compra de teste com e-mail apontando para o site de testes; primeira mudança a passar pelo fluxo homologação → PR #15 → produção)
 
 **Como testar daqui em diante:** mudança vai para a branch `Desenvolvimento` → o Render publica sozinho em https://moneyflow3d-web-dev.onrender.com (faixa amarela) e na API de homologação → testar lá → Pull Request para `main` → produção. Para alinhar o banco de homologação com a produção: GitHub → Actions → "Homologação — copiar estrutura do banco" → Run workflow → digitar `HOMOLOGACAO` (apaga os dados de teste da homologação).
-- [x] 2.3 Proxy do Cloudflare e cabeçalhos de segurança · itens 21 e 29 (10/11; falta só confirmar e-mail de suporte recebendo)
+- [x] 2.3 Proxy do Cloudflare e cabeçalhos de segurança · itens 21 e 29 (10/11; site, painel e e-mail de suporte testados)
 - [x] 2.4 Backup diário do banco por GitHub Actions · item 13 (ativo desde 08/11)
 - [x] 2.5 Liberar o zoom no celular · item 34 (08/11)
 - [x] 2.6 Trocar credenciais expostas (09/11): senha do banco (backup testado), Supabase `backend_render_v2` e Resend `backend_render_v2` no Render (recuperação de senha testada), Resend `supabase_webhook_v2` no webhook (compra testada), token da Kiwify; antigas apagadas. Valores em `claude/credenciais.md` (decisão do Antonio)
