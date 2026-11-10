@@ -18,19 +18,27 @@ from app.pricing import (
     Filamento, Impressora, calc_custos, lucro_marketplace,
 )
 
-INDEX = Path(__file__).resolve().parents[2] / "index.html"
+RAIZ = Path(__file__).resolve().parents[2]
+INDEX = RAIZ / "index.html"
+
+
+def codigo_do_app() -> str:
+    """index.html + js/*.js (o JavaScript saiu do index.html no item 16)."""
+    partes = [INDEX.read_text(encoding="utf-8")]
+    partes += [f.read_text(encoding="utf-8") for f in sorted((RAIZ / "js").glob("*.js"))]
+    return "\n".join(partes)
 NODE = shutil.which("node")
 
 
 def _js_fonte(nome: str) -> str:
-    html = INDEX.read_text(encoding="utf-8")
+    html = codigo_do_app()
     m = re.search(r"^function " + nome + r"\(\)\{.*?^\}", html, re.S | re.M)
     assert m, f"{nome}() não encontrada no index.html"
     return m.group(0)
 
 
 def _js_constantes() -> dict:
-    html = INDEX.read_text(encoding="utf-8")
+    html = codigo_do_app()
     fee = dict(re.findall(r"\{id:'(\w+)',\s*name:'[^']*',\s*fee:([\d.]+)\}", html))
     return {k: float(v) for k, v in fee.items()}
 
@@ -104,7 +112,7 @@ def test_paridade_com_o_javascript_do_index_html():
 
 
 def test_constantes_iguais_ao_index_html():
-    html = INDEX.read_text(encoding="utf-8")
+    html = codigo_do_app()
     assert "{inv:9500,roi:18,watts:350,hpd:8,fail:5}" in html
     assert IMPRESSORA_PADRAO == {"inv": 9500.0, "roi": 18.0, "watts": 350.0, "hpd": 8.0, "fail": 5.0}
     assert ":120;" in _js_fonte("calcCustos") and CUSTO_KG_PADRAO == 120.0
