@@ -37,3 +37,5 @@ as $$
      or b.aviso_exclusao_em is not null;
 $$;
 revoke execute on function public.contas_para_limpeza(integer) from public, anon, authenticated;
+-- O revoke de PUBLIC tira também do service_role (a secret key do backend): devolve só para ele.
+grant execute on function public.contas_para_limpeza(integer) to service_role;
