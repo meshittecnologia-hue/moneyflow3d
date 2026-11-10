@@ -1,6 +1,6 @@
 # MoneyFlow 3D — Plano de Correção e Separação Front/Back
 
-Atualizado em 10/11/2026 (14h45) · Versão viva (editável, com diagramas): https://claude.ai/artifact/A5yhyA9VDmnz4pSLtQXwHt
+Atualizado em 10/11/2026 (15h05) · Versão viva (editável, com diagramas): https://claude.ai/artifact/A5yhyA9VDmnz4pSLtQXwHt
 
 ## Resumo
 
@@ -165,7 +165,7 @@ Alterações no banco: o SQL vai para `supabase/migrations/`, roda primeiro em h
 
 - [x] 4.1 Dividir o `index.html` em módulos · item 16 (10/11)
 - [x] 4.2 Trocar os 245 onclick por eventos no JavaScript · item 25 (10/11, PR #23)
-- [ ] 4.2b Ligar CSP script-src: Report-Only (Sentry) → bloqueio, após alguns dias sem aviso
+- [ ] 4.2b Ligar CSP script-src: Report-Only ligado em 10/11 (homologação: Render → Headers; produção: Cloudflare → regra "Cabecalhos de seguranca"; violações vão ao Sentry, projeto moneyflow3d-web). Passar para bloqueio (trocar o nome do cabeçalho para Content-Security-Policy e juntar com a atual) a partir de 17/11 se o Sentry não tiver nenhuma violação
 - [ ] 4.3 Fixar versões das bibliotecas e atualizar o jsPDF · item 22 (versões fixas com SRI em 08/11; falta jsPDF 4.x)
 - [x] 4.4 Monitoramento de erros (Sentry) · item 27 (10/11; backend Python fica para quando houver uso real da API)
 - [x] 4.5 Biometria: bloqueio de tela deste aparelho · item 20 (10/11)
