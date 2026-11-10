@@ -1,6 +1,6 @@
 # MoneyFlow 3D — Plano de Correção e Separação Front/Back
 
-Atualizado em 10/11/2026 (10h40) · Versão viva (editável, com diagramas): https://claude.ai/artifact/A5yhyA9VDmnz4pSLtQXwHt
+Atualizado em 10/11/2026 (12h15) · Versão viva (editável, com diagramas): https://claude.ai/artifact/A5yhyA9VDmnz4pSLtQXwHt
 
 ## Resumo
 
@@ -159,7 +159,7 @@ Alterações no banco: o SQL vai para `supabase/migrations/`, roda primeiro em h
 - [x] 3.3 Logo e nome da empresa salvos no Supabase · item 11 (10/11)
 - [x] Extra: painel admin ajustado para celular (menu em gaveta, cards 2×2) (10/11)
 - [x] 3.4 Itens do orçamento como dado estruturado · item 32 (10/11)
-- [ ] 3.5 Webhook da Kiwify migrado para o Python
+- [x] 3.5 Webhook da Kiwify: **decidido manter na Supabase** (10/11). Motivo: o Render grátis dorme após 15 min e leva até ~1 min para acordar; uma venda nesse intervalo atrasaria a liberação do acesso. A função já está versionada no repositório, com 23 testes e segredos fora do código. Revisitar se a API passar para plano pago.
 
 **Fase 4 · Frontend organizado**
 
