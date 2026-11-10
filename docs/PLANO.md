@@ -1,10 +1,10 @@
 # MoneyFlow 3D — Plano de Correção e Separação Front/Back
 
-Atualizado em 10/11/2026 (10h15) · Versão viva (editável, com diagramas): https://claude.ai/artifact/A5yhyA9VDmnz4pSLtQXwHt
+Atualizado em 10/11/2026 (10h40) · Versão viva (editável, com diagramas): https://claude.ai/artifact/A5yhyA9VDmnz4pSLtQXwHt
 
 ## Resumo
 
-Dos 34 problemas da auditoria de 04/11/2026, **25 estão resolvidos, 2 parcialmente e 7 pendentes**. Os 5 urgentes de segurança estão fechados ou mitigados; o backend Python está no ar e a Fase 1 foi concluída em 09/11; homologação, troca de chaves e Cloudflare na frente do site estão prontos; o que falta é separar o restante do frontend e os itens de polimento. Previsão de conclusão: **19/12/2026**, em 6 fases.
+Dos 34 problemas da auditoria de 04/11/2026, **26 estão resolvidos, 2 parcialmente e 6 pendentes**. Os 5 urgentes de segurança estão fechados ou mitigados; o backend Python está no ar e a Fase 1 foi concluída em 09/11; homologação, troca de chaves e Cloudflare na frente do site estão prontos; o que falta é separar o restante do frontend e os itens de polimento. Previsão de conclusão: **19/12/2026**, em 6 fases.
 
 Como usamos este plano:
 
@@ -47,7 +47,7 @@ Como usamos este plano:
 | 29 | Hospedagem limitada | Moderado | Feito | 10/11: GitHub Pages com Cloudflare na frente (proxy em @ e www, SSL Full, limite 100 req/10 s por IP). DNS saiu da Locaweb (nameservers jasper/virginia.ns.cloudflare.com); provado pelo /cdn-cgi/trace |
 | 30 | Funções esquecidas no servidor | Moderado | Feito | 09/11: código revisado (sem segredo escrito; `bright-api` mostrava o início da chave mestra, `admin-ops` enviava e-mail livre) e as 4 apagadas com autorização; restam só `webhook-kiwify` e `send-email` (desativada) |
 | 31 | Commits sem descrição | Baixo | Parcial | Commits descritivos desde 06/11; faltam marcações de versão |
-| 32 | Itens do orçamento como texto | Baixo | Pendente | Coluna JSON estruturada e erro visível na leitura |
+| 32 | Itens do orçamento como texto | Baixo | Feito | 10/11: `orcamentos.itens` virou jsonb obrigatório, sempre lista com 1+ item (constraint); os 9 de produção convertidos (2 antigos sem itens montados de produto/qtd/preço); app grava a lista direto, sem fallback silencioso, e marca ⚠ se ler algo ilegível. Testado em homologação pelo Antonio |
 | 33 | DMARC em observação | Baixo | Pendente | Subir para `quarantine` depois de 2 semanas de relatórios limpos |
 | 34 | Zoom bloqueado no celular | Baixo | Feito | Removido `maximum-scale`; em produção desde 08/11 |
 
@@ -158,7 +158,7 @@ Alterações no banco: o SQL vai para `supabase/migrations/`, roda primeiro em h
 - [x] 3.2 Planos e preços num só lugar; MRR correto no admin · item 24 (10/11; homologação e produção)
 - [x] 3.3 Logo e nome da empresa salvos no Supabase · item 11 (10/11)
 - [x] Extra: painel admin ajustado para celular (menu em gaveta, cards 2×2) (10/11)
-- [ ] 3.4 Itens do orçamento como dado estruturado · item 32
+- [x] 3.4 Itens do orçamento como dado estruturado · item 32 (10/11)
 - [ ] 3.5 Webhook da Kiwify migrado para o Python
 
 **Fase 4 · Frontend organizado**
