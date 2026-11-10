@@ -5,6 +5,7 @@
 <title>MoneyFlow 3D</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" integrity="sha512-qZvrmS2ekKPF2mSznTQsxqPgnpkI4DNTlrdUmTzrDgektczlKNRRhy5X5AAOnx5S09ydFYWWNSfcEqDTTHgtNA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.js" integrity="sha384-TcHRA3zBbn+Lexh5n+Oil4guNPOS3rjNDpGRAN46u/s/mB2IZ50ceC6TYDU2yvgK" crossorigin="anonymous"></script>
+<script src="planos.js"></script>
 <style>
 /* ── TOKENS ───────────────────────────────────────────── */
 :root{
@@ -1296,11 +1297,11 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
         <span>✅ Compartilhar via WhatsApp</span>
       </div>
     </div>
-    <div style="font-size:24px;font-weight:700;color:var(--accent);margin-bottom:4px">R$ 23,50<span style="font-size:14px;font-weight:400;color:var(--text2)">/mês</span></div>
+    <div style="font-size:24px;font-weight:700;color:var(--accent);margin-bottom:4px"><span class="js-preco-pro">R$ 23,50</span><span style="font-size:14px;font-weight:400;color:var(--text2)">/mês</span></div>
     <div style="font-size:12px;color:var(--text3);margin-bottom:20px">Cancele quando quiser · 7 dias de garantia</div>
     <div class="modal-footer" style="justify-content:center;gap:10px">
       <button class="btn btn-ghost" onclick="closeModal('modal-upgrade')">Agora não</button>
-      <a href="https://pay.kiwify.com.br/8epGftp" target="_blank" class="btn btn-primary" style="text-decoration:none">Assinar agora →</a>
+      <a href="https://pay.kiwify.com.br/8epGftp" target="_blank" class="btn btn-primary js-checkout" style="text-decoration:none">Assinar agora →</a>
     </div>
   </div>
 </div>
@@ -1323,11 +1324,11 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
         <span>✅ Compartilhar via WhatsApp</span>
       </div>
     </div>
-    <div style="font-size:24px;font-weight:700;color:var(--accent);margin-bottom:4px">R$ 23,50<span style="font-size:14px;font-weight:400;color:var(--text2)">/mês</span></div>
+    <div style="font-size:24px;font-weight:700;color:var(--accent);margin-bottom:4px"><span class="js-preco-pro">R$ 23,50</span><span style="font-size:14px;font-weight:400;color:var(--text2)">/mês</span></div>
     <div style="font-size:12px;color:var(--text3);margin-bottom:20px">Cancele quando quiser · 7 dias de garantia</div>
     <div class="modal-footer" style="justify-content:center;gap:10px">
       <button class="btn btn-ghost" onclick="closeModal('modal-upgrade')">Agora não</button>
-      <a href="https://pay.kiwify.com.br/8epGftp" target="_blank" class="btn btn-primary" style="text-decoration:none">Assinar agora →</a>
+      <a href="https://pay.kiwify.com.br/8epGftp" target="_blank" class="btn btn-primary js-checkout" style="text-decoration:none">Assinar agora →</a>
     </div>
   </div>
 </div>
@@ -2387,7 +2388,12 @@ async function verificarAcesso(){
 }
 
 /* ── CONTROLE DE ACESSO POR PLANO ─────────────────────── */
-const PLANOS_PRO = ['pro','maker','interno','annual_maker'];
+const PLANOS_PRO = PLANOS.comAcessoPro;
+const PRECO_PRO = PLANOS.brl(PLANOS.lista.pro.preco);
+const PRECO_PRO_DEPOIS = PLANOS.brl(PLANOS.lista.pro.precoDepois);
+// Preço e link de compra nas telas vêm de planos.js (fonte única, item 24).
+document.querySelectorAll('.js-preco-pro').forEach(el => { el.textContent = PRECO_PRO; });
+document.querySelectorAll('.js-checkout').forEach(el => { el.href = PLANOS.checkout; });
 
 function temAcesso(profile){
   if(!profile) return false;
@@ -2468,7 +2474,7 @@ function aplicarBloqueioPlano(profile){
     } else if(!pro && dias === 0){
       banner.style.display = 'flex';
       banner.style.background = 'var(--red)';
-      banner.innerHTML = '<span>Seu trial expirou. Assine o MoneyFlow 3D Pro por R$ 23,50/mes para continuar.</span><a href="https://pay.kiwify.com.br/8epGftp" target="_blank" style="color:#fff;font-weight:700;text-decoration:underline;white-space:nowrap;margin-left:12px">Assinar agora</a>';
+      banner.innerHTML = '<span>Seu trial expirou. Assine o MoneyFlow 3D Pro por '+PRECO_PRO+'/mês para continuar.</span><a href="'+PLANOS.checkout+'" target="_blank" style="color:#fff;font-weight:700;text-decoration:underline;white-space:nowrap;margin-left:12px">Assinar agora</a>';
     } else {
       banner.style.display = 'none';
     }
@@ -2481,8 +2487,8 @@ function abrirModalUpgrade(){
   if(m){
     document.getElementById('upgrade-titulo').textContent = expirou ? 'Acesso bloqueado' : 'Módulo exclusivo Pro';
     document.getElementById('upgrade-msg').textContent = expirou
-      ? 'Seu acesso expirou. Assine o MoneyFlow 3D Pro por R$ 23,50/mês e desbloqueie tudo. Garantia de 7 dias com reembolso total.'
-      : 'Este módulo está disponível no plano Pro. Aproveite a oferta de fundador: R$ 23,50/mês para sempre (sobe para R$ 47/mês após os 50 primeiros).';
+      ? 'Seu acesso expirou. Assine o MoneyFlow 3D Pro por '+PRECO_PRO+'/mês e desbloqueie tudo. Garantia de 7 dias com reembolso total.'
+      : 'Este módulo está disponível no plano Pro. Aproveite a oferta de fundador: '+PRECO_PRO+'/mês para sempre (sobe para '+PRECO_PRO_DEPOIS+'/mês após os '+PLANOS.vagasFundador+' primeiros).';
     m.classList.add('open');
   }
 }
