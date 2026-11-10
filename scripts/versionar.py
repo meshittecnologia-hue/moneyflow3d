@@ -12,7 +12,7 @@ import hashlib
 import re
 import sys
 
-PAGINAS = ["index.html", "admin.html", "lp.html"]
+PAGINAS = ["index.html", "admin.html", "lp.html", "privacidade.html", "termos.html"]
 REF = re.compile(r'(?P<attr>(?:src|href))="(?P<path>(?:js|css)/[^"?]+|planos\.js)(?:\?v=[0-9a-f]*)?"')
 
 
