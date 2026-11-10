@@ -136,6 +136,34 @@ const SUPABASE_FALSO = `(function(){
   for (const [k, v] of Object.entries(casos)) if (v.errs.length) falhasBloqueio.push(k + ': ' + v.errs.join('; '));
   console.log('bloqueio por biometria:', falhasBloqueio.length ? falhasBloqueio : 'OK (cancelar, erro, sucesso, sair)');
 
+  // Item 25: painel admin com a CSP ligada — clica em cada item do menu como um usuário.
+  const adminFalhas = [];
+  {
+    const p = await navegador.newPage();
+    p.on('pageerror', e => adminFalhas.push('erro: ' + e.message.split('\n')[0]));
+    p.on('console', m => { if (m.type() === 'error' && /\[eventos\]|Content Security Policy/.test(m.text())) adminFalhas.push(m.text().split('\n')[0]); });
+    p.on('dialog', d => d.dismiss());
+    await p.addInitScript(() => { window.__csp = []; document.addEventListener('securitypolicyviolation', e => window.__csp.push(e.violatedDirective + ' ' + (e.blockedURI || 'inline'))); });
+    await p.route(/supabase-js/, r => r.fulfill({ contentType: 'application/javascript', body: SUPABASE_FALSO.replace("role: 'user'", "role: 'admin'") }));
+    await p.route(/sentry-cdn/, r => r.fulfill({ contentType: 'application/javascript', body: '' }));
+    await p.route(/localhost:8765\/admin\.html/, async r => { const resp = await r.fetch();
+      r.fulfill({ response: resp, body: (await resp.text()).replace(/ integrity="[^"]+"/g, '') }); });
+    await p.goto('http://localhost:8765/admin.html');
+    await p.waitForTimeout(1200);
+    const itens = await p.$$('.nav-item[data-click^="showPage"]');
+    if (itens.length < 5) adminFalhas.push('menu do admin com ' + itens.length + ' itens (não entrou?)');
+    for (const item of itens) {
+      const alvo = (await item.getAttribute('data-click')).match(/showPage\('([^']+)'\)/)[1];
+      await item.click({ force: true }); await p.waitForTimeout(150);
+      const ok = await p.evaluate(a => document.getElementById('page-' + a)?.classList.contains('active') &&
+        document.querySelector(`.nav-item[data-click="showPage('${a}')"]`).classList.contains('active'), alvo);
+      if (!ok) adminFalhas.push('menu ' + alvo + ' não abriu');
+    }
+    adminFalhas.push(...(await p.evaluate(() => window.__csp)).map(v => 'CSP: ' + v));
+    await p.close();
+  }
+  console.log('painel admin:', adminFalhas.length ? adminFalhas : 'OK (menu inteiro clicado)');
+
   await navegador.close(); servidor.close();
 
   const ruins = Object.entries(r.paginas).filter(([, v]) => v !== 'ok');
@@ -144,6 +172,6 @@ const SUPABASE_FALSO = `(function(){
   console.log('erros de JavaScript:', erros.length ? erros : 'nenhum');
   console.log('cliques com problema:', cliques.length ? cliques : 'nenhum');
   console.log('violações da CSP:', csp.length ? csp : 'nenhuma');
-  if (cliques.length || csp.length || !r.entrou || ruins.length || erros.length || Object.keys(r.paginas).length < 10 || falhasBloqueio.length) process.exit(1);
+  if (adminFalhas.length || cliques.length || csp.length || !r.entrou || ruins.length || erros.length || Object.keys(r.paginas).length < 10 || falhasBloqueio.length) process.exit(1);
   console.log('TESTE NO NAVEGADOR OK');
 })().catch(e => { console.error(e); process.exit(1); });

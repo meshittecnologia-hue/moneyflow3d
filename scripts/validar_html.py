@@ -61,6 +61,15 @@ for arq in sys.argv[1:]:
         print("  ERRO: link javascript: no HTML (bloqueado pela CSP)")
         falhou = True
     tudo = code_js_e_html
+    # O "event" implícito do onclick antigo não existe mais do jeito antigo: com js/eventos.js,
+    # event.currentTarget é a página inteira. Use o parâmetro da função ou "this".
+    sem_atributos = re.sub(r"data-[a-z]+=([\"']).*?\1", "", tudo, flags=re.S)
+    for m in re.finditer(r"(?<![\w.$])event\.(currentTarget|target|srcElement)", sem_atributos):
+        linha = sem_atributos[max(0, m.start() - 60):m.end() + 20].replace("\n", " ")
+        if "function" in linha and "(event" in linha:
+            continue
+        print(f"  ERRO: uso do 'event' implícito (quebra com data-*): ...{linha}...")
+        falhou = True
     for m in re.finditer(r"\son(click|change|input|keydown|keyup|submit|load|error|mouseover|mouseout|dragover|drop|dragleave|paste|focus|blur)\s*=\s*[\"']", tudo):
         trecho = tudo[max(0, m.start() - 40):m.end() + 40].replace("\n", " ")
         print(f"  ERRO: evento escrito no HTML (use data-{m.group(1)}): ...{trecho}...")

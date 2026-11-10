@@ -110,7 +110,10 @@ function showPage(page) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('page-' + page).classList.add('active');
-  event.currentTarget.classList.add('active');
+  // Item 25: marca o item do menu pelo nome da página (antes usava o "event" implícito do onclick,
+  // que com js/eventos.js aponta para a página inteira e quebrava a função).
+  const nav = document.querySelector(`.nav-item[data-click="showPage('${page}')"]`);
+  if (nav) nav.classList.add('active');
 
   if (page === 'dashboard')     loadDashboard();
   if (page === 'users')         loadUsers();
