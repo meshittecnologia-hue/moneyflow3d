@@ -6,6 +6,7 @@ const { chromium } = require('playwright');
 const http = require('http'), fs = require('fs'), path = require('path');
 
 const RAIZ = path.resolve(__dirname, '../..');
+const JSPDF = require.resolve('jspdf/dist/jspdf.umd.min.js');
 const CSP = fs.readFileSync(path.join(__dirname, '../csp.txt'), 'utf8').trim();
 const TIPOS = { '.html': 'text/html', '.js': 'application/javascript', '.css': 'text/css' };
 const servidor = http.createServer((req, res) => {
@@ -45,7 +46,8 @@ const SUPABASE_FALSO = `(function(){
   await pg.addInitScript(() => { window.__csp = []; document.addEventListener('securitypolicyviolation', e => window.__csp.push(e.violatedDirective + ' ' + (e.blockedURI || 'inline'))); });
   // Bibliotecas de fora são trocadas por versões falsas (o teste não depende de internet).
   await pg.route(/supabase-js/, r => r.fulfill({ contentType: 'application/javascript', body: SUPABASE_FALSO }));
-  await pg.route(/jspdf/, r => r.fulfill({ contentType: 'application/javascript', body: 'window.jspdf={jsPDF:function(){}}' }));
+  // Item 22: o jsPDF é o de verdade (mesma versão do index.html, conferida pela assinatura SRI abaixo).
+  await pg.route(/jspdf/, r => r.fulfill({ contentType: 'application/javascript', body: fs.readFileSync(JSPDF) }));
   await pg.route(/sentry-cdn/, r => r.fulfill({ contentType: 'application/javascript', body: '' }));
   await pg.route(/localhost:8765\/index\.html/, async r => {
     const resp = await r.fetch();
@@ -105,6 +107,21 @@ const SUPABASE_FALSO = `(function(){
     return out;
   });
   cliques.push(...comDados);
+  // Item 22: gera o PDF do orçamento com o jsPDF real e confere o arquivo baixado.
+  const sriIndex = (fs.readFileSync(path.join(RAIZ, 'index.html'), 'utf8').match(/jspdf@([\d.]+)\/dist\/jspdf\.umd\.min\.js" integrity="([^"]+)"/) || []);
+  const sriLocal = 'sha512-' + require('crypto').createHash('sha512').update(fs.readFileSync(JSPDF)).digest('base64');
+  const versaoLocal = require('jspdf/package.json').version;
+  if (sriIndex[2] !== sriLocal || sriIndex[1] !== versaoLocal) cliques.push(`jsPDF do index.html (${sriIndex[1]}) diferente do testado (${versaoLocal}) ou SRI errado`);
+  try {
+    const [baixou] = await Promise.all([
+      pg.waitForEvent('download', { timeout: 8000 }),
+      pg.evaluate(() => { orcAtual = DB.orcamentos[0]; orcAtual.itens = [{ nome: 'Peça teste', qtd: 2, preco: 15.5 }]; exportarPDF(); }),
+    ]);
+    const conteudo = fs.readFileSync(await baixou.path());
+    if (process.env.PDF_SAIDA) fs.writeFileSync(process.env.PDF_SAIDA, conteudo);
+    if (conteudo.slice(0, 5).toString() !== '%PDF-' || conteudo.length < 1500) cliques.push('PDF do orçamento inválido (' + conteudo.length + ' bytes)');
+    else console.log('PDF do orçamento: OK (' + baixou.suggestedFilename() + ', ' + conteudo.length + ' bytes, jsPDF ' + versaoLocal + ')');
+  } catch (e) { cliques.push('PDF do orçamento: ' + e.message.split('\n')[0]); }
   await pg.evaluate(() => document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open')));
   // Passa o mouse de verdade nas linhas (evento escrito no HTML só reclama quando dispara).
   for (const t of await pg.$$('#page-fila tr, #page-fila [class*="card"], #page-fila div[style*="cursor"]')) await t.hover({ force: true }).catch(() => {});

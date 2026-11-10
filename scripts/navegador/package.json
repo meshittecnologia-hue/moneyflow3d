@@ -2,5 +2,10 @@
   "name": "moneyflow3d-teste-navegador",
   "private": true,
   "description": "Teste do app no navegador (CI)",
-  "dependencies": { "playwright": "1.63.0" }
+  "dependencies": {
+    "playwright": "1.63.0"
+  },
+  "devDependencies": {
+    "jspdf": "4.2.1"
+  }
 }
