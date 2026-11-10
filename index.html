@@ -357,7 +357,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   <!-- SIDEBAR -->
   <aside class="sidebar" id="sidebar">
     <div class="logo" style="cursor:pointer" onclick="showPage(&#39;settings&#39;)" title="Clique para alterar logo">
-      <div id="logo-img-wrap" style="margin-bottom:6px;display:none"><img id="logo-img" src="https://moneyflow3d-meshit.netlify.app/" style="max-width:140px;max-height:40px;object-fit:contain;border-radius:4px"></div>
+      <div id="logo-img-wrap" style="margin-bottom:6px;display:none"><img id="logo-img" alt="Logo" style="max-width:140px;max-height:40px;object-fit:contain;border-radius:4px"></div>
       <div class="logo-title" id="logo-title-text">⬡ MoneyFlow 3D</div>
       <div class="logo-sub" id="logo-sub-text">MoneyFlow 3D</div>
     </div>
@@ -1053,12 +1053,12 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
             <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
               <div id="logo-preview-box" style="width:140px;height:60px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--rsm);display:flex;align-items:center;justify-content:center;overflow:hidden">
                 <span id="logo-preview-placeholder" style="font-size:12px;color:var(--text3)">Sem logo</span>
-                <img id="logo-preview-img" src="https://moneyflow3d-meshit.netlify.app/" style="max-width:130px;max-height:54px;object-fit:contain;display:none">
+                <img id="logo-preview-img" alt="Logo" style="max-width:130px;max-height:54px;object-fit:contain;display:none">
               </div>
               <div style="flex:1;display:flex;flex-direction:column;gap:8px">
-                <button class="btn btn-ghost" onclick="document.getElementById(&#39;logo-file&#39;).click()">📁 Escolher imagem (PNG, JPG, SVG)</button>
+                <button class="btn btn-ghost" onclick="document.getElementById(&#39;logo-file&#39;).click()">📁 Escolher imagem (PNG, JPG ou WEBP, até 1 MB)</button>
                 <button class="btn btn-danger btn-sm" onclick="removerLogo()" id="btn-rem-logo" style="display:none">Remover logo</button>
-                <input type="file" id="logo-file" accept="image/*" style="display:none" onchange="uploadLogo(event)">
+                <input type="file" id="logo-file" accept="image/png,image/jpeg,image/webp" style="display:none" onchange="uploadLogo(event)">
                 <div style="font-size:11px;color:var(--text3)">Recomendado: fundo transparente, máx 400×100px</div>
               </div>
             </div>
@@ -2356,12 +2356,50 @@ async function saveConfig(){
 }
 
 /* ── SALVAR SETTINGS ─────────────────────────────────── */
-function loadSettings(){
-  const s = JSON.parse(localStorage.getItem('p3d_settings')||'{}');
-  if(s.logo){
-    const el = document.getElementById('topbar-logo');
-    if(el){ el.src=s.logo; el.style.display='block'; }
+/* Item 11: logo e nomes ficam no Supabase (profiles + Storage "logos"), não mais no navegador.
+   _settings é o espelho em memória, carregado no login. */
+let _settings = { sysname: 'MoneyFlow 3D', empresa: 'MoneyFlow 3D', logo: '' };
+function getSettings(){ return _settings; }
+
+async function carregarSettings(profile){
+  _settings = {
+    sysname: profile.system_name || 'MoneyFlow 3D',
+    empresa: profile.company || 'MoneyFlow 3D',
+    logo: profile.logo_url || '',
+  };
+  // Migração única: quem já tinha configurado no navegador leva para o banco no primeiro login.
+  let antigo = {};
+  try { antigo = JSON.parse(localStorage.getItem('p3d_settings') || '{}'); } catch(e) { antigo = {}; }
+  if (Object.keys(antigo).length) {
+    try {
+      const mudou = {};
+      if (!profile.system_name && antigo.sysname) mudou.system_name = antigo.sysname;
+      if (!profile.company && antigo.empresa) mudou.company = antigo.empresa;
+      if (!profile.logo_url && antigo.logo && antigo.logo.startsWith('data:image/')) {
+        const blob = await (await fetch(antigo.logo)).blob();
+        const url = await enviarLogoStorage(blob);
+        if (url) mudou.logo_url = url;
+      }
+      if (Object.keys(mudou).length) {
+        const { error } = await _supa.from('profiles').update(mudou).eq('id', _currentUser.id);
+        if (error) throw error;
+        if (mudou.system_name) _settings.sysname = mudou.system_name;
+        if (mudou.company) _settings.empresa = mudou.company;
+        if (mudou.logo_url) _settings.logo = mudou.logo_url;
+      }
+      localStorage.removeItem('p3d_settings');
+    } catch(e) {
+      console.warn('Migração da logo/nome para o banco falhou; tenta de novo no próximo login.', e);
+    }
   }
+  aplicarSettings();
+}
+
+function aplicarSettings(){
+  const s = _settings;
+  const t = document.getElementById('logo-title-text'); if (t) t.textContent = s.sysname;
+  const sub = document.getElementById('logo-sub-text'); if (sub) sub.textContent = s.empresa;
+  if (s.logo) showLogoImg(s.logo); else esconderLogoImg();
 }
 
 /* ── VERIFICAR PLANO/MÓDULOS ─────────────────────────── */
@@ -2372,6 +2410,8 @@ async function verificarAcesso(){
 
   if(!profile){ notify('Perfil não encontrado. Contate o administrador.','red'); return; }
   if(profile.is_blocked){ notify('Conta suspensa. Contate o administrador.','red'); await doLogout(); return; }
+
+  await carregarSettings(profile);
 
   // Exibir email na topbar
   const emailEl = document.getElementById('topbar-email');
@@ -3537,28 +3577,63 @@ function showLogoImg(src){
   const rb=document.getElementById('btn-rem-logo');if(rb)rb.style.display='inline-flex';
 }
 
-function uploadLogo(e){
-  const file=e.target.files[0];if(!file)return;
-  const reader=new FileReader();
-  reader.onload=function(ev){
-    const src=ev.target.result;
-    const s=JSON.parse(localStorage.getItem('p3d_settings')||'{}');
-    s.logo=src;localStorage.setItem('p3d_settings',JSON.stringify(s));
-    showLogoImg(src);
-    notify('Logo atualizada!');
-  };
-  reader.readAsDataURL(file);
-}
-
-function removerLogo(){
-  const s=JSON.parse(localStorage.getItem('p3d_settings')||'{}');
-  delete s.logo;localStorage.setItem('p3d_settings',JSON.stringify(s));
+function esconderLogoImg(){
   document.getElementById('logo-img-wrap').style.display='none';
   document.getElementById('logo-title-text').style.display='';
   const pi=document.getElementById('logo-preview-img');
-  if(pi){pi.src='';pi.style.display='none';document.getElementById('logo-preview-placeholder').style.display='';}
+  if(pi){pi.removeAttribute('src');pi.style.display='none';document.getElementById('logo-preview-placeholder').style.display='';}
   const rb=document.getElementById('btn-rem-logo');if(rb)rb.style.display='none';
-  notify('Logo removida','red');
+}
+
+const LOGO_TIPOS = { 'image/png':'png', 'image/jpeg':'jpg', 'image/webp':'webp' };
+const LOGO_MAX = 1024 * 1024; // 1 MB, mesmo limite do bucket
+
+// Caminho do arquivo dentro do bucket a partir da URL pública (para apagar a logo antiga).
+function caminhoLogo(url){
+  const m = String(url||'').match(/\/storage\/v1\/object\/public\/logos\/(.+)$/);
+  return m ? decodeURIComponent(m[1]) : null;
+}
+
+async function enviarLogoStorage(blob){
+  const ext = LOGO_TIPOS[blob.type];
+  if (!ext) throw new Error('Formato não aceito. Use PNG, JPG ou WEBP.');
+  if (blob.size > LOGO_MAX) throw new Error('Imagem maior que 1 MB. Reduza e tente de novo.');
+  const caminho = `${_currentUser.id}/logo-${Date.now()}.${ext}`;
+  const { error } = await _supa.storage.from('logos').upload(caminho, blob, { contentType: blob.type, cacheControl: '31536000' });
+  if (error) throw error;
+  return _supa.storage.from('logos').getPublicUrl(caminho).data.publicUrl;
+}
+
+async function uploadLogo(e){
+  const file=e.target.files[0]; e.target.value=''; if(!file) return;
+  try{
+    notify('Enviando logo...');
+    const antiga = _settings.logo;
+    const url = await enviarLogoStorage(file);
+    const { error } = await _supa.from('profiles').update({ logo_url: url }).eq('id', _currentUser.id);
+    if (error) throw error;
+    _settings.logo = url;
+    showLogoImg(url);
+    const velho = caminhoLogo(antiga);
+    if (velho) await _supa.storage.from('logos').remove([velho]);
+    notify('Logo salva na sua conta!');
+  }catch(err){
+    notify('Não foi possível salvar a logo: ' + (err.message || err), 'red');
+  }
+}
+
+async function removerLogo(){
+  try{
+    const { error } = await _supa.from('profiles').update({ logo_url: null }).eq('id', _currentUser.id);
+    if (error) throw error;
+    const velho = caminhoLogo(_settings.logo);
+    if (velho) await _supa.storage.from('logos').remove([velho]);
+    _settings.logo = '';
+    esconderLogoImg();
+    notify('Logo removida','red');
+  }catch(err){
+    notify('Não foi possível remover a logo: ' + (err.message || err), 'red');
+  }
 }
 
 function updateLogoText(){
@@ -3568,13 +3643,14 @@ function updateLogoText(){
   document.getElementById('logo-sub-text').textContent=emp;
 }
 
-function saveSettings(){
-  const name=document.getElementById('cfg-sysname').value||'MoneyFlow 3D';
-  const emp=document.getElementById('cfg-empresa').value||'MoneyFlow 3D';
-  const s=JSON.parse(localStorage.getItem('p3d_settings')||'{}');
-  s.sysname=name;s.empresa=emp;
-  localStorage.setItem('p3d_settings',JSON.stringify(s));
-  notify('Configurações salvas!');
+async function saveSettings(){
+  const name=(document.getElementById('cfg-sysname').value||'').trim()||'MoneyFlow 3D';
+  const emp=(document.getElementById('cfg-empresa').value||'').trim()||'MoneyFlow 3D';
+  const { error } = await _supa.from('profiles').update({ system_name: name, company: emp }).eq('id', _currentUser.id);
+  if (error) { notify('Não foi possível salvar: ' + error.message, 'red'); return; }
+  _settings.sysname = name; _settings.empresa = emp;
+  aplicarSettings();
+  notify('Configurações salvas na sua conta!');
 }
 
 function exportarDados(){
@@ -3853,7 +3929,7 @@ function checkBioAvailable(){
 
 /* ── BOOT ───────────────────────────────────────────── */
 function loadSettingsPage(){
-  const s=JSON.parse(localStorage.getItem('p3d_settings')||'{}');
+  const s=getSettings();
   const sn=document.getElementById('cfg-sysname');if(sn)sn.value=s.sysname||'MoneyFlow 3D';
   const em=document.getElementById('cfg-empresa');if(em)em.value=s.empresa||'MoneyFlow 3D';
   if(s.logo){
@@ -4068,12 +4144,12 @@ function emailOrcamento(id){
 function verOrcamentoPDF(id){
   const o=DB.orcamentos.find(x=>String(x.id)===String(id));if(!o)return;
   orcAtual=o;
-  const s=JSON.parse(localStorage.getItem('p3d_settings')||'{}');
+  const s=getSettings();
   const empresa=s.empresa||'MoneyFlow 3D';
   const sysname=s.sysname||'MoneyFlow 3D';
   const logoSrc=s.logo||'';
   const valStr=o.validade?new Date(o.validade).toLocaleDateString('pt-BR'):'—';
-  const logoHtml=logoSrc?`<img src="${logoSrc}" style="max-height:50px;max-width:160px;object-fit:contain;margin-bottom:8px"><br>`:'';
+  const logoHtml=logoSrc?`<img src="${esc(logoSrc)}" crossorigin="anonymous" style="max-height:50px;max-width:160px;object-fit:contain;margin-bottom:8px"><br>`:'';
 
   document.getElementById('pdf-preview-content').innerHTML=`
     <div id="pdf-body" style="font-family:sans-serif;font-size:13px;color:#111;padding:8px">
@@ -4127,7 +4203,7 @@ function exportarPDF(){
   }
   const {jsPDF}=window.jspdf||{jsPDF:window.jsPDF};
   const doc=new jsPDF({orientation:'p',unit:'mm',format:'a4'});
-  const s=JSON.parse(localStorage.getItem('p3d_settings')||'{}');
+  const s=getSettings();
   const empresa=s.empresa||'MoneyFlow 3D';
   const sysname=s.sysname||'MoneyFlow 3D';
   const o=orcAtual;
@@ -4234,7 +4310,7 @@ function wppOrcamento(id){
 
 function compartilharWhatsApp(){
   const o=orcAtual;if(!o){notify('Nenhum orçamento aberto','red');return;}
-  const s=JSON.parse(localStorage.getItem('p3d_settings')||'{}');
+  const s=getSettings();
   const empresa=s.empresa||'MoneyFlow 3D';
   const valStr=o.validade?new Date(o.validade).toLocaleDateString('pt-BR'):'—';
   const itensMsg=(o.itens&&o.itens.length?o.itens:[{nome:o.produtoNome,qtd:o.qtd,preco:o.preco}]).map(i=>`• ${i.nome} x${i.qtd} — R$ ${((i.qtd||1)*(i.preco||0)).toFixed(2).replace('.',',')}`).join('\n');
@@ -4247,7 +4323,7 @@ function compartilharWhatsApp(){
 
 function enviarEmail(){
   const o=orcAtual;if(!o){notify('Nenhum orçamento aberto','red');return;}
-  const s=JSON.parse(localStorage.getItem('p3d_settings')||'{}');
+  const s=getSettings();
   const empresa=s.empresa||'MoneyFlow 3D';
   const sysname=s.sysname||'MoneyFlow 3D';
   const valStr=o.validade?new Date(o.validade).toLocaleDateString('pt-BR'):'—';
@@ -4715,7 +4791,7 @@ function wppFila(id){
   const cli=DB.clientes.find(c=>c.id==item.clienteId);
   const st=FILA_STATUS[item.status]||{label:item.status};
   const prazoStr=item.prazo?new Date(item.prazo).toLocaleDateString('pt-BR'):'—';
-  const s=JSON.parse(localStorage.getItem('p3d_settings')||'{}');
+  const s=getSettings();
   const msg=`Olá ${item.clienteNome}! 👋\n\nAtualização do seu pedido:\n\n📦 *${item.produto}*\n📊 Quantidade: ${item.qtd}\n${st.label}\n📅 Prazo: ${prazoStr}\n\n_${s.sysname||'MoneyFlow 3D'} — ${s.empresa||'MoneyFlow 3D'}_`;
   const num=cli&&cli.wpp?cli.wpp.replace(/\D/g,''):'';
   window.open(`https://wa.me/${num?'55'+num:''}?text=${encodeURIComponent(msg)}`,'_blank');
