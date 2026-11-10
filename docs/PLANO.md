@@ -1,10 +1,10 @@
 # MoneyFlow 3D — Plano de Correção e Separação Front/Back
 
-Atualizado em 10/11/2026 (09h30) · Versão viva (editável, com diagramas): https://claude.ai/artifact/A5yhyA9VDmnz4pSLtQXwHt
+Atualizado em 10/11/2026 (10h15) · Versão viva (editável, com diagramas): https://claude.ai/artifact/A5yhyA9VDmnz4pSLtQXwHt
 
 ## Resumo
 
-Dos 34 problemas da auditoria de 04/11/2026, **24 estão resolvidos, 2 parcialmente e 8 pendentes**. Os 5 urgentes de segurança estão fechados ou mitigados; o backend Python está no ar e a Fase 1 foi concluída em 09/11; homologação, troca de chaves e Cloudflare na frente do site estão prontos; o que falta é separar o restante do frontend e os itens de polimento. Previsão de conclusão: **19/12/2026**, em 6 fases.
+Dos 34 problemas da auditoria de 04/11/2026, **25 estão resolvidos, 2 parcialmente e 7 pendentes**. Os 5 urgentes de segurança estão fechados ou mitigados; o backend Python está no ar e a Fase 1 foi concluída em 09/11; homologação, troca de chaves e Cloudflare na frente do site estão prontos; o que falta é separar o restante do frontend e os itens de polimento. Previsão de conclusão: **19/12/2026**, em 6 fases.
 
 Como usamos este plano:
 
@@ -26,7 +26,7 @@ Como usamos este plano:
 | 8 | Usuário se promove sozinho | Alto | Feito | Trava no banco; teste bloqueou virar admin, trocar plano e renovar teste |
 | 9 | Plano Pro e teste burláveis | Alto | Feito | Função `tem_acesso()` no banco, incluindo conta bloqueada |
 | 10 | XSS em nomes | Alto | Feito | Escape no admin e no app; testado com nome malicioso |
-| 11 | Logo só no navegador | Alto | Pendente | Guardar logo no Supabase Storage e nome da empresa no banco |
+| 11 | Logo só no navegador | Alto | Feito | 10/11: logo no Storage (bucket público `logos`, PNG/JPG/WEBP até 1 MB, escrita só na pasta do próprio usuário) e `logo_url`, `company`, `system_name` em profiles; migração automática do navegador no 1º login. Testado em homologação (incl. recusa de pasta alheia e SVG) e pelo Antonio |
 | 12 | Sem servidor próprio | Alto | Feito | Backend Python no Render (moneyflow3d-api.onrender.com) desde 08/11; publica a cada merge na main |
 | 13 | Sem backup automático | Alto | Feito | Backup diário criptografado ativo; primeira execução em 08/11 com sucesso (27,4 KB, guardado 30 dias) |
 | 14 | Sem ambiente de testes | Alto | Feito | 09–10/11: Supabase `moneyflow3d-dev` (estrutura copiada pela rotina do GitHub, sem dados), API https://moneyflow3d-api-dev.onrender.com e site https://moneyflow3d-web-dev.onrender.com ligados à branch `Desenvolvimento`; permissões conferidas iguais às de produção. Webhook e admin de teste na homologação desde 10/11 |
@@ -156,7 +156,8 @@ Alterações no banco: o SQL vai para `supabase/migrations/`, roda primeiro em h
 
 - [x] 3.1 Fórmula de precificação em Python com testes de paridade; a fórmula não muda · item 17 (08/11)
 - [x] 3.2 Planos e preços num só lugar; MRR correto no admin · item 24 (10/11; homologação e produção)
-- [ ] 3.3 Logo e nome da empresa salvos no Supabase · item 11
+- [x] 3.3 Logo e nome da empresa salvos no Supabase · item 11 (10/11)
+- [x] Extra: painel admin ajustado para celular (menu em gaveta, cards 2×2) (10/11)
 - [ ] 3.4 Itens do orçamento como dado estruturado · item 32
 - [ ] 3.5 Webhook da Kiwify migrado para o Python
 
