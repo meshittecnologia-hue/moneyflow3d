@@ -239,3 +239,48 @@ def test_exclusao_grava_log_antes_de_apagar(client):
     r = client.delete(f"/admin/users/{USER_ID}", headers=AUTH)
     assert r.status_code == 200, r.text
     assert ordem == ["log", "auth", "perfil"]
+
+
+# ---------- Registro de acesso (Marco Civil, art. 15) ----------
+@respx.mock
+def test_acesso_sem_token_retorna_401(client):
+    assert client.post("/acesso").status_code == 401
+
+
+@respx.mock
+def test_acesso_token_invalido_retorna_401(client):
+    respx.get(f"{SB}/auth/v1/user").mock(return_value=httpx.Response(401, json={"msg": "bad jwt"}))
+    assert client.post("/acesso", headers={"Authorization": "Bearer ruim"}).status_code == 401
+
+
+@respx.mock
+def test_acesso_grava_ip_real_do_fim_da_cadeia(client):
+    respx.get(f"{SB}/auth/v1/user").mock(return_value=httpx.Response(200, json={"id": USER_ID}))
+    grava = respx.post(f"{SB}/rest/v1/registros_acesso").mock(return_value=httpx.Response(201))
+    r = client.post(
+        "/acesso",
+        headers={"Authorization": "Bearer tok", "X-Forwarded-For": "6.6.6.6, 200.1.2.3", "User-Agent": "Teste/1.0"},
+    )
+    assert r.status_code == 200 and r.json() == {"ok": True}
+    import json
+    row = json.loads(grava.calls.last.request.content)
+    assert row["user_id"] == USER_ID
+    assert row["ip"] == "200.1.2.3"  # o forjado pelo cliente (6.6.6.6) não vira o IP gravado
+    assert row["ip_cadeia"] == "6.6.6.6, 200.1.2.3"
+    assert row["user_agent"] == "Teste/1.0"
+    assert grava.calls.last.request.headers["apikey"] == "sb_secret_test"
+
+
+@respx.mock
+def test_acesso_limite_por_usuario(client):
+    respx.get(f"{SB}/auth/v1/user").mock(return_value=httpx.Response(200, json={"id": OTHER_ID}))
+    respx.post(f"{SB}/rest/v1/registros_acesso").mock(return_value=httpx.Response(201))
+    codes = [client.post("/acesso", headers={"Authorization": "Bearer t"}).status_code for _ in range(31)]
+    assert codes[:30] == [200] * 30 and codes[30] == 429
+
+
+@respx.mock
+def test_acesso_falha_no_banco_aparece(client):
+    respx.get(f"{SB}/auth/v1/user").mock(return_value=httpx.Response(200, json={"id": USER_ID}))
+    respx.post(f"{SB}/rest/v1/registros_acesso").mock(return_value=httpx.Response(500, json={"message": "erro"}))
+    assert client.post("/acesso", headers={"Authorization": "Bearer t"}).status_code == 502

@@ -22,6 +22,17 @@ const _supa = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 function esc(v){ return String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function escJs(v){ return esc(String(v ?? '').replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/\r?\n/g,' ')); }
 
+// Marco Civil (art. 15): cada acesso ao app grava data, hora e IP no servidor, guardados 6 meses.
+// Não trava o app: se o servidor estiver dormindo ou fora do ar, só avisa no console.
+async function registrarAcesso(){
+  if (!API_URL) return;
+  try {
+    const { data: { session } } = await _supa.auth.getSession();
+    if (!session) return;
+    await fetch(API_URL + '/acesso', { method: 'POST', headers: { Authorization: 'Bearer ' + session.access_token }, keepalive: true });
+  } catch (e) { console.warn('registro de acesso não gravado:', e); }
+}
+
 /* ── LOGIN ──────────────────────────────────────────── */
 const RP_ID=location.hostname||'localhost';
 const RP_NAME='MoneyFlow 3D';

@@ -41,6 +41,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     # Recuperação de senha: 3 pedidos por e-mail a cada 15 min e 10 por IP a cada hora.
     app.state.recover_email_limit = RateLimiter(3, 15 * 60)
     app.state.recover_ip_limit = RateLimiter(10, 60 * 60)
+    # Registro de acesso: no máximo 30 por usuário por hora (abrir o app várias vezes é normal).
+    app.state.acesso_limit = RateLimiter(30, 60 * 60)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.allowed_origins,
@@ -106,6 +108,37 @@ def _sb_error(e: SupabaseError) -> HTTPException:
 def register_routes(app: FastAPI) -> None:
     @app.get("/health")
     async def health():
+        return {"ok": True}
+
+    @app.post("/acesso")
+    async def registrar_acesso(
+        request: Request,
+        authorization: str = Header(default=""),
+        user_agent: str = Header(default=""),
+        sb: SupabaseAdmin = Depends(get_sb),
+    ):
+        """Marco Civil art. 15: grava data, hora e IP de cada acesso ao app (guardados 6 meses)."""
+        if not authorization.lower().startswith("bearer "):
+            raise HTTPException(401, "Login obrigatório")
+        user = await sb.get_user_from_token(authorization[7:].strip())
+        if not user or not user.get("id"):
+            raise HTTPException(401, "Sessão inválida ou expirada")
+        if not app.state.acesso_limit.allow(user["id"]):
+            raise HTTPException(429, "Muitos registros de acesso")
+        # O proxy do Render acrescenta o IP real no FIM do X-Forwarded-For. O começo da lista
+        # pode ter sido escrito pelo próprio cliente, então o IP gravado é o último.
+        xff = request.headers.get("x-forwarded-for", "")
+        cadeia = [p.strip() for p in xff.split(",") if p.strip()]
+        ip = cadeia[-1] if cadeia else (request.client.host if request.client else "desconhecido")
+        try:
+            await sb.insert_registro_acesso({
+                "user_id": user["id"],
+                "ip": ip[:64],
+                "ip_cadeia": xff[:300] or None,
+                "user_agent": user_agent[:300] or None,
+            })
+        except SupabaseError as e:
+            raise _sb_error(e) from e
         return {"ok": True}
 
     @app.post("/auth/recover")

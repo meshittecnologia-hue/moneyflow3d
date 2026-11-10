@@ -136,6 +136,7 @@ async function initApp(){
   applyTheme();
   const { data: { user } } = await _supa.auth.getUser();
   _currentUser = user;
+  registrarAcesso(); // sem await: não atrasa a abertura do app
   await verificarAcesso();
   await loadSupabaseData();
   loadDB(); // mantém filamentos default

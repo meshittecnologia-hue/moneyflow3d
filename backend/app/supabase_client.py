@@ -86,6 +86,14 @@ class SupabaseAdmin:
         )
         await self._check(resp)
 
+    async def insert_registro_acesso(self, row: dict) -> None:
+        resp = await self.http.post(
+            f"{self.url}/rest/v1/registros_acesso",
+            json=row,
+            headers={**self._headers(), "Prefer": "return=minimal"},
+        )
+        await self._check(resp)
+
     # ---------- Usuários (Auth Admin API) ----------
     async def create_user(self, email: str, password: str, name: str) -> dict:
         resp = await self.http.post(
