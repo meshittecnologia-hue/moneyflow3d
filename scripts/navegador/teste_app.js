@@ -39,6 +39,7 @@ const SUPABASE_FALSO = `(function(){
   // Bibliotecas de fora são trocadas por versões falsas (o teste não depende de internet).
   await pg.route(/supabase-js/, r => r.fulfill({ contentType: 'application/javascript', body: SUPABASE_FALSO }));
   await pg.route(/jspdf/, r => r.fulfill({ contentType: 'application/javascript', body: 'window.jspdf={jsPDF:function(){}}' }));
+  await pg.route(/sentry-cdn/, r => r.fulfill({ contentType: 'application/javascript', body: '' }));
   await pg.route(/localhost:8765\/index\.html/, async r => {
     const resp = await r.fetch();
     r.fulfill({ response: resp, body: (await resp.text()).replace(/ integrity="[^"]+"/g, '') });
@@ -64,6 +65,7 @@ const SUPABASE_FALSO = `(function(){
     await p.route(/supabase-js/, r => r.fulfill({ contentType: 'application/javascript',
       body: SUPABASE_FALSO.replace('signOut: async () => ({})', 'signOut: async () => { window.__saiu = true; return {}; }') }));
     await p.route(/jspdf/, r => r.fulfill({ contentType: 'application/javascript', body: 'window.jspdf={jsPDF:function(){}}' }));
+    await p.route(/sentry-cdn/, r => r.fulfill({ contentType: 'application/javascript', body: '' }));
     await p.route(/localhost:8765\/index\.html/, async r => { const resp = await r.fetch();
       r.fulfill({ response: resp, body: (await resp.text()).replace(/ integrity="[^"]+"/g, '') }); });
     await p.addInitScript(res => {

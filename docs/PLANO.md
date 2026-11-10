@@ -1,10 +1,10 @@
 # MoneyFlow 3D — Plano de Correção e Separação Front/Back
 
-Atualizado em 10/11/2026 (13h40) · Versão viva (editável, com diagramas): https://claude.ai/artifact/A5yhyA9VDmnz4pSLtQXwHt
+Atualizado em 10/11/2026 (14h05) · Versão viva (editável, com diagramas): https://claude.ai/artifact/A5yhyA9VDmnz4pSLtQXwHt
 
 ## Resumo
 
-Dos 34 problemas da auditoria de 04/11/2026, **28 estão resolvidos, 2 parcialmente e 4 pendentes**. Os 5 urgentes de segurança estão fechados ou mitigados; o backend Python está no ar e a Fase 1 foi concluída em 09/11; homologação, troca de chaves e Cloudflare na frente do site estão prontos; o que falta é separar o restante do frontend e os itens de polimento. Previsão de conclusão: **19/12/2026**, em 6 fases.
+Dos 34 problemas da auditoria de 04/11/2026, **29 estão resolvidos, 2 parcialmente e 3 pendentes**. Os 5 urgentes de segurança estão fechados ou mitigados; o backend Python está no ar e a Fase 1 foi concluída em 09/11; homologação, troca de chaves e Cloudflare na frente do site estão prontos; o que falta é separar o restante do frontend e os itens de polimento. Previsão de conclusão: **19/12/2026**, em 6 fases.
 
 Como usamos este plano:
 
@@ -42,7 +42,7 @@ Como usamos este plano:
 | 24 | Preços repetidos e MRR errado | Moderado | Feito | 10/11: `planos.js` é a fonte única (Pro R$ 23,50, depois R$ 47; maker e anual como planos antigos); index e admin leem dele; CI barra preço/link/vagas divergentes (`validar_precos.py`); MRR pela função `mrr_atual()` com o valor real cobrado pela Kiwify. Assinaturas de teste do Antonio apagadas e as de Willer/Eder canceladas (decisão de 10/11) |
 | 25 | 245 onclick no HTML | Moderado | Pendente | Trocar por eventos registrados no JavaScript |
 | 26 | Sem verificação automática | Moderado | Feito | GitHub Actions: JS, IDs, segredos e testes do backend em todo PR |
-| 27 | Sem monitoramento de erros | Moderado | Pendente | Sentry (plano gratuito) no front e no backend |
+| 27 | Sem monitoramento de erros | Moderado | Feito | 10/11: Sentry (org `meshit`, projeto `moneyflow3d-web`, plano grátis) no app e no admin; v11.9.0 com SRI; ambientes produção/homologação; sem IP/usuário, e-mails e tokens apagados, sem gravação de tela; no painel: data scrubbing + bloqueio de IP; aviso por e-mail. Painel: https://meshit.sentry.io/issues/ |
 | 28 | Publicação manual direto no ar | Moderado | Feito | `main` protegida; push direto recusado e PR #2 mesclado com verificação verde (08/11) |
 | 29 | Hospedagem limitada | Moderado | Feito | 10/11: GitHub Pages com Cloudflare na frente (proxy em @ e www, SSL Full, limite 100 req/10 s por IP). DNS saiu da Locaweb (nameservers jasper/virginia.ns.cloudflare.com); provado pelo /cdn-cgi/trace |
 | 30 | Funções esquecidas no servidor | Moderado | Feito | 09/11: código revisado (sem segredo escrito; `bright-api` mostrava o início da chave mestra, `admin-ops` enviava e-mail livre) e as 4 apagadas com autorização; restam só `webhook-kiwify` e `send-email` (desativada) |
@@ -166,7 +166,7 @@ Alterações no banco: o SQL vai para `supabase/migrations/`, roda primeiro em h
 - [x] 4.1 Dividir o `index.html` em módulos · item 16 (10/11)
 - [ ] 4.2 Trocar os 245 onclick por eventos no JavaScript · item 25
 - [ ] 4.3 Fixar versões das bibliotecas e atualizar o jsPDF · item 22 (versões fixas com SRI em 08/11; falta jsPDF 4.x)
-- [ ] 4.4 Monitoramento de erros (Sentry) · item 27
+- [x] 4.4 Monitoramento de erros (Sentry) · item 27 (10/11; backend Python fica para quando houver uso real da API)
 - [x] 4.5 Biometria: bloqueio de tela deste aparelho · item 20 (10/11)
 
 **Fase 5 · LGPD e entrega**
