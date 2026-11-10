@@ -58,7 +58,7 @@ async function doLogin(){
   document.getElementById('login-overlay').style.display='none';
   initApp();
   if(window.PublicKeyCredential && !localStorage.getItem('p3d_cred')){
-    setTimeout(()=>{ notify('💡 Ative a biometria em Configurações para entrar mais rápido!'); }, 1200);
+    setTimeout(()=>{ notify('💡 Dica: ligue o bloqueio por biometria em Configurações.'); }, 1200);
   }
 }
 
@@ -120,42 +120,25 @@ async function doLogout(){
   location.reload();
 }
 
-async function registrarBiometria(){
-  const btn=document.getElementById('bio-reg-icon');
-  const err=document.getElementById('login-err');
-  if(!window.PublicKeyCredential){
-    err.textContent='Este dispositivo não suporta biometria.';return;
-  }
-  try{
-    btn.textContent='⏳';
-    const uid=new Uint8Array(16);crypto.getRandomValues(uid);
-    const cred=await navigator.credentials.create({publicKey:{
-      challenge:crypto.getRandomValues(new Uint8Array(32)),
-      rp:{id:RP_ID,name:RP_NAME},
-      user:{id:uid,name:'usuario',displayName:'Usuário MoneyFlow 3D'},
-      pubKeyCredParams:[{type:'public-key',alg:-7},{type:'public-key',alg:-257}],
-      authenticatorSelection:{authenticatorAttachment:'platform',userVerification:'required'},
-      timeout:60000,
-      attestation:'none'
-    }});
-    localStorage.setItem('p3d_cred',b64url(cred.rawId));
-    btn.textContent='✅';
-    document.getElementById('bio-register-wrap').querySelector('button').textContent='✅  Biometria ativada neste dispositivo!';
-    document.getElementById('bio-register-wrap').querySelector('button').disabled=true;
-    notify('Biometria ativada! Próximo acesso será automático.');
-  }catch(e){
-    btn.textContent='📱';
-    err.textContent='Não foi possível ativar: '+e.message;
-  }
+/* Item 20: a biometria é um BLOQUEIO DE TELA deste aparelho, não um login.
+   O servidor não vê a biometria: ela só libera a sessão que já está salva aqui.
+   Por isso só existe quando há sessão; sem sessão, o caminho é e-mail e senha. */
+function mostrarBloqueio(){
+  document.getElementById('login-overlay').style.display='flex';
+  document.getElementById('bio-section').style.display='block';
+  document.getElementById('login-campos').style.display='none';
+  document.getElementById('login-err').textContent='';
+  const icon=navigator.userAgent.includes('iPhone')||navigator.userAgent.includes('iPad')?'👤':'🔏';
+  document.getElementById('bio-icon').textContent=icon;
 }
 
-async function loginBiometria(){
+async function desbloquearBiometria(){
   const err=document.getElementById('login-err');
   const credId=localStorage.getItem('p3d_cred');
-  if(!credId){err.textContent='Nenhuma biometria registrada.';return;}
+  if(!credId){ await sairDoBloqueio(); return; }
   try{
     document.getElementById('bio-icon').textContent='⏳';
-    const assertion=await navigator.credentials.get({publicKey:{
+    await navigator.credentials.get({publicKey:{
       challenge:crypto.getRandomValues(new Uint8Array(32)),
       rpId:RP_ID,
       allowCredentials:[{type:'public-key',id:fromB64url(credId)}],
@@ -164,19 +147,28 @@ async function loginBiometria(){
     }});
     sessionStorage.setItem('p3d_ok','1');
     document.getElementById('login-overlay').style.display='none';
-    document.getElementById('bio-icon').textContent='🔐';
     initApp();
   }catch(e){
+    // Nunca abre o app sem a biometria: qualquer falha mantém o bloqueio.
+    err.textContent = e.name==='NotAllowedError'
+      ? 'Biometria cancelada. Toque em "Desbloquear" de novo ou entre com e-mail e senha.'
+      : 'A biometria não funcionou neste aparelho ('+(e.name||'erro')+'). Entre com e-mail e senha.';
+  }finally{
     document.getElementById('bio-icon').textContent='🔐';
-    if(e.name!=='NotAllowedError'){err.textContent='Falha na biometria. Use sua senha.';}
   }
+}
+
+// Sai da sessão e desliga o bloqueio deste aparelho (evita ficar preso numa biometria quebrada).
+async function sairDoBloqueio(){
+  localStorage.removeItem('p3d_cred');
+  await doLogout();
 }
 
 function renderBioStatus(){
   const el=document.getElementById('bio-status-card');
   if(!el)return;
   if(location.protocol!=='https:'){
-    el.innerHTML='<div style="color:var(--yellow);font-size:13px">⚠️ Biometria requer HTTPS. O certificado SSL do domínio precisa estar ativo. Acesse via https://moneyflow3d.com.br com certificado válido.</div>';
+    el.innerHTML='<div style="color:var(--yellow);font-size:13px">⚠️ O bloqueio por biometria só funciona com o endereço seguro (https://).</div>';
     return;
   }
   if(!window.PublicKeyCredential){
@@ -188,19 +180,19 @@ function renderBioStatus(){
     el.innerHTML=`
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
         <div>
-          <div style="font-weight:500;color:var(--green)">✅ Biometria ativa neste dispositivo</div>
-          <div style="font-size:12px;color:var(--text3);margin-top:3px">Face ID, Touch ID ou impressão digital configurados</div>
+          <div style="font-weight:500;color:var(--green)">✅ Bloqueio ligado neste aparelho</div>
+          <div style="font-size:12px;color:var(--text3);margin-top:3px">Ao abrir o app, pede Face ID, digital ou Windows Hello</div>
         </div>
-        <button class="btn btn-danger btn-sm" onclick="removerBiometria()">Remover</button>
+        <button class="btn btn-danger btn-sm" onclick="removerBiometria()">Desligar</button>
       </div>`;
   } else {
     el.innerHTML=`
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
         <div>
-          <div style="font-weight:500">🔐 Biometria não configurada</div>
-          <div style="font-size:12px;color:var(--text3);margin-top:3px">Ative para entrar com Face ID / impressão digital</div>
+          <div style="font-weight:500">🔐 Bloqueio desligado</div>
+          <div style="font-size:12px;color:var(--text3);margin-top:3px">Ligue para pedir a biometria ao abrir o app</div>
         </div>
-        <button class="btn btn-primary btn-sm" id="btn-ativar-bio" onclick="ativarBiometriaConfig(this)">Ativar agora</button>
+        <button class="btn btn-primary btn-sm" id="btn-ativar-bio" onclick="ativarBiometriaConfig(this)">Ligar bloqueio</button>
       </div>`;
   }
 }
@@ -213,7 +205,7 @@ async function ativarBiometriaConfig(btn){
     const uid=new Uint8Array(16);crypto.getRandomValues(uid);
     const cred=await navigator.credentials.create({publicKey:{
       challenge:crypto.getRandomValues(new Uint8Array(32)),
-      rp:{id:location.hostname,name:RP_NAME},
+      rp:{id:RP_ID,name:RP_NAME},
       user:{id:uid,name:'usuario',displayName:'Usuário MoneyFlow 3D'},
       pubKeyCredParams:[{type:'public-key',alg:-7},{type:'public-key',alg:-257}],
       authenticatorSelection:{authenticatorAttachment:'platform',userVerification:'required'},
@@ -221,7 +213,7 @@ async function ativarBiometriaConfig(btn){
       attestation:'none'
     }});
     localStorage.setItem('p3d_cred',b64url(cred.rawId));
-    notify('Biometria ativada! Próximo acesso será automático.');
+    notify('Bloqueio por biometria ligado neste aparelho.');
     renderBioStatus();
   }catch(e){
     btn.textContent=orig;btn.disabled=false;
@@ -232,18 +224,7 @@ async function ativarBiometriaConfig(btn){
 function removerBiometria(){
   localStorage.removeItem('p3d_cred');
   renderBioStatus();
-  notify('Biometria removida','red');
-}
-
-function checkBioAvailable(){
-  const hasCred=localStorage.getItem('p3d_cred');
-  if(window.PublicKeyCredential && hasCred){
-    document.getElementById('bio-section').style.display='block';
-    const icon=navigator.userAgent.includes('iPhone')||navigator.userAgent.includes('iPad')?'👤':'🔏';
-    document.getElementById('bio-icon').textContent=icon;
-    // auto-trigger biometric on page load
-    setTimeout(loginBiometria, 400);
-  }
+  notify('Bloqueio por biometria desligado','red');
 }
 
 /* ── BOOT ───────────────────────────────────────────── */

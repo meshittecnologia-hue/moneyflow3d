@@ -1,10 +1,10 @@
 # MoneyFlow 3D — Plano de Correção e Separação Front/Back
 
-Atualizado em 10/11/2026 (13h20) · Versão viva (editável, com diagramas): https://claude.ai/artifact/A5yhyA9VDmnz4pSLtQXwHt
+Atualizado em 10/11/2026 (13h40) · Versão viva (editável, com diagramas): https://claude.ai/artifact/A5yhyA9VDmnz4pSLtQXwHt
 
 ## Resumo
 
-Dos 34 problemas da auditoria de 04/11/2026, **27 estão resolvidos, 2 parcialmente e 5 pendentes**. Os 5 urgentes de segurança estão fechados ou mitigados; o backend Python está no ar e a Fase 1 foi concluída em 09/11; homologação, troca de chaves e Cloudflare na frente do site estão prontos; o que falta é separar o restante do frontend e os itens de polimento. Previsão de conclusão: **19/12/2026**, em 6 fases.
+Dos 34 problemas da auditoria de 04/11/2026, **28 estão resolvidos, 2 parcialmente e 4 pendentes**. Os 5 urgentes de segurança estão fechados ou mitigados; o backend Python está no ar e a Fase 1 foi concluída em 09/11; homologação, troca de chaves e Cloudflare na frente do site estão prontos; o que falta é separar o restante do frontend e os itens de polimento. Previsão de conclusão: **19/12/2026**, em 6 fases.
 
 Como usamos este plano:
 
@@ -35,7 +35,7 @@ Como usamos este plano:
 | 17 | Fórmula sem testes | Alto | Feito | Fórmula em Python com teste de paridade: 503 casos contra o JavaScript real; teste de mutação confirmou (08/11) |
 | 18 | Chave antiga do Resend no código | Moderado | Feito | Removida do `admin.html`; varredura automática bloqueia chaves em todo PR |
 | 19 | Recuperação de senha improvisada | Moderado | Feito | Recuperação pelo backend em produção; e-mail entregue (Resend, 08/11); erro de configuração não fica silencioso |
-| 20 | Biometria só visual | Moderado | Pendente | Decidir: login real por passkey ou renomear para bloqueio de tela |
+| 20 | Biometria só visual | Moderado | Feito | 10/11 (decisão do Antonio): assumida como bloqueio de tela deste aparelho — 'Desbloquear com biometria', só com sessão salva; 'Entrar com e-mail e senha' sai e desliga; corrigida brecha em que erro ≠ cancelado abria o app; teste no navegador cobre 4 cenários |
 | 21 | Sem cabeçalhos de segurança | Moderado | Feito | 10/11: regra "Cabecalhos de seguranca" no Cloudflare (X-Frame-Options DENY, Referrer-Policy, Permissions-Policy, CSP frame-ancestors/base-uri/object-src), HSTS 6 meses, nosniff, HTTPS obrigatório, TLS mínimo 1.2 |
 | 22 | Bibliotecas sem versão fixa | Moderado | Parcial | supabase-js 2.118.0 e jsPDF 2.5.1 fixos com SRI, em produção; falta atualizar o jsPDF para 4.x |
 | 23 | Sem Política de Privacidade e Termos | Moderado | Pendente | Textos LGPD (revisão jurídica recomendada) |
@@ -167,7 +167,7 @@ Alterações no banco: o SQL vai para `supabase/migrations/`, roda primeiro em h
 - [ ] 4.2 Trocar os 245 onclick por eventos no JavaScript · item 25
 - [ ] 4.3 Fixar versões das bibliotecas e atualizar o jsPDF · item 22 (versões fixas com SRI em 08/11; falta jsPDF 4.x)
 - [ ] 4.4 Monitoramento de erros (Sentry) · item 27
-- [ ] 4.5 Biometria: aplicar a decisão tomada · item 20
+- [x] 4.5 Biometria: bloqueio de tela deste aparelho · item 20 (10/11)
 
 **Fase 5 · LGPD e entrega**
 

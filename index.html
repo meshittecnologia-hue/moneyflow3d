@@ -27,13 +27,16 @@
 
     <!-- MODO LOGIN NORMAL -->
     <div id="login-section">
-      <div id="bio-section" style="display:none;margin-bottom:14px">
-        <button class="login-btn" id="bio-btn" onclick="loginBiometria()" style="background:var(--bg3);color:var(--text);border:1px solid var(--border);margin-bottom:8px">
-          <span id="bio-icon">🔐</span> &nbsp;Entrar com biometria
+      <!-- Item 20: biometria = BLOQUEIO DE TELA deste aparelho (só aparece com sessão já salva) -->
+      <div id="bio-section" style="display:none;margin-bottom:14px;text-align:center">
+        <div style="font-size:13px;color:var(--text2);margin-bottom:12px">🔒 O app está bloqueado neste aparelho</div>
+        <button class="login-btn" id="bio-btn" onclick="desbloquearBiometria()" style="margin-bottom:10px">
+          <span id="bio-icon">🔐</span> &nbsp;Desbloquear com biometria
         </button>
-        <div style="font-size:11px;color:var(--text3);margin-bottom:12px">ou use seu email abaixo</div>
+        <span style="font-size:12px;color:var(--text2);cursor:pointer;text-decoration:underline" onclick="sairDoBloqueio()">Entrar com e-mail e senha</span>
       </div>
 
+      <div id="login-campos">
       <input class="login-input" type="email" id="login-email" placeholder="Email">
       <input class="login-input" type="password" id="login-pw" placeholder="Senha" style="margin-top:8px" onkeydown="if(event.key===&#39;Enter&#39;)doLogin()">
       <button class="login-btn" id="login-btn-submit" onclick="doLogin()">Entrar</button>
@@ -48,12 +51,7 @@
         <button class="login-btn" onclick="enviarResetSenha()" style="background:var(--bg3);color:var(--text);border:1px solid var(--border);font-size:13px;margin-top:6px">Enviar link de redefinição</button>
         <div id="esqueci-msg" style="font-size:12px;color:var(--green);margin-top:6px;text-align:center"></div>
       </div>
-
-      <div id="bio-register-wrap" style="display:none;margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">
-        <button class="login-btn" onclick="registrarBiometria()" style="background:var(--bg3);color:var(--text);border:1px solid var(--border);font-size:12px;padding:8px">
-          <span id="bio-reg-icon">📱</span> &nbsp;Ativar Face ID / Biometria neste dispositivo
-        </button>
-      </div>
+      </div><!-- /login-campos -->
     </div>
   </div>
 </div>
@@ -782,15 +780,15 @@
 
           <!-- BIOMETRIA -->
           <div class="card">
-            <div class="card-title">🔐 Biometria / Face ID / Windows Hello</div>
-            <div style="font-size:12px;color:var(--text3);margin-bottom:12px">Suporta: Face ID (iPhone/Mac), impressão digital (Android), Windows Hello (câmera facial, leitor ou PIN do Windows)</div>
+            <div class="card-title">🔐 Bloqueio por biometria</div>
+            <div style="font-size:12px;color:var(--text3);margin-bottom:12px">Ao abrir o app <strong>neste aparelho</strong>, pede Face ID, digital ou Windows Hello antes de mostrar seus dados. Não substitui a senha: em um aparelho novo, o primeiro acesso é sempre com e-mail e senha.</div>
             <div id="bio-status-card">
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
         <div>
-          <div style="font-weight:500">🔐 Biometria não configurada</div>
-          <div style="font-size:12px;color:var(--text3);margin-top:3px">Ative para entrar com Face ID / impressão digital</div>
+          <div style="font-weight:500">🔐 Bloqueio desligado</div>
+          <div style="font-size:12px;color:var(--text3);margin-top:3px">Ligue para pedir a biometria ao abrir o app</div>
         </div>
-        <button class="btn btn-primary btn-sm" onclick="registrarBiometria()">Ativar agora</button>
+        <button class="btn btn-primary btn-sm" onclick="ativarBiometriaConfig(this)">Ligar bloqueio</button>
       </div></div>
           </div>
 
@@ -1347,7 +1345,7 @@
   </div>
 </div>
 
-<div class="notif green" id="notif">💡 Ative a biometria em Configurações para entrar mais rápido!</div>
+<div class="notif green" id="notif"></div>
 
 <script src="js/dados.js?v=9d1a625f24"></script>
 <script src="js/acesso.js?v=3de1a872a3"></script>
@@ -1355,11 +1353,11 @@
 <script src="js/cadastros.js?v=5c24ead6c6"></script>
 <script src="js/importar.js?v=7ddce3854c"></script>
 <script src="js/configuracoes.js?v=05acfa34a9"></script>
-<script src="js/login.js?v=0265073315"></script>
+<script src="js/login.js?v=9fd3d358c0"></script>
 <script src="js/orcamentos.js?v=660ee54ad9"></script>
 <script src="js/crm.js?v=20d533535d"></script>
 <script src="js/estoque.js?v=1fa8b4376f"></script>
 <script src="js/producao.js?v=b7afcf139e"></script>
-<script src="js/inicio.js?v=629323870d"></script>
+<script src="js/inicio.js?v=f93cfb5f5b"></script>
 
 
