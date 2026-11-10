@@ -15,6 +15,8 @@ jobs:
           node-version: 22
       - name: Regras 1 e 2 + varredura de segredos
         run: python3 scripts/validar_html.py admin.html index.html lp.html
+      - name: Preços iguais a planos.js (item 24)
+        run: python3 scripts/validar_precos.py admin.html index.html lp.html
       - name: Testes do webhook da Kiwify
         run: node --experimental-strip-types --no-warnings --test supabase/functions/webhook-kiwify/webhook.test.mjs
 

@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MoneyFlow 3D — Painel Admin</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.js" integrity="sha384-TcHRA3zBbn+Lexh5n+Oil4guNPOS3rjNDpGRAN46u/s/mB2IZ50ceC6TYDU2yvgK" crossorigin="anonymous"></script>
+<script src="planos.js"></script>
 <style>
   :root {
     --bg:       #0f1117;
@@ -352,8 +353,8 @@
         </div>
         <div class="cards-grid" id="dash-cards">
           <div class="card"><div class="card-label">Total Usuários</div><div class="card-value blue" id="d-total">—</div><div class="card-delta">cadastrados</div></div>
-          <div class="card"><div class="card-label">Assinantes Ativos</div><div class="card-value green" id="d-active">—</div><div class="card-delta">planos pagos</div></div>
-          <div class="card"><div class="card-label">MRR Estimado</div><div class="card-value accent" id="d-mrr">—</div><div class="card-delta">receita mensal recorrente</div></div>
+          <div class="card"><div class="card-label">Assinantes Pagantes</div><div class="card-value green" id="d-active">—</div><div class="card-delta">assinatura ativa na Kiwify</div></div>
+          <div class="card"><div class="card-label">MRR</div><div class="card-value accent" id="d-mrr">—</div><div class="card-delta" id="d-mrr-obs">valor real cobrado pela Kiwify</div></div>
           <div class="card"><div class="card-label">Sem plano</div><div class="card-value yellow" id="d-free">—</div><div class="card-delta">acesso bloqueado</div></div>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
@@ -381,7 +382,7 @@
           <select class="filter-select" id="user-plan-filter" onchange="filterUsers()">
             <option value="">Todos os planos</option>
             <option value="free">Sem plano / Expirado</option>
-            <option value="pro">Pro — R$ 18/mês</option>
+            <option value="pro">Pro</option>
             <option value="interno">⚙ Interno/Staff</option>
           </select>
           <select class="filter-select" id="user-role-filter" onchange="filterUsers()">
@@ -477,7 +478,7 @@
             <div style="font-size:28px">✅</div>
             <div>
               <div style="font-weight:700;font-size:13px;color:var(--green)">Kiwify configurado</div>
-              <div style="font-size:12px;color:var(--text3);margin-top:3px">Produto: MoneyFlow 3D Pro — R$ 18/mês</div>
+              <div style="font-size:12px;color:var(--text3);margin-top:3px">Produto: MoneyFlow 3D Pro — <span class="js-preco-pro"></span>/mês</div>
               <div style="font-size:11px;color:var(--text3);margin-top:2px">Eventos: Compra aprovada · Assinatura cancelada · Assinatura atrasada</div>
             </div>
           </div>
@@ -493,8 +494,8 @@
             <div style="font-size:28px">🛒</div>
             <div>
               <div style="font-weight:700;font-size:13px">Checkout ativo</div>
-              <div style="font-size:12px;color:var(--text3);margin-top:3px"><a href="https://pay.kiwify.com.br/bRJAryH" target="_blank" style="color:var(--accent);text-decoration:none">pay.kiwify.com.br/bRJAryH ↗</a></div>
-              <div style="font-size:11px;color:var(--text3);margin-top:2px">Oferta fundador: R$ 18/mês (sobe para R$ 36)</div>
+              <div style="font-size:12px;color:var(--text3);margin-top:3px"><a class="js-checkout" href="#" target="_blank" style="color:var(--accent);text-decoration:none"></a></div>
+              <div style="font-size:11px;color:var(--text3);margin-top:2px">Oferta fundador: <span class="js-preco-pro"></span>/mês (sobe para <span class="js-preco-pro-depois"></span>)</div>
             </div>
           </div>
         </div>
@@ -645,7 +646,7 @@
       <label class="form-label">Plano</label>
       <select class="form-select" id="new-user-plan" onchange="newUserPlanChanged()">
         <option value="free">Sem plano (acesso bloqueado)</option>
-        <option value="pro">Pro — R$ 18/mês (Oferta Fundador)</option>
+        <option value="pro" class="js-opt-pro">Pro</option>
         <option value="interno">⚙ Interno/Staff — acesso total sem cobrança</option>
       </select>
     </div>
@@ -725,7 +726,7 @@
       <label class="form-label">Plano</label>
       <select class="form-select" id="edit-user-plan" onchange="editPlanChanged()">
         <option value="free">Sem plano (acesso bloqueado)</option>
-        <option value="pro">Pro — R$ 18/mês (Oferta Fundador)</option>
+        <option value="pro" class="js-opt-pro">Pro</option>
         <option value="annual_maker">Legado (não usar para novos)</option>
         <option value="interno">⚙ Interno/Staff — acesso total sem cobrança</option>
       </select>
@@ -812,7 +813,7 @@
       <label class="form-label">Plano</label>
       <select class="form-select" id="sub-plan" onchange="subPlanChanged()">
         <option value="free">Sem plano</option>
-        <option value="pro">Pro — R$ 18/mês (Oferta Fundador)</option>
+        <option value="pro" class="js-opt-pro">Pro</option>
         <option value="annual_maker">Legado (não usar para novos)</option>
         <option value="interno">⚙ Interno/Staff — sem cobrança</option>
       </select>
@@ -1255,15 +1256,18 @@ async function loadDashboard() {
   if (!profiles) return;
 
   const total  = profiles.length;
-  const active = profiles.filter(p => p.plan !== 'free').length;
   const free   = profiles.filter(p => p.plan === 'free').length;
 
-  const planPrices = { maker: 18, pro: 39, annual_maker: 159/12 };
-  const mrr = profiles.reduce((acc, p) => acc + (planPrices[p.plan] || 0), 0);
-
+  // MRR = valor real cobrado pela Kiwify em cada assinatura ativa (anual ÷ 12),
+  // sem admin, interno e perfis sem plano. Calculado no banco: função mrr_atual().
+  const { data: mrrData, error: mrrErr } = await sb.rpc('mrr_atual');
+  const m = (mrrData && mrrData[0]) || null;
   document.getElementById('d-total').textContent = total;
-  document.getElementById('d-active').textContent = active;
-  document.getElementById('d-mrr').textContent = 'R$ ' + mrr.toFixed(2);
+  document.getElementById('d-active').textContent = m ? m.assinantes : '—';
+  document.getElementById('d-mrr').textContent = m ? PLANOS.brl(m.mrr) : '—';
+  document.getElementById('d-mrr-obs').textContent = mrrErr
+    ? 'erro ao calcular: ' + mrrErr.message
+    : (m && m.sem_valor > 0 ? m.sem_valor + ' assinatura(s) sem valor registrado' : 'valor real cobrado pela Kiwify');
   document.getElementById('d-free').textContent = free;
 
   // Distribuição por plano
@@ -1288,16 +1292,16 @@ async function loadDashboard() {
 // ============================================================
 // MAPEAMENTO DE PLANOS → MÓDULOS (automático Kiwify)
 // ============================================================
-const PLAN_MODULES = {
-  free:         ['calc'],
-  maker:        ['calc','pdf','wpp','crm','fila','estoque'],
-  pro:          ['calc','pdf','wpp','crm','fila','estoque','relatorio','ilimitado'],
-  annual_maker: ['calc','pdf','wpp','crm','fila','estoque','relatorio','ilimitado'],
-  interno:      ['calc','pdf','wpp','crm','fila','estoque','relatorio','ilimitado'],
-};
-
-const PLAN_PRICES = { free: 0, maker: 11.99, pro: 9.99, annual_maker: 13.25, interno: 0 };
-const PLAN_LABELS = { free:'Hobby', maker:'Pro Mensal', pro:'Pro Anual', annual_maker:'Anual', interno:'⚙ Interno/Staff' };
+// Planos, preços e módulos vêm de planos.js (fonte única, item 24).
+const PLAN_MODULES = Object.fromEntries(Object.entries(PLANOS.lista).map(([k, p]) => [k, p.modulos]));
+const PLAN_PRICES  = Object.fromEntries(Object.entries(PLANOS.lista).map(([k, p]) => [k, p.preco || 0]));
+const PLAN_LABELS  = Object.fromEntries(Object.entries(PLANOS.lista).map(([k, p]) => [k, p.nome]));
+document.querySelectorAll('.js-preco-pro').forEach(el => { el.textContent = PLANOS.brl(PLANOS.lista.pro.preco); });
+document.querySelectorAll('.js-preco-pro-depois').forEach(el => { el.textContent = PLANOS.brl(PLANOS.lista.pro.precoDepois); });
+document.querySelectorAll('.js-checkout').forEach(a => { a.href = PLANOS.checkout; a.textContent = PLANOS.checkout.replace('https://', '') + ' ↗'; });
+document.querySelectorAll('.js-opt-pro').forEach(o => {
+  o.textContent = 'Pro — ' + PLANOS.brl(PLANOS.lista.pro.preco) + '/mês (Oferta Fundador)';
+});
 
 function applyPlanModules(prefix, plan) {
   const mods = PLAN_MODULES[plan] || ['calc'];
@@ -1725,7 +1729,7 @@ async function loadWebhooks() {
 // HELPERS
 // ============================================================
 function planLabel(plan) {
-  return { free:'Free', maker:'Maker', pro:'Pro', annual_maker:'Anual', interno:'Interno/Staff' }[plan] || plan || '—';
+  return PLANOS.nome(plan);
 }
 function statusLabel(s) {
   return { active:'Ativo', cancelled:'Cancelado', overdue:'Inadimplente', refunded:'Reembolsado', trial:'Trial' }[s] || s || '—';
