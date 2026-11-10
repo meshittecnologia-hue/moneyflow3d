@@ -88,6 +88,28 @@ const SUPABASE_FALSO = `(function(){
   await pg.evaluate(() => showPage('crm'));
   await pg.click('[data-click="openClienteModal()"]', { force: true }); await pg.waitForTimeout(60);
   await confere('abrir modal de cliente', await pg.evaluate(() => document.getElementById('modal-cliente').classList.contains('open')));
+  // Telas que só desenham botões/linhas quando há dados (foi onde a CSP em modo aviso achou
+  // onmouseenter esquecido): CRM em grade e lista, pedidos e fila com um registro cada.
+  const comDados = await pg.evaluate(async () => {
+    const agora = Date.now(), hoje = new Date().toLocaleDateString('pt-BR');
+    DB.clientes = [{ id: 'c-1', nome: 'Cliente Teste', wpp: '62999990000', email: 'c@t.com', insta: '@c', obs: '', ts: agora }];
+    DB.orcamentos = [{ id: 'o-1', numero: 1, cliente: 'Cliente Teste', clienteNome: 'Cliente Teste', status: 'pendente', itens: [], total: 10, ts: agora, data: hoje }];
+    DB.fila = [{ id: 'f-1', nome: 'Peça', produto: 'Peça', cliente: 'Cliente Teste', status: 'aguardando', ts: agora, data: hoje }];
+    const out = [];
+    for (const [pag, fn] of [['crm', () => { crmViewMode = 'grade'; renderCRM(); crmViewMode = 'lista'; renderCRM(); }], ['pedidos', renderPedidos], ['fila', renderFila]]) {
+      try { showPage(pag); fn(); } catch (e) { out.push(pag + ': ' + e.message); }
+    }
+    await new Promise(r => setTimeout(r, 200));
+    const linha = document.querySelector('.hover-linha');
+    if (!linha) out.push('linhas com dados não apareceram');
+    return out;
+  });
+  cliques.push(...comDados);
+  await pg.evaluate(() => document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open')));
+  // Passa o mouse de verdade nas linhas (evento escrito no HTML só reclama quando dispara).
+  for (const t of await pg.$$('#page-fila tr, #page-fila [class*="card"], #page-fila div[style*="cursor"]')) await t.hover({ force: true }).catch(() => {});
+  await pg.evaluate(() => showPage('crm'));
+  for (const t of (await pg.$$('#page-crm tr, #page-crm div[style*="border-radius"]')).slice(0, 15)) await t.hover({ force: true }).catch(() => {});
   const csp = await pg.evaluate(() => window.__csp);
   await pg.close();
 

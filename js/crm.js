@@ -145,7 +145,7 @@ function renderCRMGrid(clientes){
     const totalGasto=(DB.orcamentos||[]).filter(o=>o.clienteId==c.id&&o.status==='aprovado').reduce((s,o)=>s+o.total,0);
     const ultimoOrc=(DB.orcamentos||[]).filter(o=>o.clienteId==c.id).sort((a,b)=>b.ts-a.ts)[0];
     const instaUrl=c.insta?'https://instagram.com/'+c.insta.replace('@',''):'';
-    return `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:16px;transition:border-color .15s" onmouseenter="this.style.borderColor='var(--accent)'" onmouseleave="this.style.borderColor='var(--border)'">
+    return `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:16px;transition:border-color .15s" class="hover-borda">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
         <div style="flex:1;min-width:0">
           <div style="font-size:14px;font-weight:700;margin-bottom:3px">${esc(c.nome)}</div>
@@ -191,7 +191,7 @@ function renderCRMLista(clientes){
       const orcCount=(DB.orcamentos||[]).filter(o=>o.clienteId==c.id).length;
       const totalGasto=(DB.orcamentos||[]).filter(o=>o.clienteId==c.id&&o.status==='aprovado').reduce((s,o)=>s+o.total,0);
       const instaUrl=instaUrlFn(c.insta);
-      return`<tr style="border-bottom:1px solid var(--border)" onmouseenter="this.style.background='rgba(255,255,255,.02)'" onmouseleave="this.style.background=''">
+      return`<tr class="hover-linha" style="border-bottom:1px solid var(--border)">
         <td style="padding:11px 14px;font-weight:600">${esc(c.nome)}${c.obs?`<div style="font-size:11px;color:var(--text3);font-weight:400;font-style:italic">${esc(c.obs)}</div>`:''}</td>
         <td style="padding:11px 14px">${c.wpp?`<a href="https://wa.me/55${c.wpp.replace(/\D/g,'')}" target="_blank" style="color:var(--green);text-decoration:none">📱 ${esc(c.wpp)}</a>`:'—'}</td>
         <td style="padding:11px 14px">${c.insta?`<a href="${instaUrl}" target="_blank" style="color:#e1306c;text-decoration:none">📸 ${c.insta}</a>`:'—'}</td>

@@ -70,7 +70,7 @@ for arq in sys.argv[1:]:
             continue
         print(f"  ERRO: uso do 'event' implícito (quebra com data-*): ...{linha}...")
         falhou = True
-    for m in re.finditer(r"\son(click|change|input|keydown|keyup|submit|load|error|mouseover|mouseout|dragover|drop|dragleave|paste|focus|blur)\s*=\s*[\"']", tudo):
+    for m in re.finditer(r"\son([a-z]+)\s*=\s*[\"'\\]", tudo):
         trecho = tudo[max(0, m.start() - 40):m.end() + 40].replace("\n", " ")
         print(f"  ERRO: evento escrito no HTML (use data-{m.group(1)}): ...{trecho}...")
         falhou = True

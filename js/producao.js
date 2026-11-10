@@ -248,7 +248,7 @@ function renderPedidos(){
     <tbody>${orcs.map(o=>{
       const pedidoFila=(DB.fila||[]).find(f=>f.orcamentoId===o.id);
       const filaStatus=pedidoFila?FILA_STATUS[pedidoFila.status]:{label:'—',cor:'var(--text3)'};
-      return`<tr style="border-bottom:1px solid var(--border)" onmouseenter="this.style.background='rgba(255,255,255,.02)'" onmouseleave="this.style.background=''">
+      return`<tr class="hover-linha" style="border-bottom:1px solid var(--border)">
         <td style="padding:11px 14px;color:var(--text3);font-size:11px">${String(o.id).slice(-4)}</td>
         <td style="padding:11px 14px;font-weight:600">${o.clienteNome}</td>
         <td style="padding:11px 14px;color:var(--text2)">${o.produtoNome} × ${o.qtd}</td>
