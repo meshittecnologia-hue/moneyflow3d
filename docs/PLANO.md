@@ -1,6 +1,6 @@
 # MoneyFlow 3D — Plano de Correção e Separação Front/Back
 
-Atualizado em 10/11/2026 (00h40) · Versão viva (editável, com diagramas): https://claude.ai/artifact/A5yhyA9VDmnz4pSLtQXwHt
+Atualizado em 10/11/2026 (01h15) · Versão viva (editável, com diagramas): https://claude.ai/artifact/A5yhyA9VDmnz4pSLtQXwHt
 
 ## Resumo
 
@@ -29,7 +29,7 @@ Como usamos este plano:
 | 11 | Logo só no navegador | Alto | Pendente | Guardar logo no Supabase Storage e nome da empresa no banco |
 | 12 | Sem servidor próprio | Alto | Feito | Backend Python no Render (moneyflow3d-api.onrender.com) desde 08/11; publica a cada merge na main |
 | 13 | Sem backup automático | Alto | Feito | Backup diário criptografado ativo; primeira execução em 08/11 com sucesso (27,4 KB, guardado 30 dias) |
-| 14 | Sem ambiente de testes | Alto | Feito | 09–10/11: Supabase `moneyflow3d-dev` (estrutura copiada pela rotina do GitHub, sem dados), API https://moneyflow3d-api-dev.onrender.com e site https://moneyflow3d-web-dev.onrender.com ligados à branch `Desenvolvimento`; permissões conferidas iguais às de produção. Falta só o webhook da Kiwify na homologação (2.2b) |
+| 14 | Sem ambiente de testes | Alto | Feito | 09–10/11: Supabase `moneyflow3d-dev` (estrutura copiada pela rotina do GitHub, sem dados), API https://moneyflow3d-api-dev.onrender.com e site https://moneyflow3d-web-dev.onrender.com ligados à branch `Desenvolvimento`; permissões conferidas iguais às de produção. Webhook e admin de teste na homologação desde 10/11 |
 | 15 | Código no ar diferente do guardado | Alto | Feito | `webhook-kiwify` no ar = GitHub (conferido por hash a cada publicação); 4 funções esquecidas apagadas; cópia antiga e aberta da `send-email` removida do GitHub (no ar ela só responde 410) |
 | 16 | App em um arquivo de 5 mil linhas | Alto | Pendente | Dividir em módulos |
 | 17 | Fórmula sem testes | Alto | Feito | Fórmula em Python com teste de paridade: 503 casos contra o JavaScript real; teste de mutação confirmou (08/11) |
@@ -144,7 +144,7 @@ Alterações no banco: o SQL vai para `supabase/migrations/`, roda primeiro em h
 
 - [x] 2.1 Projeto Supabase `moneyflow3d-dev` com a mesma estrutura de banco · item 14 (09/11; rotina "Homologação — copiar estrutura do banco", PR #12/#13)
 - [x] 2.2 Backend e site de homologação a partir da branch `Desenvolvimento` · item 14 (10/11, PR #14)
-- [ ] 2.2b Webhook da Kiwify na homologação (função + segredos no `moneyflow3d-dev`) e um usuário admin de teste
+- [x] 2.2b Webhook da Kiwify na homologação (função + segredos no `moneyflow3d-dev`) e um usuário admin de teste (10/11; compra de teste com e-mail apontando para o site de testes; primeira mudança a passar pelo fluxo homologação → PR #15 → produção)
 
 **Como testar daqui em diante:** mudança vai para a branch `Desenvolvimento` → o Render publica sozinho em https://moneyflow3d-web-dev.onrender.com (faixa amarela) e na API de homologação → testar lá → Pull Request para `main` → produção. Para alinhar o banco de homologação com a produção: GitHub → Actions → "Homologação — copiar estrutura do banco" → Run workflow → digitar `HOMOLOGACAO` (apaga os dados de teste da homologação).
 - [ ] 2.3 Proxy do Cloudflare e cabeçalhos de segurança · itens 21 e 29
