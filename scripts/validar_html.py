@@ -32,7 +32,17 @@ for arq in sys.argv[1:]:
         if re.search(r"@\d+(/|$)|@latest", src):
             print(f"  ERRO: script externo sem versão exata: {src}")
             falhou = True
-    js = "\n".join(re.findall(r"<script>(.*?)</script>", code, re.DOTALL))
+    # Item 16: o JS também vem de arquivos locais (js/...). Junta tudo na ordem de carga.
+    locais = re.findall(r'<script src="((?:js/)[^"?]+)(?:\?v=[0-9a-f]*)?"></script>', code)
+    externos = "\n".join(open(f, encoding="utf-8").read() for f in locais)
+    if locais:
+        print(f"  arquivos JS: {len(locais)}")
+    for padrao, nome in SEGREDOS:
+        if re.search(padrao, externos):
+            print(f"  ERRO: {nome} encontrada em js/")
+            falhou = True
+    js = "\n".join(re.findall(r"<script>(.*?)</script>", code, re.DOTALL)) + "\n" + externos
+    code_js_e_html = code + "\n" + externos
     with tempfile.NamedTemporaryFile("w", suffix=".js", delete=False) as t:
         t.write(js)
     r = subprocess.run(
@@ -42,7 +52,7 @@ for arq in sys.argv[1:]:
     print("  " + r.stdout.strip())
     if r.returncode:
         falhou = True
-    js_ids = set(re.findall(r"getElementById\('([^']+)'\)", code))
+    js_ids = set(re.findall(r"getElementById\('([^']+)'\)", code_js_e_html))
     html_ids = set(re.findall(r'\bid=["\']([^"\']+)["\']', code))
     faltando = js_ids - html_ids
     print("  IDs faltando (aviso):", sorted(faltando) if faltando else "nenhum")

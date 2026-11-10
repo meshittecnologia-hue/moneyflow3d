@@ -1,0 +1,6 @@
+{
+  "name": "moneyflow3d-teste-navegador",
+  "private": true,
+  "description": "Teste do app no navegador (CI)",
+  "dependencies": { "playwright": "1.63.0" }
+}

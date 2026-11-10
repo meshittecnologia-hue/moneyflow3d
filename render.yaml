@@ -47,7 +47,7 @@ services:
     name: moneyflow3d-web-dev
     runtime: static
     branch: Desenvolvimento
-    buildCommand: mkdir -p site && cp index.html admin.html lp.html planos.js site/
+    buildCommand: mkdir -p site && cp index.html admin.html lp.html planos.js site/ && cp -r js css site/
     staticPublishPath: site
     headers:
       - path: /*

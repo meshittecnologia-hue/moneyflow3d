@@ -1,10 +1,10 @@
 # MoneyFlow 3D — Plano de Correção e Separação Front/Back
 
-Atualizado em 10/11/2026 (10h40) · Versão viva (editável, com diagramas): https://claude.ai/artifact/A5yhyA9VDmnz4pSLtQXwHt
+Atualizado em 10/11/2026 (13h20) · Versão viva (editável, com diagramas): https://claude.ai/artifact/A5yhyA9VDmnz4pSLtQXwHt
 
 ## Resumo
 
-Dos 34 problemas da auditoria de 04/11/2026, **26 estão resolvidos, 2 parcialmente e 6 pendentes**. Os 5 urgentes de segurança estão fechados ou mitigados; o backend Python está no ar e a Fase 1 foi concluída em 09/11; homologação, troca de chaves e Cloudflare na frente do site estão prontos; o que falta é separar o restante do frontend e os itens de polimento. Previsão de conclusão: **19/12/2026**, em 6 fases.
+Dos 34 problemas da auditoria de 04/11/2026, **27 estão resolvidos, 2 parcialmente e 5 pendentes**. Os 5 urgentes de segurança estão fechados ou mitigados; o backend Python está no ar e a Fase 1 foi concluída em 09/11; homologação, troca de chaves e Cloudflare na frente do site estão prontos; o que falta é separar o restante do frontend e os itens de polimento. Previsão de conclusão: **19/12/2026**, em 6 fases.
 
 Como usamos este plano:
 
@@ -31,7 +31,7 @@ Como usamos este plano:
 | 13 | Sem backup automático | Alto | Feito | Backup diário criptografado ativo; primeira execução em 08/11 com sucesso (27,4 KB, guardado 30 dias) |
 | 14 | Sem ambiente de testes | Alto | Feito | 09–10/11: Supabase `moneyflow3d-dev` (estrutura copiada pela rotina do GitHub, sem dados), API https://moneyflow3d-api-dev.onrender.com e site https://moneyflow3d-web-dev.onrender.com ligados à branch `Desenvolvimento`; permissões conferidas iguais às de produção. Webhook e admin de teste na homologação desde 10/11 |
 | 15 | Código no ar diferente do guardado | Alto | Feito | `webhook-kiwify` no ar = GitHub (conferido por hash a cada publicação); 4 funções esquecidas apagadas; cópia antiga e aberta da `send-email` removida do GitHub (no ar ela só responde 410) |
-| 16 | App em um arquivo de 5 mil linhas | Alto | Pendente | Dividir em módulos |
+| 16 | App em um arquivo de 5 mil linhas | Alto | Feito | 10/11: `index.html` (5.058 → 1.365 linhas) + `css/app.css` + 12 arquivos em `js/` por assunto, conteúdo idêntico byte a byte; carimbo de versão `?v=hash` (`scripts/versionar.py`, conferido no CI); teste no navegador das 14 páginas no CI (`scripts/navegador/teste_app.js`). Testado em homologação pelo Antonio |
 | 17 | Fórmula sem testes | Alto | Feito | Fórmula em Python com teste de paridade: 503 casos contra o JavaScript real; teste de mutação confirmou (08/11) |
 | 18 | Chave antiga do Resend no código | Moderado | Feito | Removida do `admin.html`; varredura automática bloqueia chaves em todo PR |
 | 19 | Recuperação de senha improvisada | Moderado | Feito | Recuperação pelo backend em produção; e-mail entregue (Resend, 08/11); erro de configuração não fica silencioso |
@@ -159,11 +159,11 @@ Alterações no banco: o SQL vai para `supabase/migrations/`, roda primeiro em h
 - [x] 3.3 Logo e nome da empresa salvos no Supabase · item 11 (10/11)
 - [x] Extra: painel admin ajustado para celular (menu em gaveta, cards 2×2) (10/11)
 - [x] 3.4 Itens do orçamento como dado estruturado · item 32 (10/11)
-- [ ] 3.5 Webhook da Kiwify migrado para o Python
+- [x] 3.5 Webhook da Kiwify: **decidido manter na Supabase** (10/11). Motivo: o Render grátis dorme após 15 min e leva até ~1 min para acordar; uma venda nesse intervalo atrasaria a liberação do acesso. A função já está versionada no repositório, com 23 testes e segredos fora do código. Revisitar se a API passar para plano pago.
 
 **Fase 4 · Frontend organizado**
 
-- [ ] 4.1 Dividir o `index.html` em módulos · item 16
+- [x] 4.1 Dividir o `index.html` em módulos · item 16 (10/11)
 - [ ] 4.2 Trocar os 245 onclick por eventos no JavaScript · item 25
 - [ ] 4.3 Fixar versões das bibliotecas e atualizar o jsPDF · item 22 (versões fixas com SRI em 08/11; falta jsPDF 4.x)
 - [ ] 4.4 Monitoramento de erros (Sentry) · item 27
