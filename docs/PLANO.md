@@ -1,10 +1,10 @@
 # MoneyFlow 3D — Plano de Correção e Separação Front/Back
 
-Atualizado em 10/11/2026 (01h15) · Versão viva (editável, com diagramas): https://claude.ai/artifact/A5yhyA9VDmnz4pSLtQXwHt
+Atualizado em 10/11/2026 (08h30) · Versão viva (editável, com diagramas): https://claude.ai/artifact/A5yhyA9VDmnz4pSLtQXwHt
 
 ## Resumo
 
-Dos 34 problemas da auditoria de 04/11/2026, **21 estão resolvidos, 2 parcialmente e 11 pendentes**. Os 5 urgentes de segurança estão fechados ou mitigados; o backend Python está no ar e a Fase 1 foi concluída em 09/11; o que falta é o ambiente de homologação, a troca das chaves que passaram pelo chat e separar o restante do frontend. Previsão de conclusão: **19/12/2026**, em 6 fases.
+Dos 34 problemas da auditoria de 04/11/2026, **23 estão resolvidos, 2 parcialmente e 9 pendentes**. Os 5 urgentes de segurança estão fechados ou mitigados; o backend Python está no ar e a Fase 1 foi concluída em 09/11; homologação, troca de chaves e Cloudflare na frente do site estão prontos; o que falta é separar o restante do frontend e os itens de polimento. Previsão de conclusão: **19/12/2026**, em 6 fases.
 
 Como usamos este plano:
 
@@ -36,7 +36,7 @@ Como usamos este plano:
 | 18 | Chave antiga do Resend no código | Moderado | Feito | Removida do `admin.html`; varredura automática bloqueia chaves em todo PR |
 | 19 | Recuperação de senha improvisada | Moderado | Feito | Recuperação pelo backend em produção; e-mail entregue (Resend, 08/11); erro de configuração não fica silencioso |
 | 20 | Biometria só visual | Moderado | Pendente | Decidir: login real por passkey ou renomear para bloqueio de tela |
-| 21 | Sem cabeçalhos de segurança | Moderado | Pendente | Cloudflare com proxy ligado e regras de cabeçalho |
+| 21 | Sem cabeçalhos de segurança | Moderado | Feito | 10/11: regra "Cabecalhos de seguranca" no Cloudflare (X-Frame-Options DENY, Referrer-Policy, Permissions-Policy, CSP frame-ancestors/base-uri/object-src), HSTS 6 meses, nosniff, HTTPS obrigatório, TLS mínimo 1.2 |
 | 22 | Bibliotecas sem versão fixa | Moderado | Parcial | supabase-js 2.118.0 e jsPDF 2.5.1 fixos com SRI, em produção; falta atualizar o jsPDF para 4.x |
 | 23 | Sem Política de Privacidade e Termos | Moderado | Pendente | Textos LGPD (revisão jurídica recomendada) |
 | 24 | Preços repetidos e MRR errado | Moderado | Pendente | Planos e preços num único lugar, servidos pelo backend |
@@ -44,7 +44,7 @@ Como usamos este plano:
 | 26 | Sem verificação automática | Moderado | Feito | GitHub Actions: JS, IDs, segredos e testes do backend em todo PR |
 | 27 | Sem monitoramento de erros | Moderado | Pendente | Sentry (plano gratuito) no front e no backend |
 | 28 | Publicação manual direto no ar | Moderado | Feito | `main` protegida; push direto recusado e PR #2 mesclado com verificação verde (08/11) |
-| 29 | Hospedagem limitada | Moderado | Pendente | Decidir: GitHub Pages + Cloudflare na frente, ou Cloudflare Pages |
+| 29 | Hospedagem limitada | Moderado | Feito | 10/11: GitHub Pages com Cloudflare na frente (proxy em @ e www, SSL Full, limite 100 req/10 s por IP). DNS saiu da Locaweb (nameservers jasper/virginia.ns.cloudflare.com); provado pelo /cdn-cgi/trace |
 | 30 | Funções esquecidas no servidor | Moderado | Feito | 09/11: código revisado (sem segredo escrito; `bright-api` mostrava o início da chave mestra, `admin-ops` enviava e-mail livre) e as 4 apagadas com autorização; restam só `webhook-kiwify` e `send-email` (desativada) |
 | 31 | Commits sem descrição | Baixo | Parcial | Commits descritivos desde 06/11; faltam marcações de versão |
 | 32 | Itens do orçamento como texto | Baixo | Pendente | Coluna JSON estruturada e erro visível na leitura |
@@ -147,7 +147,7 @@ Alterações no banco: o SQL vai para `supabase/migrations/`, roda primeiro em h
 - [x] 2.2b Webhook da Kiwify na homologação (função + segredos no `moneyflow3d-dev`) e um usuário admin de teste (10/11; compra de teste com e-mail apontando para o site de testes; primeira mudança a passar pelo fluxo homologação → PR #15 → produção)
 
 **Como testar daqui em diante:** mudança vai para a branch `Desenvolvimento` → o Render publica sozinho em https://moneyflow3d-web-dev.onrender.com (faixa amarela) e na API de homologação → testar lá → Pull Request para `main` → produção. Para alinhar o banco de homologação com a produção: GitHub → Actions → "Homologação — copiar estrutura do banco" → Run workflow → digitar `HOMOLOGACAO` (apaga os dados de teste da homologação).
-- [ ] 2.3 Proxy do Cloudflare e cabeçalhos de segurança · itens 21 e 29
+- [x] 2.3 Proxy do Cloudflare e cabeçalhos de segurança · itens 21 e 29 (10/11; falta só confirmar e-mail de suporte recebendo)
 - [x] 2.4 Backup diário do banco por GitHub Actions · item 13 (ativo desde 08/11)
 - [x] 2.5 Liberar o zoom no celular · item 34 (08/11)
 - [x] 2.6 Trocar credenciais expostas (09/11): senha do banco (backup testado), Supabase `backend_render_v2` e Resend `backend_render_v2` no Render (recuperação de senha testada), Resend `supabase_webhook_v2` no webhook (compra testada), token da Kiwify; antigas apagadas. Valores em `claude/credenciais.md` (decisão do Antonio)
