@@ -1,10 +1,10 @@
 # MoneyFlow 3D — Plano de Correção e Separação Front/Back
 
-Atualizado em 10/11/2026 (16h10) · Versão viva (editável, com diagramas): https://claude.ai/artifact/A5yhyA9VDmnz4pSLtQXwHt
+Atualizado em 10/11/2026 (17h10) · Versão viva (editável, com diagramas): https://claude.ai/artifact/A5yhyA9VDmnz4pSLtQXwHt
 
 ## Resumo
 
-Dos 34 problemas da auditoria de 04/11/2026, **32 estão resolvidos, 1 parcialmente e 1 pendente**. Os 5 urgentes de segurança estão fechados ou mitigados; o backend Python está no ar e a Fase 1 foi concluída em 09/11; homologação, troca de chaves e Cloudflare na frente do site estão prontos; o que falta é separar o restante do frontend e os itens de polimento. Previsão de conclusão: **19/12/2026**, em 6 fases.
+Dos 34 problemas da auditoria de 04/11/2026, **33 estão resolvidos e 1 pendente (DMARC, a partir de 24/11)**. Os 5 urgentes de segurança estão fechados ou mitigados; o backend Python está no ar e a Fase 1 foi concluída em 09/11; homologação, troca de chaves e Cloudflare na frente do site estão prontos; o que falta é separar o restante do frontend e os itens de polimento. Previsão de conclusão: **19/12/2026**, em 6 fases.
 
 Como usamos este plano:
 
@@ -38,7 +38,7 @@ Como usamos este plano:
 | 20 | Biometria só visual | Moderado | Feito | 10/11 (decisão do Antonio): assumida como bloqueio de tela deste aparelho — 'Desbloquear com biometria', só com sessão salva; 'Entrar com e-mail e senha' sai e desliga; corrigida brecha em que erro ≠ cancelado abria o app; teste no navegador cobre 4 cenários |
 | 21 | Sem cabeçalhos de segurança | Moderado | Feito | 10/11: regra "Cabecalhos de seguranca" no Cloudflare (X-Frame-Options DENY, Referrer-Policy, Permissions-Policy, CSP frame-ancestors/base-uri/object-src), HSTS 6 meses, nosniff, HTTPS obrigatório, TLS mínimo 1.2 |
 | 22 | Bibliotecas sem versão fixa | Moderado | Feito | supabase-js 2.118.0 fixo com SRI; 10/11: jsPDF 2.5.1 → 4.2.1 (jsDelivr, SRI), corrige as CVEs públicas da 2.5.1; teste no navegador gera o PDF com o jsPDF real e confere versão/SRI; PDF idêntico ao da versão antiga (PR #25) |
-| 23 | Sem Política de Privacidade e Termos | Moderado | Parcial | 10/11 em produção (PR #26): privacidade.html e termos.html (fornecedores por categoria; nomes em claude/fornecedores_lgpd.md); registro de acesso do Marco Civil (6 meses, pg_cron); contas sem plano pago e sem uso: aviso aos 75 dias e exclusão aos 90 (tarefa diária, contagem a partir de 10/11). Falta: endereço físico + CNPJ na página de vendas (Decreto 7.962/2013) e revisão por advogado |
+| 23 | Sem Política de Privacidade e Termos | Moderado | Feito | 10/11 em produção (PR #26): privacidade.html e termos.html (fornecedores por categoria; nomes em claude/fornecedores_lgpd.md); registro de acesso do Marco Civil (6 meses, pg_cron); contas sem plano pago e sem uso: aviso aos 75 dias e exclusão aos 90 (tarefa diária, contagem a partir de 10/11). CNPJ e endereço físico no rodapé da página de vendas e nas páginas legais (Decreto 7.962/2013). Recomendado: revisão por advogado |
 | 24 | Preços repetidos e MRR errado | Moderado | Feito | 10/11: `planos.js` é a fonte única (Pro R$ 23,50, depois R$ 47; maker e anual como planos antigos); index e admin leem dele; CI barra preço/link/vagas divergentes (`validar_precos.py`); MRR pela função `mrr_atual()` com o valor real cobrado pela Kiwify. Assinaturas de teste do Antonio apagadas e as de Willer/Eder canceladas (decisão de 10/11) |
 | 25 | 245 onclick no HTML | Moderado | Feito | 10/11: 349 ações viraram data-* chamadas por js/eventos.js (sem eval); scripts do admin/lp em js/; validador e teste no navegador (com CSP de scripts/csp.txt, app e menu do admin) reprovam regressão. Próximo: ligar CSP script-src em modo aviso e depois bloqueio |
 | 26 | Sem verificação automática | Moderado | Feito | GitHub Actions: JS, IDs, segredos e testes do backend em todo PR |
@@ -186,7 +186,7 @@ Alterações no banco: o SQL vai para `supabase/migrations/`, roda primeiro em h
 | Hospedagem do backend | Render gratuito agora; Railway (~US$ 5/mês) com o primeiro cliente pagante | Primeiro cliente |
 | Biometria (item 20) | Renomear para bloqueio de tela; passkey real só se clientes pedirem | Fase 4 |
 | Política de Privacidade e Termos (item 23) | Textos em homologação; revisão por advogado recomendada | Antes de publicar |
-| Endereço físico na página de vendas (Decreto 7.962/2013, art. 2º) | Endereço do CNPJ ou endereço comercial/fiscal; CNPJ também visível | Assim que possível (lacuna legal aberta) |
+| Endereço físico na página de vendas (Decreto 7.962/2013, art. 2º) | Decidido 10/11: endereço do CNPJ (Rua Pouso Alto, 1266, Setor Centro-Oeste, Goiânia/GO) | — |
 | Regra de exclusão de dados | Decidido 10/11: sem plano pago e sem uso há 90 dias, aviso 15 dias antes; Free em uso nunca | — |
 | Fornecedores na política | Decidido 10/11: por categoria; nomes sob pedido (art. 18, VII). Trocou de fornecedor → atualizar claude/fornecedores_lgpd.md | — |
 | Vendas na Kiwify | Podem ficar ativas: webhook testado e liberando acesso | Já |
