@@ -1796,11 +1796,18 @@ async function loadSupabaseData(){
   }));
 
   // Orçamentos
+  // Item 32: itens é jsonb (sempre lista). Se vier algo ilegível, avisa em vez de inventar um item calado.
+  let _orcIlegiveis = 0;
   DB.orcamentos = (orcamentos || []).map(o=>{
-    let itens=null;
-    if(o.itens){try{itens=typeof o.itens==='string'?JSON.parse(o.itens):o.itens;}catch{itens=null;}}
-    if(!itens){itens=[{nome:o.produto_nome||'Item',qtd:o.qtd||1,preco:o.preco||0}];}
+    let itens = o.itens, itensErro = false;
+    if (typeof itens === 'string') { try { itens = JSON.parse(itens); } catch(e) { itens = null; } }
+    if (!Array.isArray(itens) || !itens.length) {
+      itensErro = true; _orcIlegiveis++;
+      console.error('Orçamento com itens ilegíveis', o.id, o.itens);
+      itens = [{ nome: o.produto_nome || 'Item', qtd: o.qtd || 1, preco: o.preco || 0 }];
+    }
     return {
+      itensErro,
       id: o.id, clienteId: o.cliente_id, clienteNome: o.cliente_nome||'Cliente não informado',
       clienteWpp: o.cliente_wpp||'', produtoNome: o.produto_nome||'',
       produtoId: o.produto_id||null, itens,
@@ -1811,6 +1818,7 @@ async function loadSupabaseData(){
       ts: new Date(o.created_at).getTime()
     };
   });
+  if (_orcIlegiveis) notify(_orcIlegiveis + ' orçamento(s) com itens ilegíveis — marcados com ⚠ na lista. Fale com o suporte.', 'red');
 
   // Fila
   DB.fila = (fila || []).map(f=>({
@@ -2002,28 +2010,20 @@ async function saveOrcamento(){
   };
 
   if(editId){
-    let upPayload = {...payload, itens: JSON.stringify(itens)};
-    let {error}=await _supa.from('orcamentos').update(upPayload).eq('id',editId);
-    if(error&&error.message&&error.message.includes('itens')){
-      ({error}=await _supa.from('orcamentos').update(payload).eq('id',editId));
-    }
-    if(error){notify('Erro: '+error.message,'red');return;}
+    const {error}=await _supa.from('orcamentos').update({...payload, itens}).eq('id',editId);
+    if(error){notify('Erro ao salvar o orçamento: '+error.message,'red');return;}
     DB.orcamentos=DB.orcamentos.map(o=>String(o.id)===String(editId)?{...o,
       clienteId:cliId,clienteNome:payload.cliente_nome,clienteWpp:payload.cliente_wpp,
       produtoId:null,produtoNome:prodNome,qtd:qtdTotal,preco:itens[0].preco,desc,total,
-      itens,marketplace:payload.marketplace,obs:payload.obs,validade:payload.validade}:o);
+      itens,itensErro:false,marketplace:payload.marketplace,obs:payload.obs,validade:payload.validade}:o);
     delete document.getElementById('modal-orc').dataset.editId;
     document.getElementById('modal-orc').querySelector('.modal-title').textContent='Novo orçamento';
     closeModal('modal-orc');notify('Orçamento atualizado!');renderOrcamentos();
     return;
   }
 
-  let insPayload = {user_id:uid,...payload,status:'pendente',itens:JSON.stringify(itens)};
-  let { data, error } = await _supa.from('orcamentos').insert(insPayload).select().single();
-  if(error&&error.message&&error.message.includes('itens')){
-    ({data,error}=await _supa.from('orcamentos').insert({user_id:uid,...payload,status:'pendente'}).select().single());
-  }
-  if(error){ notify('Erro: '+error.message,'red'); return; }
+  const { data, error } = await _supa.from('orcamentos').insert({user_id:uid,...payload,status:'pendente',itens}).select().single();
+  if(error){ notify('Erro ao salvar o orçamento: '+error.message,'red'); return; }
 
   DB.orcamentos.unshift({
     id: data.id, clienteId: cliId, clienteNome: payload.cliente_nome,
@@ -4042,8 +4042,8 @@ function renderOrcamentos(){
     </tr></thead>
     <tbody>${orcs.map(o=>`
       <tr style="border-bottom:1px solid var(--border)">
-        <td style="padding:12px 14px;font-size:13px;font-weight:600">${o.clienteNome}</td>
-        <td style="padding:12px 14px;font-size:13px;color:var(--text2)">${o.produtoNome} × ${o.qtd}</td>
+        <td style="padding:12px 14px;font-size:13px;font-weight:600">${esc(o.clienteNome)}</td>
+        <td style="padding:12px 14px;font-size:13px;color:var(--text2)">${o.itensErro?'<span title="Itens ilegíveis: confira antes de enviar" style="color:var(--red)">⚠ </span>':''}${esc(o.produtoNome)} × ${o.qtd}</td>
         <td style="padding:12px 14px;font-size:13px;font-weight:700;color:var(--accent)">R$ ${o.total.toFixed(2).replace('.',',')}</td>
         <td style="padding:12px 14px">
           <select onchange="updateOrcStatus('${o.id}',this.value)" style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:4px 8px;color:${statusCores[o.status]||'var(--text)'};font-size:12px;outline:none">
