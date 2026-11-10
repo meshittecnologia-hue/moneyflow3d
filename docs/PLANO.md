@@ -1,6 +1,6 @@
 # MoneyFlow 3D — Plano de Correção e Separação Front/Back
 
-Atualizado em 10/11/2026 (15h30) · Versão viva (editável, com diagramas): https://claude.ai/artifact/A5yhyA9VDmnz4pSLtQXwHt
+Atualizado em 10/11/2026 (15h55) · Versão viva (editável, com diagramas): https://claude.ai/artifact/A5yhyA9VDmnz4pSLtQXwHt
 
 ## Resumo
 
@@ -38,7 +38,7 @@ Como usamos este plano:
 | 20 | Biometria só visual | Moderado | Feito | 10/11 (decisão do Antonio): assumida como bloqueio de tela deste aparelho — 'Desbloquear com biometria', só com sessão salva; 'Entrar com e-mail e senha' sai e desliga; corrigida brecha em que erro ≠ cancelado abria o app; teste no navegador cobre 4 cenários |
 | 21 | Sem cabeçalhos de segurança | Moderado | Feito | 10/11: regra "Cabecalhos de seguranca" no Cloudflare (X-Frame-Options DENY, Referrer-Policy, Permissions-Policy, CSP frame-ancestors/base-uri/object-src), HSTS 6 meses, nosniff, HTTPS obrigatório, TLS mínimo 1.2 |
 | 22 | Bibliotecas sem versão fixa | Moderado | Feito | supabase-js 2.118.0 fixo com SRI; 10/11: jsPDF 2.5.1 → 4.2.1 (jsDelivr, SRI), corrige as CVEs públicas da 2.5.1; teste no navegador gera o PDF com o jsPDF real e confere versão/SRI; PDF idêntico ao da versão antiga (PR #25) |
-| 23 | Sem Política de Privacidade e Termos | Moderado | Pendente | Textos LGPD (revisão jurídica recomendada) |
+| 23 | Sem Política de Privacidade e Termos | Moderado | Pendente | 10/11: privacidade.html e termos.html em homologação (fornecedores por categoria; nomes em claude/fornecedores_lgpd.md). Registro de acesso do Marco Civil (6 meses) pronto em homologação. Falta: endereço físico + CNPJ na página de vendas (Decreto 7.962/2013), regra de exclusão após cancelamento, aprovação do texto e revisão por advogado |
 | 24 | Preços repetidos e MRR errado | Moderado | Feito | 10/11: `planos.js` é a fonte única (Pro R$ 23,50, depois R$ 47; maker e anual como planos antigos); index e admin leem dele; CI barra preço/link/vagas divergentes (`validar_precos.py`); MRR pela função `mrr_atual()` com o valor real cobrado pela Kiwify. Assinaturas de teste do Antonio apagadas e as de Willer/Eder canceladas (decisão de 10/11) |
 | 25 | 245 onclick no HTML | Moderado | Feito | 10/11: 349 ações viraram data-* chamadas por js/eventos.js (sem eval); scripts do admin/lp em js/; validador e teste no navegador (com CSP de scripts/csp.txt, app e menu do admin) reprovam regressão. Próximo: ligar CSP script-src em modo aviso e depois bloqueio |
 | 26 | Sem verificação automática | Moderado | Feito | GitHub Actions: JS, IDs, segredos e testes do backend em todo PR |
@@ -185,5 +185,8 @@ Alterações no banco: o SQL vai para `supabase/migrations/`, roda primeiro em h
 | Repositório público ou privado (item 3) | Manter público: chaves do histórico revogadas; privado no plano gratuito desativa o GitHub Pages | Fase 2 |
 | Hospedagem do backend | Render gratuito agora; Railway (~US$ 5/mês) com o primeiro cliente pagante | Primeiro cliente |
 | Biometria (item 20) | Renomear para bloqueio de tela; passkey real só se clientes pedirem | Fase 4 |
-| Política de Privacidade e Termos (item 23) | Rascunho preparado; revisão por advogado antes de publicar | Fase 5 |
+| Política de Privacidade e Termos (item 23) | Textos em homologação; revisão por advogado recomendada | Antes de publicar |
+| Endereço físico na página de vendas (Decreto 7.962/2013, art. 2º) | Endereço do CNPJ ou endereço comercial/fiscal; CNPJ também visível | Antes de publicar o item 23 |
+| Regra de exclusão de dados após cancelamento (política promete 90 dias) | Decidir quais contas entram (ver resposta de 10/11); exclusão automática só depois da decisão | Antes de publicar o item 23 |
+| Fornecedores na política | Decidido 10/11: por categoria; nomes sob pedido (art. 18, VII). Trocou de fornecedor → atualizar claude/fornecedores_lgpd.md | — |
 | Vendas na Kiwify | Podem ficar ativas: webhook testado e liberando acesso | Já |
