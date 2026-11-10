@@ -5,6 +5,7 @@
 <title>MoneyFlow 3D</title>
 <script src="https://browser.sentry-cdn.com/11.9.0/bundle.min.js" integrity="sha384-xE/bmsH+mppbFLN9Cj+Lyc7rR9sTBh9p6GEswhQcoZPRAZbv5k6MRfdRIGnB+azV" crossorigin="anonymous"></script>
 <script src="js/monitoramento.js?v=b01c711adf"></script>
+<script src="js/eventos.js?v=5f06521870"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" integrity="sha512-qZvrmS2ekKPF2mSznTQsxqPgnpkI4DNTlrdUmTzrDgektczlKNRRhy5X5AAOnx5S09ydFYWWNSfcEqDTTHgtNA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.js" integrity="sha384-TcHRA3zBbn+Lexh5n+Oil4guNPOS3rjNDpGRAN46u/s/mB2IZ50ceC6TYDU2yvgK" crossorigin="anonymous"></script>
 <script src="planos.js?v=83e7dcbe7f"></script>
@@ -23,7 +24,7 @@
       <div style="font-size:13px;color:var(--text2);margin-bottom:14px;text-align:center">Digite sua nova senha</div>
       <input class="login-input" type="password" id="reset-pw" placeholder="Nova senha">
       <input class="login-input" type="password" id="reset-pw2" placeholder="Confirmar nova senha" style="margin-top:8px">
-      <button class="login-btn" onclick="doResetSenha()">Salvar nova senha</button>
+      <button class="login-btn" data-click="doResetSenha()">Salvar nova senha</button>
       <div class="login-error" id="reset-err"></div>
     </div>
 
@@ -32,25 +33,25 @@
       <!-- Item 20: biometria = BLOQUEIO DE TELA deste aparelho (só aparece com sessão já salva) -->
       <div id="bio-section" style="display:none;margin-bottom:14px;text-align:center">
         <div style="font-size:13px;color:var(--text2);margin-bottom:12px">🔒 O app está bloqueado neste aparelho</div>
-        <button class="login-btn" id="bio-btn" onclick="desbloquearBiometria()" style="margin-bottom:10px">
+        <button class="login-btn" id="bio-btn" data-click="desbloquearBiometria()" style="margin-bottom:10px">
           <span id="bio-icon">🔐</span> &nbsp;Desbloquear com biometria
         </button>
-        <span style="font-size:12px;color:var(--text2);cursor:pointer;text-decoration:underline" onclick="sairDoBloqueio()">Entrar com e-mail e senha</span>
+        <span style="font-size:12px;color:var(--text2);cursor:pointer;text-decoration:underline" data-click="sairDoBloqueio()">Entrar com e-mail e senha</span>
       </div>
 
       <div id="login-campos">
       <input class="login-input" type="email" id="login-email" placeholder="Email">
-      <input class="login-input" type="password" id="login-pw" placeholder="Senha" style="margin-top:8px" onkeydown="if(event.key===&#39;Enter&#39;)doLogin()">
-      <button class="login-btn" id="login-btn-submit" onclick="doLogin()">Entrar</button>
+      <input class="login-input" type="password" id="login-pw" placeholder="Senha" style="margin-top:8px" data-enter="doLogin()">
+      <button class="login-btn" id="login-btn-submit" data-click="doLogin()">Entrar</button>
       <div class="login-error" id="login-err"></div>
 
       <div style="margin-top:12px;text-align:center">
-        <span style="font-size:12px;color:var(--text2);cursor:pointer;text-decoration:underline" onclick="toggleEsqueciSenha()">Esqueci minha senha</span>
+        <span style="font-size:12px;color:var(--text2);cursor:pointer;text-decoration:underline" data-click="toggleEsqueciSenha()">Esqueci minha senha</span>
       </div>
 
       <div id="esqueci-wrap" style="display:none;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
         <input class="login-input" type="email" id="esqueci-email" placeholder="Seu email">
-        <button class="login-btn" onclick="enviarResetSenha()" style="background:var(--bg3);color:var(--text);border:1px solid var(--border);font-size:13px;margin-top:6px">Enviar link de redefinição</button>
+        <button class="login-btn" data-click="enviarResetSenha()" style="background:var(--bg3);color:var(--text);border:1px solid var(--border);font-size:13px;margin-top:6px">Enviar link de redefinição</button>
         <div id="esqueci-msg" style="font-size:12px;color:var(--green);margin-top:6px;text-align:center"></div>
       </div>
       </div><!-- /login-campos -->
@@ -59,39 +60,39 @@
 </div>
 
 <!-- SIDEBAR OVERLAY -->
-<div class="sidebar-overlay" id="sb-overlay" onclick="closeSidebar()" style="display: none;"></div>
+<div class="sidebar-overlay" id="sb-overlay" data-click="closeSidebar()" style="display: none;"></div>
 
 <!-- APP LAYOUT -->
 <div class="layout">
 
   <!-- SIDEBAR -->
   <aside class="sidebar" id="sidebar">
-    <div class="logo" style="cursor:pointer" onclick="showPage(&#39;settings&#39;)" title="Clique para alterar logo">
+    <div class="logo" style="cursor:pointer" data-click="showPage(&#39;settings&#39;)" title="Clique para alterar logo">
       <div id="logo-img-wrap" style="margin-bottom:6px;display:none"><img id="logo-img" alt="Logo" style="max-width:140px;max-height:40px;object-fit:contain;border-radius:4px"></div>
       <div class="logo-title" id="logo-title-text">⬡ MoneyFlow 3D</div>
       <div class="logo-sub" id="logo-sub-text">MoneyFlow 3D</div>
     </div>
     <nav class="nav">
       <div class="nav-section">Principal</div>
-      <div class="nav-item active" id="nav-dashboard" onclick="showPage(&#39;dashboard&#39;)"><span class="nav-icon">▦</span>Dashboard</div>
-      <div class="nav-item" id="nav-calc" onclick="showPage(&#39;calc&#39;)"><span class="nav-icon">⊕</span>Nova precificação</div>
+      <div class="nav-item active" id="nav-dashboard" data-click="showPage(&#39;dashboard&#39;)"><span class="nav-icon">▦</span>Dashboard</div>
+      <div class="nav-item" id="nav-calc" data-click="showPage(&#39;calc&#39;)"><span class="nav-icon">⊕</span>Nova precificação</div>
       <div class="nav-section">Dados</div>
-      <div class="nav-item" id="nav-produtos" onclick="showPage('produtos')"><span class="nav-icon">◫</span>Produtos</div>
-      <div class="nav-item" id="nav-crm" onclick="showPage('crm')"><span class="nav-icon">👥</span>Clientes (CRM)</div>
-      <div class="nav-item" id="nav-orcamentos" onclick="showPage('orcamentos')"><span class="nav-icon">📄</span>Orçamentos</div>
-      <div class="nav-item" id="nav-pedidos" onclick="showPage('pedidos')"><span class="nav-icon">🗂</span>Painel de pedidos</div>
-      <div class="nav-item" id="nav-fila" onclick="showPage('fila')"><span class="nav-icon">🖨</span>Fila de produção</div>
-      <div class="nav-item" id="nav-comparar" onclick="showPage('comparar')"><span class="nav-icon">⇌</span>Comparar</div>
-      <div class="nav-item" id="nav-relatorio" onclick="showPage('relatorio')"><span class="nav-icon">◈</span>Relatório</div>
+      <div class="nav-item" id="nav-produtos" data-click="showPage('produtos')"><span class="nav-icon">◫</span>Produtos</div>
+      <div class="nav-item" id="nav-crm" data-click="showPage('crm')"><span class="nav-icon">👥</span>Clientes (CRM)</div>
+      <div class="nav-item" id="nav-orcamentos" data-click="showPage('orcamentos')"><span class="nav-icon">📄</span>Orçamentos</div>
+      <div class="nav-item" id="nav-pedidos" data-click="showPage('pedidos')"><span class="nav-icon">🗂</span>Painel de pedidos</div>
+      <div class="nav-item" id="nav-fila" data-click="showPage('fila')"><span class="nav-icon">🖨</span>Fila de produção</div>
+      <div class="nav-item" id="nav-comparar" data-click="showPage('comparar')"><span class="nav-icon">⇌</span>Comparar</div>
+      <div class="nav-item" id="nav-relatorio" data-click="showPage('relatorio')"><span class="nav-icon">◈</span>Relatório</div>
       <div class="nav-section">Configurar</div>
-      <div class="nav-item" id="nav-config" onclick="showPage('config')"><span class="nav-icon">◎</span>Máquina &amp; custos</div>
-      <div class="nav-item" id="nav-filamentos" onclick="showPage('filamentos')"><span class="nav-icon">◌</span>Filamentos &amp; estoque</div>
-      <div class="nav-item" id="nav-importar" onclick="showPage('importar')"><span class="nav-icon">⬆</span>Importar dados</div>
+      <div class="nav-item" id="nav-config" data-click="showPage('config')"><span class="nav-icon">◎</span>Máquina &amp; custos</div>
+      <div class="nav-item" id="nav-filamentos" data-click="showPage('filamentos')"><span class="nav-icon">◌</span>Filamentos &amp; estoque</div>
+      <div class="nav-item" id="nav-importar" data-click="showPage('importar')"><span class="nav-icon">⬆</span>Importar dados</div>
       <div class="nav-section">Sistema</div>
-      <div class="nav-item" id="nav-roadmap" onclick="showPage('roadmap')" style="color:var(--accent)"><span class="nav-icon">🗺</span>O que vem por aí</div>
-      <div class="nav-item" id="nav-settings" onclick="showPage(&#39;settings&#39;)"><span class="nav-icon">⚙</span>Configurações</div>
+      <div class="nav-item" id="nav-roadmap" data-click="showPage('roadmap')" style="color:var(--accent)"><span class="nav-icon">🗺</span>O que vem por aí</div>
+      <div class="nav-item" id="nav-settings" data-click="showPage(&#39;settings&#39;)"><span class="nav-icon">⚙</span>Configurações</div>
       <div style="padding:16px 8px 8px">
-        <button class="theme-btn" onclick="toggleTheme()" id="theme-btn" style="width:100%;justify-content:center">🌙 Tema Claro</button>
+        <button class="theme-btn" data-click="toggleTheme()" id="theme-btn" style="width:100%;justify-content:center">🌙 Tema Claro</button>
       </div>
     </nav>
   </aside>
@@ -101,14 +102,14 @@
     <!-- TOPBAR -->
     <header class="topbar">
       <div class="topbar-left">
-        <div class="hamburger" onclick="openSidebar()">
+        <div class="hamburger" data-click="openSidebar()">
           <span></span><span></span><span></span>
         </div>
         <div class="topbar-title" id="topbar-title">Dashboard</div>
       </div>
       <div class="topbar-right">
-        <button class="btn btn-primary btn-sm" onclick="showPage(&#39;calc&#39;)" style="display:none" id="topbar-new">+ Novo</button>
-        <button onclick="doLogout()" title="Sair" style="background:transparent;border:1px solid var(--border);color:var(--text2);padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px;display:flex;align-items:center;gap:5px;transition:all .2s" onmouseover="this.style.borderColor='var(--red)';this.style.color='var(--red)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text2)'">
+        <button class="btn btn-primary btn-sm" data-click="showPage(&#39;calc&#39;)" style="display:none" id="topbar-new">+ Novo</button>
+        <button data-click="doLogout()" title="Sair" style="background:transparent;border:1px solid var(--border);color:var(--text2);padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px;display:flex;align-items:center;gap:5px;transition:all .2s" data-mouseover="destacarPerigo(this,true)" data-mouseout="destacarPerigo(this,false)">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
           Sair
         </button>
@@ -122,7 +123,7 @@
       <div class="panel active" id="page-dashboard">
         <div class="page-header">
           <div><div class="page-title">Dashboard</div><div class="page-sub" id="dash-date">sexta-feira, 26 de junho de 2026</div></div>
-          <button class="btn btn-primary" onclick="showPage(&#39;calc&#39;)">+ Nova precificação</button>
+          <button class="btn btn-primary" data-click="showPage(&#39;calc&#39;)">+ Nova precificação</button>
         </div>
         <div class="content">
           <div class="metrics-row" id="dash-metrics">
@@ -142,89 +143,89 @@
         <div class="page-header"><div><div class="page-title">Nova precificação</div><div class="page-sub">Resultado em tempo real</div></div></div>
         <div class="content">
           <div class="steps">
-            <div class="step active" id="cstep1" onclick="goStep(1)"><span class="step-num">01</span>Produto</div>
-            <div class="step" id="cstep2" onclick="goStep(2)"><span class="step-num">02</span>Impressão</div>
-            <div class="step" id="cstep3" onclick="goStep(3)"><span class="step-num">03</span>Mão de obra</div>
-            <div class="step" id="cstep4" onclick="goStep(4)"><span class="step-num">04</span>Resultado</div>
+            <div class="step active" id="cstep1" data-click="goStep(1)"><span class="step-num">01</span>Produto</div>
+            <div class="step" id="cstep2" data-click="goStep(2)"><span class="step-num">02</span>Impressão</div>
+            <div class="step" id="cstep3" data-click="goStep(3)"><span class="step-num">03</span>Mão de obra</div>
+            <div class="step" id="cstep4" data-click="goStep(4)"><span class="step-num">04</span>Resultado</div>
           </div>
 
           <div id="s1" style="display: block;">
             <div class="card">
               <div class="card-title">Dados do produto</div>
               <div class="form-grid">
-                <div class="field full"><label>Nome do produto</label><input type="text" id="c-nome" placeholder="Ex: Suporte headset gamer" oninput="calcRT()"></div>
+                <div class="field full"><label>Nome do produto</label><input type="text" id="c-nome" placeholder="Ex: Suporte headset gamer" data-input="calcRT()"></div>
                 <div class="field">
                   <label>Filamento</label>
                   <div class="select-row">
                     <div id="fil-picker-wrap" style="position:relative;flex:1">
                       <!-- Valor selecionado — hidden real select para compatibilidade com calcRT -->
-                      <select id="c-fil" onchange="calcRT()" style="display:none"></select>
+                      <select id="c-fil" data-change="calcRT()" style="display:none"></select>
                       <!-- Display button -->
-                      <div id="fil-picker-btn" onclick="toggleFilPicker()" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--rsm);padding:8px 12px;font-size:13px;color:var(--text);cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none">
+                      <div id="fil-picker-btn" data-click="toggleFilPicker()" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--rsm);padding:8px 12px;font-size:13px;color:var(--text);cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none">
                         <span id="fil-picker-label" style="color:var(--text3)">Selecione um filamento...</span>
                         <span style="color:var(--text3);font-size:11px">▼</span>
                       </div>
                       <!-- Dropdown -->
                       <div id="fil-picker-drop" style="display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);box-shadow:0 8px 24px rgba(0,0,0,.4);z-index:999;max-height:320px;overflow:hidden">
                         <div style="padding:8px">
-                          <input type="text" id="fil-picker-search" oninput="filPickerSearch()" placeholder="🔍 Digite para buscar..." autocomplete="off"
+                          <input type="text" id="fil-picker-search" data-input="filPickerSearch()" placeholder="🔍 Digite para buscar..." autocomplete="off"
                             style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--rsm);padding:8px 10px;color:var(--text);outline:none;font-size:13px;box-sizing:border-box">
                         </div>
                         <div id="fil-picker-list" style="overflow-y:auto;max-height:250px"></div>
                       </div>
                     </div>
-                    <button class="btn btn-ghost btn-sm" onclick="openFilModal('calc')">+ Novo</button>
+                    <button class="btn btn-ghost btn-sm" data-click="openFilModal('calc')">+ Novo</button>
                   </div>
                 </div>
-                <div class="field"><label>Peso usado (g)</label><input type="number" id="c-grams" value="80" min="0" oninput="calcRT()"></div>
-                <div class="field"><label>Embalagem (R$)</label><input type="number" id="c-emb" value="2.50" step="0.50" min="0" oninput="calcRT()"></div>
-                <div class="field"><label>Outros insumos (R$)</label><input type="number" id="c-ins" value="0" step="0.50" min="0" oninput="calcRT()"><div class="hint">Cola, primer, tinta, lixa...</div></div>
+                <div class="field"><label>Peso usado (g)</label><input type="number" id="c-grams" value="80" min="0" data-input="calcRT()"></div>
+                <div class="field"><label>Embalagem (R$)</label><input type="number" id="c-emb" value="2.50" step="0.50" min="0" data-input="calcRT()"></div>
+                <div class="field"><label>Outros insumos (R$)</label><input type="number" id="c-ins" value="0" step="0.50" min="0" data-input="calcRT()"><div class="hint">Cola, primer, tinta, lixa...</div></div>
               </div>
             </div>
-            <button class="btn btn-primary" onclick="goStep(2)">Próximo →</button>
+            <button class="btn btn-primary" data-click="goStep(2)">Próximo →</button>
           </div>
 
           <div id="s2" style="display:none">
             <div class="card">
               <div class="card-title">Dados do fatiador</div>
               <div class="form-grid-3">
-                <div class="field"><label>Horas</label><input type="number" id="c-th" value="3" min="0" oninput="calcRT()"></div>
-                <div class="field"><label>Minutos</label><input type="number" id="c-tm" value="30" min="0" max="59" oninput="calcRT()"></div>
-                <div class="field"><label>Segundos</label><input type="number" id="c-ts" value="0" min="0" max="59" oninput="calcRT()"></div>
+                <div class="field"><label>Horas</label><input type="number" id="c-th" value="3" min="0" data-input="calcRT()"></div>
+                <div class="field"><label>Minutos</label><input type="number" id="c-tm" value="30" min="0" max="59" data-input="calcRT()"></div>
+                <div class="field"><label>Segundos</label><input type="number" id="c-ts" value="0" min="0" max="59" data-input="calcRT()"></div>
               </div>
               <hr>
               <div class="form-grid">
                 <div class="field">
                   <label>Impressora</label>
                   <div class="select-row">
-                    <select id="c-imp" onchange="calcRT()"><option value="">Selecione</option><option value="1">Bambu Lab X1 Carbon</option></select>
-                    <button class="btn btn-ghost btn-sm" onclick="openImpModal(&#39;calc&#39;)">+ Nova</button>
+                    <select id="c-imp" data-change="calcRT()"><option value="">Selecione</option><option value="1">Bambu Lab X1 Carbon</option></select>
+                    <button class="btn btn-ghost btn-sm" data-click="openImpModal(&#39;calc&#39;)">+ Nova</button>
                   </div>
                 </div>
               </div>
             </div>
-            <div style="display:flex;gap:8px"><button class="btn btn-ghost" onclick="goStep(1)">← Voltar</button><button class="btn btn-primary" onclick="goStep(3)">Próximo →</button></div>
+            <div style="display:flex;gap:8px"><button class="btn btn-ghost" data-click="goStep(1)">← Voltar</button><button class="btn btn-primary" data-click="goStep(3)">Próximo →</button></div>
           </div>
 
           <div id="s3" style="display:none">
             <div class="card">
               <div class="card-title">Mão de obra</div>
               <div class="form-grid">
-                <div class="field"><label>Sua hora (R$/h)</label><input type="number" id="c-hora" value="35" min="0" oninput="calcRT()"></div>
-                <div class="field"><label>Tempo manual (min)</label><input type="number" id="c-tman" value="15" min="0" oninput="calcRT()"><div class="hint">Setup, lixamento, embalagem</div></div>
+                <div class="field"><label>Sua hora (R$/h)</label><input type="number" id="c-hora" value="35" min="0" data-input="calcRT()"></div>
+                <div class="field"><label>Tempo manual (min)</label><input type="number" id="c-tman" value="15" min="0" data-input="calcRT()"><div class="hint">Setup, lixamento, embalagem</div></div>
               </div>
               <hr>
               <div class="card-title">Markup</div>
               <div class="toggle-row">
-                <div class="toggle active" id="tv" onclick="setModo(&#39;v&#39;)">Varejo</div>
-                <div class="toggle" id="ta" onclick="setModo(&#39;a&#39;)">Atacado</div>
+                <div class="toggle active" id="tv" data-click="setModo(&#39;v&#39;)">Varejo</div>
+                <div class="toggle" id="ta" data-click="setModo(&#39;a&#39;)">Atacado</div>
               </div>
               <div class="form-grid">
-                <div class="field"><label>Markup (%)</label><input type="number" id="c-markup" value="200" min="0" oninput="calcRT()"><div class="hint" id="c-mhint">Varejo: 150–300%</div></div>
+                <div class="field"><label>Markup (%)</label><input type="number" id="c-markup" value="200" min="0" data-input="calcRT()"><div class="hint" id="c-mhint">Varejo: 150–300%</div></div>
 
               </div>
             </div>
-            <div style="display:flex;gap:8px"><button class="btn btn-ghost" onclick="goStep(2)">← Voltar</button><button class="btn btn-primary" onclick="goStep(4)">Ver resultado →</button></div>
+            <div style="display:flex;gap:8px"><button class="btn btn-ghost" data-click="goStep(2)">← Voltar</button><button class="btn btn-primary" data-click="goStep(4)">Ver resultado →</button></div>
           </div>
 
           <div id="s4" style="display:none">
@@ -234,12 +235,12 @@
                 <div class="price-box">
                   <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;background:var(--bg4);border-radius:var(--rsm);padding:10px 12px">
                     <label style="font-size:12px;color:var(--text2);font-weight:500;white-space:nowrap">Desconto (%)</label>
-                    <input type="number" id="c-desconto" value="0" min="0" max="99" step="0.5" oninput="calcRT()" style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--rsm);padding:6px 10px;color:var(--text);outline:none;width:90px;font-size:14px;font-weight:600;text-align:center">
+                    <input type="number" id="c-desconto" value="0" min="0" max="99" step="0.5" data-input="calcRT()" style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--rsm);padding:6px 10px;color:var(--text);outline:none;width:90px;font-size:14px;font-weight:600;text-align:center">
                     <span style="font-size:11px;color:var(--text3)">Digite 0 para sem desconto</span>
                   </div>
                   <div style="display:flex;gap:6px;margin-bottom:12px">
-                    <button class="toggle active" id="ptog-sug" onclick="setPriceTog(&#39;sug&#39;)" style="flex:1;font-size:12px">Preço Sugerido</button>
-                    <button class="toggle" id="ptog-final" onclick="setPriceTog(&#39;final&#39;)" style="flex:1;font-size:12px">Preço Final</button>
+                    <button class="toggle active" id="ptog-sug" data-click="setPriceTog(&#39;sug&#39;)" style="flex:1;font-size:12px">Preço Sugerido</button>
+                    <button class="toggle" id="ptog-final" data-click="setPriceTog(&#39;final&#39;)" style="flex:1;font-size:12px">Preço Final</button>
                   </div>
                   <div class="price-label" id="c-price-label">Preço sugerido</div>
                   <div class="price-big" id="c-price">R$ —</div>
@@ -260,8 +261,8 @@
               </div>
             </div>
             <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
-              <button class="btn btn-ghost" onclick="goStep(3)">← Ajustar</button>
-              <button class="btn btn-primary" onclick="salvar()">Salvar produto</button>
+              <button class="btn btn-ghost" data-click="goStep(3)">← Ajustar</button>
+              <button class="btn btn-primary" data-click="salvar()">Salvar produto</button>
             </div>
           </div>
         </div>
@@ -271,20 +272,20 @@
       <div class="panel" id="page-produtos">
         <div class="page-header">
           <div><div class="page-title">Produtos</div><div class="page-sub">Histórico de precificações e catálogo visual</div></div>
-          <button class="btn btn-primary" onclick="showPage('calc')">+ Nova precificação</button>
+          <button class="btn btn-primary" data-click="showPage('calc')">+ Nova precificação</button>
         </div>
         <div class="content">
           <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center">
-            <input type="text" id="prod-search" placeholder="🔍 Buscar produto..." oninput="renderProdutos()" style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--rsm);padding:8px 12px;color:var(--text);outline:none;flex:1;min-width:180px;font-size:13px">
-            <select id="prod-filter-margem" onchange="renderProdutos()" style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--rsm);padding:8px 10px;color:var(--text);outline:none;font-size:13px">
+            <input type="text" id="prod-search" placeholder="🔍 Buscar produto..." data-input="renderProdutos()" style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--rsm);padding:8px 12px;color:var(--text);outline:none;flex:1;min-width:180px;font-size:13px">
+            <select id="prod-filter-margem" data-change="renderProdutos()" style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--rsm);padding:8px 10px;color:var(--text);outline:none;font-size:13px">
               <option value="">Todas as margens</option>
               <option value="boa">Boa (&gt;30%)</option>
               <option value="media">Média (15–30%)</option>
               <option value="baixa">Baixa (&lt;15%)</option>
             </select>
             <div style="display:flex;gap:4px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--rsm);padding:3px">
-              <button id="view-lista-btn" onclick="setViewMode('lista')" style="padding:5px 12px;border-radius:4px;border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:600;cursor:pointer">☰ Lista</button>
-              <button id="view-grid-btn" onclick="setViewMode('grid')" style="padding:5px 12px;border-radius:4px;border:none;background:transparent;color:var(--text2);font-size:12px;font-weight:600;cursor:pointer">⊞ Grid</button>
+              <button id="view-lista-btn" data-click="setViewMode('lista')" style="padding:5px 12px;border-radius:4px;border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:600;cursor:pointer">☰ Lista</button>
+              <button id="view-grid-btn" data-click="setViewMode('grid')" style="padding:5px 12px;border-radius:4px;border:none;background:transparent;color:var(--text2);font-size:12px;font-weight:600;cursor:pointer">⊞ Grid</button>
             </div>
           </div>
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:6px">
@@ -312,7 +313,7 @@
       <div class="panel" id="page-comparar">
         <div class="page-header">
           <div><div class="page-title">Comparar &amp; Concorrentes</div><div class="page-sub">Seus produtos vs concorrentes do mercado</div></div>
-          <button class="btn btn-primary" onclick="openConcModal()">+ Adicionar concorrente</button>
+          <button class="btn btn-primary" data-click="openConcModal()">+ Adicionar concorrente</button>
         </div>
         <div class="content">
           <div class="card">
@@ -320,26 +321,26 @@
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
               <div>
                 <label style="font-size:12px;color:var(--text3);display:block;margin-bottom:6px">Seu produto</label>
-                <select id="comp-sel-prod" onchange="updateComp()" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--rsm);padding:8px 10px;color:var(--text);outline:none;font-size:13px">
+                <select id="comp-sel-prod" data-change="updateComp()" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--rsm);padding:8px 10px;color:var(--text);outline:none;font-size:13px">
                   <option value="">— Selecione um produto —</option>
                 </select>
               </div>
               <div>
                 <label style="font-size:12px;color:var(--text3);display:block;margin-bottom:6px">Concorrente</label>
-                <select id="comp-sel-conc" onchange="updateComp()" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--rsm);padding:8px 10px;color:var(--text);outline:none;font-size:13px">
+                <select id="comp-sel-conc" data-change="updateComp()" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--rsm);padding:8px 10px;color:var(--text);outline:none;font-size:13px">
                   <option value="">— Selecione um concorrente —</option>
                 </select>
               </div>
             </div>
-            <button class="btn btn-primary" onclick="runBenchmarkSelecionado()" style="width:100%">⇌ Comparar</button>
+            <button class="btn btn-primary" data-click="runBenchmarkSelecionado()" style="width:100%">⇌ Comparar</button>
           </div>
 
           <div class="card">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
               <div class="card-title" style="margin:0">🏪 Concorrentes cadastrados</div>
               <div style="display:flex;gap:4px" id="conc-view-toggle">
-                <button id="conc-btn-lista" onclick="setConcView('lista')" style="padding:4px 10px;border-radius:4px;border:none;cursor:pointer;font-size:12px;font-weight:600;background:var(--accent);color:#fff">☰ Lista</button>
-                <button id="conc-btn-blocos" onclick="setConcView('blocos')" style="padding:4px 10px;border-radius:4px;border:none;cursor:pointer;font-size:12px;font-weight:600;background:transparent;color:var(--text2)">⊞ Blocos</button>
+                <button id="conc-btn-lista" data-click="setConcView('lista')" style="padding:4px 10px;border-radius:4px;border:none;cursor:pointer;font-size:12px;font-weight:600;background:var(--accent);color:#fff">☰ Lista</button>
+                <button id="conc-btn-blocos" data-click="setConcView('blocos')" style="padding:4px 10px;border-radius:4px;border:none;cursor:pointer;font-size:12px;font-weight:600;background:transparent;color:var(--text2)">⊞ Blocos</button>
               </div>
             </div>
             <div id="conc-list"></div>
@@ -354,14 +355,14 @@
       <div class="panel" id="page-relatorio">
         <div class="page-header">
           <div><div class="page-title">Relatório</div><div class="page-sub">Lucro potencial por período</div></div>
-          <button class="btn btn-primary" onclick="baixarRelatorio()">⬇ Baixar CSV</button>
+          <button class="btn btn-primary" data-click="baixarRelatorio()">⬇ Baixar CSV</button>
         </div>
         <div class="content">
           <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
-            <button class="period-btn active" onclick="setP(7,this)">7 dias</button>
-            <button class="period-btn" onclick="setP(30,this)">30 dias</button>
-            <button class="period-btn" onclick="setP(90,this)">90 dias</button>
-            <button class="period-btn" onclick="setP(365,this)">1 ano</button>
+            <button class="period-btn active" data-click="setP(7,this)">7 dias</button>
+            <button class="period-btn" data-click="setP(30,this)">30 dias</button>
+            <button class="period-btn" data-click="setP(90,this)">90 dias</button>
+            <button class="period-btn" data-click="setP(365,this)">1 ano</button>
           </div>
           <div class="metrics-row" id="rel-metrics">
     <div class="metric"><div class="metric-label">Produtos</div><div class="metric-value">0</div></div>
@@ -375,7 +376,7 @@
       <div class="panel" id="page-config">
         <div class="page-header">
           <div><div class="page-title">Máquina &amp; custos</div><div class="page-sub">Base de todos os cálculos</div></div>
-          <button class="btn btn-primary" onclick="saveConfig()">Salvar</button>
+          <button class="btn btn-primary" data-click="saveConfig()">Salvar</button>
         </div>
         <div class="content">
           <div class="card">
@@ -386,9 +387,9 @@
         <div style="font-weight:500">Bambu Lab X1 Carbon</div>
         <div style="font-size:11px;color:var(--text3);margin-top:2px">R$ 9500 | ROI 18m | 350W | 8h/dia | 5% falhas</div>
       </div>
-      <button class="btn btn-danger btn-sm" onclick="delImp(1)">Excluir</button>
+      <button class="btn btn-danger btn-sm" data-click="delImp(1)">Excluir</button>
     </div></div>
-            <button class="btn btn-ghost" onclick="openImpModal(&#39;config&#39;)">+ Adicionar impressora</button>
+            <button class="btn btn-ghost" data-click="openImpModal(&#39;config&#39;)">+ Adicionar impressora</button>
           </div>
           <div class="card">
             <div class="card-title">Energia elétrica</div>
@@ -398,10 +399,10 @@
             <div style="margin-top:12px">
               <div style="font-size:12px;color:var(--text2);margin-bottom:8px;font-weight:500">Bandeira tarifária — clique para aplicar ao kWh:</div>
               <div style="display:flex;gap:8px;flex-wrap:wrap">
-                <button onclick="aplicarBandeira('verde',0)" style="padding:7px 14px;border-radius:6px;border:none;cursor:pointer;font-size:12px;font-weight:700;background:#16a34a;color:#fff;display:flex;align-items:center;gap:6px">🟢 Verde <span style="font-weight:400;opacity:.85">+R$0,00</span></button>
-                <button onclick="aplicarBandeira('amarela',0.02)" style="padding:7px 14px;border-radius:6px;border:none;cursor:pointer;font-size:12px;font-weight:700;background:#ca8a04;color:#fff;display:flex;align-items:center;gap:6px">🟡 Amarela <span style="font-weight:400;opacity:.85">+R$0,02/kWh</span></button>
-                <button onclick="aplicarBandeira('vermelha1',0.04)" style="padding:7px 14px;border-radius:6px;border:none;cursor:pointer;font-size:12px;font-weight:700;background:#dc2626;color:#fff;display:flex;align-items:center;gap:6px">🔴 Vermelha 1 <span style="font-weight:400;opacity:.85">+R$0,04/kWh</span></button>
-                <button onclick="aplicarBandeira('vermelha2',0.08)" style="padding:7px 14px;border-radius:6px;border:none;cursor:pointer;font-size:12px;font-weight:700;background:#7f1d1d;color:#fff;display:flex;align-items:center;gap:6px">🔴 Vermelha 2 <span style="font-weight:400;opacity:.85">+R$0,08/kWh</span></button>
+                <button data-click="aplicarBandeira('verde',0)" style="padding:7px 14px;border-radius:6px;border:none;cursor:pointer;font-size:12px;font-weight:700;background:#16a34a;color:#fff;display:flex;align-items:center;gap:6px">🟢 Verde <span style="font-weight:400;opacity:.85">+R$0,00</span></button>
+                <button data-click="aplicarBandeira('amarela',0.02)" style="padding:7px 14px;border-radius:6px;border:none;cursor:pointer;font-size:12px;font-weight:700;background:#ca8a04;color:#fff;display:flex;align-items:center;gap:6px">🟡 Amarela <span style="font-weight:400;opacity:.85">+R$0,02/kWh</span></button>
+                <button data-click="aplicarBandeira('vermelha1',0.04)" style="padding:7px 14px;border-radius:6px;border:none;cursor:pointer;font-size:12px;font-weight:700;background:#dc2626;color:#fff;display:flex;align-items:center;gap:6px">🔴 Vermelha 1 <span style="font-weight:400;opacity:.85">+R$0,04/kWh</span></button>
+                <button data-click="aplicarBandeira('vermelha2',0.08)" style="padding:7px 14px;border-radius:6px;border:none;cursor:pointer;font-size:12px;font-weight:700;background:#7f1d1d;color:#fff;display:flex;align-items:center;gap:6px">🔴 Vermelha 2 <span style="font-weight:400;opacity:.85">+R$0,08/kWh</span></button>
               </div>
               <div id="bandeira-atual" style="margin-top:8px;font-size:12px;color:var(--text3)"></div>
             </div>
@@ -414,12 +415,12 @@
       <div class="panel" id="page-filamentos">
         <div class="page-header">
           <div><div class="page-title">Filamentos &amp; estoque</div><div class="page-sub">Cadastro de filamentos e controle de carretéis</div></div>
-          <button class="btn btn-primary" onclick="openFilModal(&#39;page&#39;)">+ Adicionar</button>
+          <button class="btn btn-primary" data-click="openFilModal(&#39;page&#39;)">+ Adicionar</button>
         </div>
         <div class="content">
           <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center">
-            <input type="text" id="fil-search" placeholder="🔍 Buscar filamento..." oninput="renderFilamentos()" style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--rsm);padding:8px 12px;color:var(--text);outline:none;flex:1;min-width:180px;font-size:13px">
-            <select id="fil-filter-tipo" onchange="renderFilamentos()" style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--rsm);padding:8px 10px;color:var(--text);outline:none;font-size:13px">
+            <input type="text" id="fil-search" placeholder="🔍 Buscar filamento..." data-input="renderFilamentos()" style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--rsm);padding:8px 12px;color:var(--text);outline:none;flex:1;min-width:180px;font-size:13px">
+            <select id="fil-filter-tipo" data-change="renderFilamentos()" style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--rsm);padding:8px 10px;color:var(--text);outline:none;font-size:13px">
               <option value="">Todos os tipos</option>
               <option>PLA</option><option>PLA+</option><option>Silk PLA</option><option>Matte PLA</option><option>Tough PLA</option>
               <option>ABS</option><option>ABS+</option><option>PETG</option><option>ASA</option>
@@ -430,7 +431,7 @@
               <option>Metal Fill</option><option>Glow in the Dark</option><option>Conductive PLA</option>
               <option>ESD Safe</option><option>Recycled PLA</option><option>Recycled PETG</option><option>Outro</option>
             </select>
-            <select id="fil-filter-preco" onchange="renderFilamentos()" style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--rsm);padding:8px 10px;color:var(--text);outline:none;font-size:13px">
+            <select id="fil-filter-preco" data-change="renderFilamentos()" style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--rsm);padding:8px 10px;color:var(--text);outline:none;font-size:13px">
               <option value="">Todos os preços</option>
               <option value="com">Com preço</option>
               <option value="sem">Sem preço</option>
@@ -449,7 +450,7 @@
       <td><span style="display:inline-block;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700;background:rgba(59,130,246,.15);color:#3b82f6">PLA</span></td>
       <td>R$ 170.00</td>
       <td style="color:var(--text2)">R$ 0.1700</td>
-      <td style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn btn-ghost btn-sm" onclick="editFil(101)">Editar</button><button class="btn btn-danger btn-sm" onclick="delFil(101)">✕</button></td>
+      <td style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn btn-ghost btn-sm" data-click="editFil(101)">Editar</button><button class="btn btn-danger btn-sm" data-click="delFil(101)">✕</button></td>
     </tr><tr>
       <td style="font-weight:600;color:#3b82f6">PLA 3DX Natural</td>
       <td style="color:var(--text2)">3DX NATURAL</td>
@@ -457,7 +458,7 @@
       <td><span style="display:inline-block;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700;background:rgba(59,130,246,.15);color:#3b82f6">PLA</span></td>
       <td>R$ 150.00</td>
       <td style="color:var(--text2)">R$ 0.1500</td>
-      <td style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn btn-ghost btn-sm" onclick="editFil(102)">Editar</button><button class="btn btn-danger btn-sm" onclick="delFil(102)">✕</button></td>
+      <td style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn btn-ghost btn-sm" data-click="editFil(102)">Editar</button><button class="btn btn-danger btn-sm" data-click="delFil(102)">✕</button></td>
     </tr><tr>
       <td style="font-weight:600;color:#3b82f6">PLA 3D LAB</td>
       <td style="color:var(--text2)">3D LAB</td>
@@ -465,7 +466,7 @@
       <td><span style="display:inline-block;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700;background:rgba(59,130,246,.15);color:#3b82f6">PLA</span></td>
       <td>R$ 90.00</td>
       <td style="color:var(--text2)">R$ 0.0900</td>
-      <td style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn btn-ghost btn-sm" onclick="editFil(103)">Editar</button><button class="btn btn-danger btn-sm" onclick="delFil(103)">✕</button></td>
+      <td style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn btn-ghost btn-sm" data-click="editFil(103)">Editar</button><button class="btn btn-danger btn-sm" data-click="delFil(103)">✕</button></td>
     </tr><tr>
       <td style="font-weight:600;color:#3b82f6">PLA Macarrão Verde</td>
       <td style="color:var(--text2)">3DFILA</td>
@@ -473,7 +474,7 @@
       <td><span style="display:inline-block;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700;background:rgba(59,130,246,.15);color:#3b82f6">PLA</span></td>
       <td>R$ 110.00</td>
       <td style="color:var(--text2)">R$ 0.1100</td>
-      <td style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn btn-ghost btn-sm" onclick="editFil(104)">Editar</button><button class="btn btn-danger btn-sm" onclick="delFil(104)">✕</button></td>
+      <td style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn btn-ghost btn-sm" data-click="editFil(104)">Editar</button><button class="btn btn-danger btn-sm" data-click="delFil(104)">✕</button></td>
     </tr><tr>
       <td style="font-weight:600;color:#3b82f6">PLA VOOLT MATTE Blue 1</td>
       <td style="color:var(--text2)">VOOLT</td>
@@ -481,7 +482,7 @@
       <td><span style="display:inline-block;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700;background:rgba(59,130,246,.15);color:#3b82f6">PLA</span></td>
       <td>R$ 120.00</td>
       <td style="color:var(--text2)">R$ 0.1200</td>
-      <td style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn btn-ghost btn-sm" onclick="editFil(105)">Editar</button><button class="btn btn-danger btn-sm" onclick="delFil(105)">✕</button></td>
+      <td style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn btn-ghost btn-sm" data-click="editFil(105)">Editar</button><button class="btn btn-danger btn-sm" data-click="delFil(105)">✕</button></td>
     </tr><tr>
       <td style="font-weight:600;color:#22c55e">ABS Amarelo</td>
       <td style="color:var(--text2)">GTMAX3D</td>
@@ -489,7 +490,7 @@
       <td><span style="display:inline-block;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700;background:rgba(34,197,94,.15);color:#22c55e">ABS</span></td>
       <td><span style="color:var(--accent);font-size:11px">cadastrar preço</span></td>
       <td style="color:var(--text2)">—</td>
-      <td style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn btn-ghost btn-sm" onclick="editFil(106)">Editar</button><button class="btn btn-danger btn-sm" onclick="delFil(106)">✕</button></td>
+      <td style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn btn-ghost btn-sm" data-click="editFil(106)">Editar</button><button class="btn btn-danger btn-sm" data-click="delFil(106)">✕</button></td>
     </tr><tr>
       <td style="font-weight:600;color:#22c55e">ABS Azul Bebê</td>
       <td style="color:var(--text2)">GTMAX3D</td>
@@ -497,7 +498,7 @@
       <td><span style="display:inline-block;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700;background:rgba(34,197,94,.15);color:#22c55e">ABS</span></td>
       <td><span style="color:var(--accent);font-size:11px">cadastrar preço</span></td>
       <td style="color:var(--text2)">—</td>
-      <td style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn btn-ghost btn-sm" onclick="editFil(107)">Editar</button><button class="btn btn-danger btn-sm" onclick="delFil(107)">✕</button></td>
+      <td style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn btn-ghost btn-sm" data-click="editFil(107)">Editar</button><button class="btn btn-danger btn-sm" data-click="delFil(107)">✕</button></td>
     </tr><tr>
       <td style="font-weight:600;color:#22c55e">ABS Azul Claro</td>
       <td style="color:var(--text2)">GTMAX3D</td>
@@ -505,7 +506,7 @@
       <td><span style="display:inline-block;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700;background:rgba(34,197,94,.15);color:#22c55e">ABS</span></td>
       <td><span style="color:var(--accent);font-size:11px">cadastrar preço</span></td>
       <td style="color:var(--text2)">—</td>
-      <td style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn btn-ghost btn-sm" onclick="editFil(108)">Editar</button><button class="btn btn-danger btn-sm" onclick="delFil(108)">✕</button></td>
+      <td style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn btn-ghost btn-sm" data-click="editFil(108)">Editar</button><button class="btn btn-danger btn-sm" data-click="delFil(108)">✕</button></td>
     </tr><tr>
       <td style="font-weight:600;color:#22c55e">ABS Azul Escuro</td>
       <td style="color:var(--text2)">GTMAX3D</td>
@@ -513,7 +514,7 @@
       <td><span style="display:inline-block;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700;background:rgba(34,197,94,.15);color:#22c55e">ABS</span></td>
       <td><span style="color:var(--accent);font-size:11px">cadastrar preço</span></td>
       <td style="color:var(--text2)">—</td>
-      <td style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn btn-ghost btn-sm" onclick="editFil(109)">Editar</button><button class="btn btn-danger btn-sm" onclick="delFil(109)">✕</button></td>
+      <td style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn btn-ghost btn-sm" data-click="editFil(109)">Editar</button><button class="btn btn-danger btn-sm" data-click="delFil(109)">✕</button></td>
     </tr><tr>
       <td style="font-weight:600;color:#22c55e">ABS BR Dental</td>
       <td style="color:var(--text2)">3DLAB</td>
@@ -521,7 +522,7 @@
       <td><span style="display:inline-block;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700;background:rgba(34,197,94,.15);color:#22c55e">ABS</span></td>
       <td><span style="color:var(--accent);font-size:11px">cadastrar preço</span></td>
       <td style="color:var(--text2)">—</td>
-      <td style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn btn-ghost btn-sm" onclick="editFil(110)">Editar</button><button class="btn btn-danger btn-sm" onclick="delFil(110)">✕</button></td>
+      <td style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn btn-ghost btn-sm" data-click="editFil(110)">Editar</button><button class="btn btn-danger btn-sm" data-click="delFil(110)">✕</button></td>
     </tr><tr>
       <td style="font-weight:600;color:#22c55e">ABS Cinza</td>
       <td style="color:var(--text2)">GTMAX3D</td>
@@ -529,7 +530,7 @@
       <td><span style="display:inline-block;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700;background:rgba(34,197,94,.15);color:#22c55e">ABS</span></td>
       <td><span style="color:var(--accent);font-size:11px">cadastrar preço</span></td>
       <td style="color:var(--text2)">—</td>
-      <td style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn btn-ghost btn-sm" onclick="editFil(111)">Editar</button><button class="btn btn-danger btn-sm" onclick="delFil(111)">✕</button></td>
+      <td style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn btn-ghost btn-sm" data-click="editFil(111)">Editar</button><button class="btn btn-danger btn-sm" data-click="delFil(111)">✕</button></td>
     </tr><tr>
       <td style="font-weight:600;color:#22c55e">ABS Cinza</td>
       <td style="color:var(--text2)">3DLAB</td>
@@ -537,7 +538,7 @@
       <td><span style="display:inline-block;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700;background:rgba(34,197,94,.15);color:#22c55e">ABS</span></td>
       <td><span style="color:var(--accent);font-size:11px">cadastrar preço</span></td>
       <td style="color:var(--text2)">—</td>
-      <td style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn btn-ghost btn-sm" onclick="editFil(112)">Editar</button><button class="btn btn-danger btn-sm" onclick="delFil(112)">✕</button></td>
+      <td style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn btn-ghost btn-sm" data-click="editFil(112)">Editar</button><button class="btn btn-danger btn-sm" data-click="delFil(112)">✕</button></td>
     </tr><tr>
       <td style="font-weight:600;color:#22c55e">ABS Eco Plast</td>
       <td style="color:var(--text2)">GTMAX3D</td>
@@ -545,7 +546,7 @@
       <td><span style="display:inline-block;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700;background:rgba(34,197,94,.15);color:#22c55e">ABS</span></td>
       <td><span style="color:var(--accent);font-size:11px">cadastrar preço</span></td>
       <td style="color:var(--text2)">—</td>
-      <td style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn btn-ghost btn-sm" onclick="editFil(113)">Editar</button><button class="btn btn-danger btn-sm" onclick="delFil(113)">✕</button></td>
+      <td style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn btn-ghost btn-sm" data-click="editFil(113)">Editar</button><button class="btn btn-danger btn-sm" data-click="delFil(113)">✕</button></td>
     </tr><tr>
       <td style="font-weight:600;color:#22c55e">ABS Laranja</td>
       <td style="color:var(--text2)">GTMAX3D</td>
@@ -553,7 +554,7 @@
       <td><span style="display:inline-block;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700;background:rgba(34,197,94,.15);color:#22c55e">ABS</span></td>
       <td><span style="color:var(--accent);font-size:11px">cadastrar preço</span></td>
       <td style="color:var(--text2)">—</td>
-      <td style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn btn-ghost btn-sm" onclick="editFil(114)">Editar</button><button class="btn btn-danger btn-sm" onclick="delFil(114)">✕</button></td>
+      <td style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn btn-ghost btn-sm" data-click="editFil(114)">Editar</button><button class="btn btn-danger btn-sm" data-click="delFil(114)">✕</button></td>
     </tr><tr>
       <td style="font-weight:600;color:#22c55e">ABS Laranja</td>
       <td style="color:var(--text2)">3DLAB</td>
@@ -561,7 +562,7 @@
       <td><span style="display:inline-block;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700;background:rgba(34,197,94,.15);color:#22c55e">ABS</span></td>
       <td><span style="color:var(--accent);font-size:11px">cadastrar preço</span></td>
       <td style="color:var(--text2)">—</td>
-      <td style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn btn-ghost btn-sm" onclick="editFil(115)">Editar</button><button class="btn btn-danger btn-sm" onclick="delFil(115)">✕</button></td>
+      <td style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn btn-ghost btn-sm" data-click="editFil(115)">Editar</button><button class="btn btn-danger btn-sm" data-click="delFil(115)">✕</button></td>
     </tr><tr>
       <td style="font-weight:600;color:#22c55e">ABS Laranja Fluor</td>
       <td style="color:var(--text2)">GTMAX3D</td>
@@ -569,7 +570,7 @@
       <td><span style="display:inline-block;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700;background:rgba(34,197,94,.15);color:#22c55e">ABS</span></td>
       <td><span style="color:var(--accent);font-size:11px">cadastrar preço</span></td>
       <td style="color:var(--text2)">—</td>
-      <td style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn btn-ghost btn-sm" onclick="editFil(116)">Editar</button><button class="btn btn-danger btn-sm" onclick="delFil(116)">✕</button></td>
+      <td style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn btn-ghost btn-sm" data-click="editFil(116)">Editar</button><button class="btn btn-danger btn-sm" data-click="delFil(116)">✕</button></td>
     </tr><tr>
       <td style="font-weight:600;color:#22c55e">ABS Lilás</td>
       <td style="color:var(--text2)">GTMAX3D</td>
@@ -577,7 +578,7 @@
       <td><span style="display:inline-block;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700;background:rgba(34,197,94,.15);color:#22c55e">ABS</span></td>
       <td><span style="color:var(--accent);font-size:11px">cadastrar preço</span></td>
       <td style="color:var(--text2)">—</td>
-      <td style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn btn-ghost btn-sm" onclick="editFil(117)">Editar</button><button class="btn btn-danger btn-sm" onclick="delFil(117)">✕</button></td>
+      <td style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn btn-ghost btn-sm" data-click="editFil(117)">Editar</button><button class="btn btn-danger btn-sm" data-click="delFil(117)">✕</button></td>
     </tr><tr>
       <td style="font-weight:600;color:#22c55e">ABS Marrom</td>
       <td style="color:var(--text2)">GTMAX3D</td>
@@ -585,7 +586,7 @@
       <td><span style="display:inline-block;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700;background:rgba(34,197,94,.15);color:#22c55e">ABS</span></td>
       <td><span style="color:var(--accent);font-size:11px">cadastrar preço</span></td>
       <td style="color:var(--text2)">—</td>
-      <td style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn btn-ghost btn-sm" onclick="editFil(118)">Editar</button><button class="btn btn-danger btn-sm" onclick="delFil(118)">✕</button></td>
+      <td style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn btn-ghost btn-sm" data-click="editFil(118)">Editar</button><button class="btn btn-danger btn-sm" data-click="delFil(118)">✕</button></td>
     </tr><tr>
       <td style="font-weight:600;color:#22c55e">ABS Nude</td>
       <td style="color:var(--text2)">GTMAX3D</td>
@@ -593,7 +594,7 @@
       <td><span style="display:inline-block;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700;background:rgba(34,197,94,.15);color:#22c55e">ABS</span></td>
       <td><span style="color:var(--accent);font-size:11px">cadastrar preço</span></td>
       <td style="color:var(--text2)">—</td>
-      <td style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn btn-ghost btn-sm" onclick="editFil(119)">Editar</button><button class="btn btn-danger btn-sm" onclick="delFil(119)">✕</button></td>
+      <td style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn btn-ghost btn-sm" data-click="editFil(119)">Editar</button><button class="btn btn-danger btn-sm" data-click="delFil(119)">✕</button></td>
     </tr><tr>
       <td style="font-weight:600;color:#22c55e">ABS Pink</td>
       <td style="color:var(--text2)">GTMAX3D</td>
@@ -601,7 +602,7 @@
       <td><span style="display:inline-block;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700;background:rgba(34,197,94,.15);color:#22c55e">ABS</span></td>
       <td><span style="color:var(--accent);font-size:11px">cadastrar preço</span></td>
       <td style="color:var(--text2)">—</td>
-      <td style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn btn-ghost btn-sm" onclick="editFil(120)">Editar</button><button class="btn btn-danger btn-sm" onclick="delFil(120)">✕</button></td>
+      <td style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn btn-ghost btn-sm" data-click="editFil(120)">Editar</button><button class="btn btn-danger btn-sm" data-click="delFil(120)">✕</button></td>
     </tr><tr>
       <td style="font-weight:600;color:#22c55e">ABS Pink</td>
       <td style="color:var(--text2)">3DLAB</td>
@@ -609,7 +610,7 @@
       <td><span style="display:inline-block;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700;background:rgba(34,197,94,.15);color:#22c55e">ABS</span></td>
       <td><span style="color:var(--accent);font-size:11px">cadastrar preço</span></td>
       <td style="color:var(--text2)">—</td>
-      <td style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn btn-ghost btn-sm" onclick="editFil(121)">Editar</button><button class="btn btn-danger btn-sm" onclick="delFil(121)">✕</button></td>
+      <td style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn btn-ghost btn-sm" data-click="editFil(121)">Editar</button><button class="btn btn-danger btn-sm" data-click="delFil(121)">✕</button></td>
     </tr><tr>
       <td style="font-weight:600;color:#22c55e">ABS Preto</td>
       <td style="color:var(--text2)">GTMAX3D</td>
@@ -617,7 +618,7 @@
       <td><span style="display:inline-block;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700;background:rgba(34,197,94,.15);color:#22c55e">ABS</span></td>
       <td><span style="color:var(--accent);font-size:11px">cadastrar preço</span></td>
       <td style="color:var(--text2)">—</td>
-      <td style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn btn-ghost btn-sm" onclick="editFil(122)">Editar</button><button class="btn btn-danger btn-sm" onclick="delFil(122)">✕</button></td>
+      <td style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn btn-ghost btn-sm" data-click="editFil(122)">Editar</button><button class="btn btn-danger btn-sm" data-click="delFil(122)">✕</button></td>
     </tr><tr>
       <td style="font-weight:600;color:#22c55e">ABS Preto</td>
       <td style="color:var(--text2)">VOOLT</td>
@@ -625,7 +626,7 @@
       <td><span style="display:inline-block;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700;background:rgba(34,197,94,.15);color:#22c55e">ABS</span></td>
       <td><span style="color:var(--accent);font-size:11px">cadastrar preço</span></td>
       <td style="color:var(--text2)">—</td>
-      <td style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn btn-ghost btn-sm" onclick="editFil(123)">Editar</button><button class="btn btn-danger btn-sm" onclick="delFil(123)">✕</button></td>
+      <td style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn btn-ghost btn-sm" data-click="editFil(123)">Editar</button><button class="btn btn-danger btn-sm" data-click="delFil(123)">✕</button></td>
     </tr><tr>
       <td style="font-weight:600;color:#22c55e">ABS Roxo</td>
       <td style="color:var(--text2)">GTMAX3D</td>
@@ -633,7 +634,7 @@
       <td><span style="display:inline-block;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700;background:rgba(34,197,94,.15);color:#22c55e">ABS</span></td>
       <td><span style="color:var(--accent);font-size:11px">cadastrar preço</span></td>
       <td style="color:var(--text2)">—</td>
-      <td style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn btn-ghost btn-sm" onclick="editFil(124)">Editar</button><button class="btn btn-danger btn-sm" onclick="delFil(124)">✕</button></td>
+      <td style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn btn-ghost btn-sm" data-click="editFil(124)">Editar</button><button class="btn btn-danger btn-sm" data-click="delFil(124)">✕</button></td>
     </tr><tr>
       <td style="font-weight:600;color:#22c55e">ABS Verde</td>
       <td style="color:var(--text2)">PRINTALOT</td>
@@ -641,7 +642,7 @@
       <td><span style="display:inline-block;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700;background:rgba(34,197,94,.15);color:#22c55e">ABS</span></td>
       <td><span style="color:var(--accent);font-size:11px">cadastrar preço</span></td>
       <td style="color:var(--text2)">—</td>
-      <td style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn btn-ghost btn-sm" onclick="editFil(125)">Editar</button><button class="btn btn-danger btn-sm" onclick="delFil(125)">✕</button></td>
+      <td style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn btn-ghost btn-sm" data-click="editFil(125)">Editar</button><button class="btn btn-danger btn-sm" data-click="delFil(125)">✕</button></td>
     </tr><tr>
       <td style="font-weight:600;color:#22c55e">ABS Verde Escuro</td>
       <td style="color:var(--text2)">3DLAB</td>
@@ -649,7 +650,7 @@
       <td><span style="display:inline-block;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700;background:rgba(34,197,94,.15);color:#22c55e">ABS</span></td>
       <td><span style="color:var(--accent);font-size:11px">cadastrar preço</span></td>
       <td style="color:var(--text2)">—</td>
-      <td style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn btn-ghost btn-sm" onclick="editFil(126)">Editar</button><button class="btn btn-danger btn-sm" onclick="delFil(126)">✕</button></td>
+      <td style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn btn-ghost btn-sm" data-click="editFil(126)">Editar</button><button class="btn btn-danger btn-sm" data-click="delFil(126)">✕</button></td>
     </tr><tr>
       <td style="font-weight:600;color:#22c55e">ABS Verde Limão</td>
       <td style="color:var(--text2)">3DLAB</td>
@@ -657,7 +658,7 @@
       <td><span style="display:inline-block;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700;background:rgba(34,197,94,.15);color:#22c55e">ABS</span></td>
       <td><span style="color:var(--accent);font-size:11px">cadastrar preço</span></td>
       <td style="color:var(--text2)">—</td>
-      <td style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn btn-ghost btn-sm" onclick="editFil(127)">Editar</button><button class="btn btn-danger btn-sm" onclick="delFil(127)">✕</button></td>
+      <td style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn btn-ghost btn-sm" data-click="editFil(127)">Editar</button><button class="btn btn-danger btn-sm" data-click="delFil(127)">✕</button></td>
     </tr><tr>
       <td style="font-weight:600;color:#22c55e">ABS Vermelho</td>
       <td style="color:var(--text2)">PRINTALOT</td>
@@ -665,7 +666,7 @@
       <td><span style="display:inline-block;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700;background:rgba(34,197,94,.15);color:#22c55e">ABS</span></td>
       <td><span style="color:var(--accent);font-size:11px">cadastrar preço</span></td>
       <td style="color:var(--text2)">—</td>
-      <td style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn btn-ghost btn-sm" onclick="editFil(128)">Editar</button><button class="btn btn-danger btn-sm" onclick="delFil(128)">✕</button></td>
+      <td style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn btn-ghost btn-sm" data-click="editFil(128)">Editar</button><button class="btn btn-danger btn-sm" data-click="delFil(128)">✕</button></td>
     </tr></tbody></table>
             </div>
             <div id="fil-empty" class="empty" style="display:none"><div class="empty-icon">◌</div><div class="empty-title">Nenhum filamento encontrado</div></div>
@@ -678,7 +679,7 @@
                 <div style="font-size:15px;font-weight:700">Estoque de carretéis</div>
                 <div style="font-size:12px;color:var(--text2);margin-top:2px">Quantos carretéis físicos você tem de cada filamento. Independente do cadastro acima.</div>
               </div>
-              <button class="btn btn-primary" onclick="openEstoqueModal()">+ Registrar entrada</button>
+              <button class="btn btn-primary" data-click="openEstoqueModal()">+ Registrar entrada</button>
             </div>
             <div id="est-alertas" style="margin-bottom:12px"></div>
             <div id="est-list"></div>
@@ -699,10 +700,10 @@
             <div class="card-title">📥 Templates para download</div>
             <p style="font-size:13px;color:var(--text2);margin-bottom:14px">Baixe o template, preencha e importe. Mantenha os nomes das colunas exatamente como estão.</p>
             <div style="display:flex;gap:8px;flex-wrap:wrap">
-              <button class="btn btn-ghost" onclick="downloadTemplate('produtos')">⬇ Template Produtos (.csv)</button>
-              <button class="btn btn-ghost" onclick="downloadTemplate('filamentos')">⬇ Template Filamentos (.csv)</button>
-              <button class="btn btn-ghost" onclick="downloadTemplate('catalogo')">⬇ Template Catálogo (.csv)</button>
-              <button class="btn btn-ghost" onclick="downloadTemplate('clientes')">⬇ Template Clientes (.csv)</button>
+              <button class="btn btn-ghost" data-click="downloadTemplate('produtos')">⬇ Template Produtos (.csv)</button>
+              <button class="btn btn-ghost" data-click="downloadTemplate('filamentos')">⬇ Template Filamentos (.csv)</button>
+              <button class="btn btn-ghost" data-click="downloadTemplate('catalogo')">⬇ Template Catálogo (.csv)</button>
+              <button class="btn btn-ghost" data-click="downloadTemplate('clientes')">⬇ Template Clientes (.csv)</button>
             </div>
             <div style="margin-top:16px;background:var(--bg3);border-radius:var(--rsm);padding:14px;font-size:12px;color:var(--text2)">
               <div style="font-weight:600;margin-bottom:8px;color:var(--text)">Colunas obrigatórias por arquivo:</div>
@@ -718,17 +719,17 @@
             <div class="card-title">📂 Importar arquivo CSV / Excel</div>
             <div style="margin-bottom:12px">
               <div class="toggle-row">
-                <div class="toggle active" id="imp-t-prod" onclick="setImpTipo('produtos')">Produtos</div>
-                <div class="toggle" id="imp-t-fil" onclick="setImpTipo('filamentos')">Filamentos</div>
-                <div class="toggle" id="imp-t-cat" onclick="setImpTipo('catalogo')">Catálogo</div>
-                <div class="toggle" id="imp-t-cli" onclick="setImpTipo('clientes')">Clientes</div>
+                <div class="toggle active" id="imp-t-prod" data-click="setImpTipo('produtos')">Produtos</div>
+                <div class="toggle" id="imp-t-fil" data-click="setImpTipo('filamentos')">Filamentos</div>
+                <div class="toggle" id="imp-t-cat" data-click="setImpTipo('catalogo')">Catálogo</div>
+                <div class="toggle" id="imp-t-cli" data-click="setImpTipo('clientes')">Clientes</div>
               </div>
             </div>
-            <div id="drop-zone" style="border:2px dashed var(--border2);border-radius:var(--r);padding:32px;text-align:center;cursor:pointer;transition:border-color .2s" onclick="document.getElementById(&#39;csv-input&#39;).click()" ondragover="event.preventDefault();this.style.borderColor=&#39;var(--accent)&#39;" ondragleave="this.style.borderColor=&#39;var(--border2)&#39;" ondrop="handleDrop(event)">
+            <div id="drop-zone" style="border:2px dashed var(--border2);border-radius:var(--r);padding:32px;text-align:center;cursor:pointer;transition:border-color .2s" data-click="clicarEm('csv-input')" data-dragover="destacarBorda(this,'var(--accent)')" data-dragleave="destacarBorda(this,'var(--border2)')" data-drop="handleDrop(event)">
               <div style="font-size:28px;margin-bottom:8px">📄</div>
               <div style="font-size:14px;color:var(--text2)">Arraste o arquivo aqui ou clique para selecionar</div>
               <div style="font-size:12px;color:var(--text3);margin-top:4px">CSV ou Excel (.xlsx .xls .csv)</div>
-              <input type="file" id="csv-input" accept=".csv,.xlsx,.xls" style="display:none" onchange="handleFileUpload(event)">
+              <input type="file" id="csv-input" accept=".csv,.xlsx,.xls" style="display:none" data-change="handleFileUpload(event)">
             </div>
             <div id="imp-preview" style="margin-top:14px"></div>
           </div>
@@ -738,13 +739,13 @@
             <div class="card-title">📊 Importar via Google Sheets</div>
             <p style="font-size:13px;color:var(--text2);margin-bottom:12px">A planilha precisa estar publicada como CSV. No Google Sheets: <strong>Arquivo → Compartilhar → Publicar na web → CSV</strong></p>
             <div class="toggle-row">
-              <div class="toggle active" id="gs-t-prod" onclick="setGSTipo(&#39;produtos&#39;)">Produtos</div>
-              <div class="toggle" id="gs-t-fil" onclick="setGSTipo(&#39;filamentos&#39;)">Filamentos</div>
-              <div class="toggle" id="gs-t-cat" onclick="setGSTipo(&#39;catalogo&#39;)">Catálogo</div>
+              <div class="toggle active" id="gs-t-prod" data-click="setGSTipo(&#39;produtos&#39;)">Produtos</div>
+              <div class="toggle" id="gs-t-fil" data-click="setGSTipo(&#39;filamentos&#39;)">Filamentos</div>
+              <div class="toggle" id="gs-t-cat" data-click="setGSTipo(&#39;catalogo&#39;)">Catálogo</div>
             </div>
             <div style="display:flex;gap:8px;flex-wrap:wrap">
               <input type="text" id="gs-url" placeholder="Cole aqui a URL pública de exportação CSV do Google Sheets" style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--rsm);padding:9px 12px;color:var(--text);outline:none;flex:1;min-width:220px">
-              <button class="btn btn-primary" onclick="importGSheets()">Importar</button>
+              <button class="btn btn-primary" data-click="importGSheets()">Importar</button>
             </div>
             <div id="gs-status" style="margin-top:10px;font-size:13px"></div>
           </div>
@@ -766,18 +767,18 @@
                 <img id="logo-preview-img" alt="Logo" style="max-width:130px;max-height:54px;object-fit:contain;display:none">
               </div>
               <div style="flex:1;display:flex;flex-direction:column;gap:8px">
-                <button class="btn btn-ghost" onclick="document.getElementById(&#39;logo-file&#39;).click()">📁 Escolher imagem (PNG, JPG ou WEBP, até 1 MB)</button>
-                <button class="btn btn-danger btn-sm" onclick="removerLogo()" id="btn-rem-logo" style="display:none">Remover logo</button>
-                <input type="file" id="logo-file" accept="image/png,image/jpeg,image/webp" style="display:none" onchange="uploadLogo(event)">
+                <button class="btn btn-ghost" data-click="clicarEm('logo-file')">📁 Escolher imagem (PNG, JPG ou WEBP, até 1 MB)</button>
+                <button class="btn btn-danger btn-sm" data-click="removerLogo()" id="btn-rem-logo" style="display:none">Remover logo</button>
+                <input type="file" id="logo-file" accept="image/png,image/jpeg,image/webp" style="display:none" data-change="uploadLogo(event)">
                 <div style="font-size:11px;color:var(--text3)">Recomendado: fundo transparente, máx 400×100px</div>
               </div>
             </div>
             <hr>
             <div class="form-grid">
-              <div class="field"><label>Nome do sistema</label><input type="text" id="cfg-sysname" value="MoneyFlow 3D" oninput="updateLogoText()"></div>
-              <div class="field"><label>Nome da empresa</label><input type="text" id="cfg-empresa" value="MoneyFlow 3D" oninput="updateLogoText()"></div>
+              <div class="field"><label>Nome do sistema</label><input type="text" id="cfg-sysname" value="MoneyFlow 3D" data-input="updateLogoText()"></div>
+              <div class="field"><label>Nome da empresa</label><input type="text" id="cfg-empresa" value="MoneyFlow 3D" data-input="updateLogoText()"></div>
             </div>
-            <div style="margin-top:10px"><button class="btn btn-primary" onclick="saveSettings()">Salvar</button></div>
+            <div style="margin-top:10px"><button class="btn btn-primary" data-click="saveSettings()">Salvar</button></div>
           </div>
 
           <!-- BIOMETRIA -->
@@ -790,7 +791,7 @@
           <div style="font-weight:500">🔐 Bloqueio desligado</div>
           <div style="font-size:12px;color:var(--text3);margin-top:3px">Ligue para pedir a biometria ao abrir o app</div>
         </div>
-        <button class="btn btn-primary btn-sm" onclick="ativarBiometriaConfig(this)">Ligar bloqueio</button>
+        <button class="btn btn-primary btn-sm" data-click="ativarBiometriaConfig(this)">Ligar bloqueio</button>
       </div></div>
           </div>
 
@@ -802,7 +803,7 @@
                 <div style="font-weight:500">Tema atual</div>
                 <div style="font-size:12px;color:var(--text3);margin-top:2px">Alterne entre modo escuro e claro</div>
               </div>
-              <button class="theme-btn" onclick="toggleTheme()" id="theme-btn2">🌙 Tema Claro</button>
+              <button class="theme-btn" data-click="toggleTheme()" id="theme-btn2">🌙 Tema Claro</button>
             </div>
           </div>
 
@@ -821,12 +822,12 @@
           <div class="card" id="backup-dados-card">
             <div class="card-title">💾 Backup &amp; dados</div>
             <div style="display:flex;gap:8px;flex-wrap:wrap">
-              <button class="btn btn-ghost" onclick="exportarDados()">⬇ Exportar tudo (JSON)</button>
-              <button class="btn btn-ghost" onclick="document.getElementById(&#39;import-json&#39;).click()">⬆ Restaurar backup (JSON)</button>
-              <input type="file" id="import-json" accept=".json" style="display:none" onchange="restaurarDados(event)">
+              <button class="btn btn-ghost" data-click="exportarDados()">⬇ Exportar tudo (JSON)</button>
+              <button class="btn btn-ghost" data-click="clicarEm('import-json')">⬆ Restaurar backup (JSON)</button>
+              <input type="file" id="import-json" accept=".json" style="display:none" data-change="restaurarDados(event)">
             </div>
             <div style="margin-top:10px">
-              <button class="btn btn-danger" onclick="limparDados()">🗑 Limpar todos os dados</button>
+              <button class="btn btn-danger" data-click="limparDados()">🗑 Limpar todos os dados</button>
             </div>
           </div>
 
@@ -837,21 +838,21 @@
       <div class="panel" id="page-pedidos">
         <div class="page-header">
           <div><div class="page-title">Painel de pedidos</div><div class="page-sub">Visão consolidada de todos os orçamentos e pedidos</div></div>
-          <button class="btn btn-ghost btn-sm" onclick="exportarPedidosCSV()">⬇ Excel/CSV</button>
+          <button class="btn btn-ghost btn-sm" data-click="exportarPedidosCSV()">⬇ Excel/CSV</button>
         </div>
         <div class="content">
           <!-- MÉTRICAS -->
           <div id="pedidos-metrics" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;margin-bottom:20px"></div>
           <!-- FILTROS -->
           <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;align-items:center">
-            <input type="text" id="ped-search" placeholder="🔍 Buscar cliente ou produto..." oninput="renderPedidos()" style="flex:1;min-width:200px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--rsm);padding:8px 12px;color:var(--text);outline:none;font-size:13px">
-            <select id="ped-status" onchange="renderPedidos()" style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--rsm);padding:8px 10px;color:var(--text);outline:none;font-size:13px">
+            <input type="text" id="ped-search" placeholder="🔍 Buscar cliente ou produto..." data-input="renderPedidos()" style="flex:1;min-width:200px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--rsm);padding:8px 12px;color:var(--text);outline:none;font-size:13px">
+            <select id="ped-status" data-change="renderPedidos()" style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--rsm);padding:8px 10px;color:var(--text);outline:none;font-size:13px">
               <option value="">Todos os status</option>
               <option value="pendente">🕐 Pendente</option>
               <option value="aprovado">✅ Aprovado</option>
               <option value="recusado">✕ Recusado</option>
             </select>
-            <select id="ped-periodo" onchange="renderPedidos()" style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--rsm);padding:8px 10px;color:var(--text);outline:none;font-size:13px">
+            <select id="ped-periodo" data-change="renderPedidos()" style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--rsm);padding:8px 10px;color:var(--text);outline:none;font-size:13px">
               <option value="0">Todo período</option>
               <option value="7">Últimos 7 dias</option>
               <option value="30">Últimos 30 dias</option>
@@ -866,12 +867,12 @@
       <div class="panel" id="page-orcamentos">
         <div class="page-header">
           <div><div class="page-title">Orçamentos</div><div class="page-sub">Gere PDFs profissionais com sua logo para enviar aos clientes</div></div>
-          <button class="btn btn-primary" onclick="openOrcModal()">+ Novo orçamento</button>
+          <button class="btn btn-primary" data-click="openOrcModal()">+ Novo orçamento</button>
         </div>
         <div class="content">
           <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:16px">
-            <input type="text" id="orc-search" placeholder="🔍 Buscar orçamento..." oninput="renderOrcamentos()" style="flex:1;min-width:180px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--rsm);padding:8px 12px;color:var(--text);outline:none;font-size:13px">
-            <select id="orc-status-filter" onchange="renderOrcamentos()" style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--rsm);padding:8px 10px;color:var(--text);outline:none;font-size:13px">
+            <input type="text" id="orc-search" placeholder="🔍 Buscar orçamento..." data-input="renderOrcamentos()" style="flex:1;min-width:180px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--rsm);padding:8px 12px;color:var(--text);outline:none;font-size:13px">
+            <select id="orc-status-filter" data-change="renderOrcamentos()" style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--rsm);padding:8px 10px;color:var(--text);outline:none;font-size:13px">
               <option value="">Todos</option>
               <option value="pendente">Pendente</option>
               <option value="aprovado">Aprovado</option>
@@ -886,14 +887,14 @@
       <div class="panel" id="page-crm">
         <div class="page-header">
           <div><div class="page-title">Clientes (CRM)</div><div class="page-sub">Histórico de pedidos, contatos e relacionamento com clientes</div></div>
-          <button class="btn btn-primary" onclick="openClienteModal()">+ Novo cliente</button>
+          <button class="btn btn-primary" data-click="openClienteModal()">+ Novo cliente</button>
         </div>
         <div class="content">
           <div style="display:flex;gap:8px;margin-bottom:16px;align-items:center;flex-wrap:wrap">
-            <input type="text" id="crm-search" placeholder="🔍 Buscar cliente..." oninput="renderCRM()" style="flex:1;min-width:180px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--rsm);padding:8px 12px;color:var(--text);outline:none;font-size:13px">
+            <input type="text" id="crm-search" placeholder="🔍 Buscar cliente..." data-input="renderCRM()" style="flex:1;min-width:180px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--rsm);padding:8px 12px;color:var(--text);outline:none;font-size:13px">
             <div style="display:flex;gap:4px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--rsm);padding:3px">
-              <button id="crm-view-grid-btn" onclick="setCrmView('grid')" style="padding:5px 12px;border-radius:4px;border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:600;cursor:pointer">⊞ Grid</button>
-              <button id="crm-view-lista-btn" onclick="setCrmView('lista')" style="padding:5px 12px;border-radius:4px;border:none;background:transparent;color:var(--text2);font-size:12px;font-weight:600;cursor:pointer">☰ Lista</button>
+              <button id="crm-view-grid-btn" data-click="setCrmView('grid')" style="padding:5px 12px;border-radius:4px;border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:600;cursor:pointer">⊞ Grid</button>
+              <button id="crm-view-lista-btn" data-click="setCrmView('lista')" style="padding:5px 12px;border-radius:4px;border:none;background:transparent;color:var(--text2);font-size:12px;font-weight:600;cursor:pointer">☰ Lista</button>
             </div>
           </div>
           <div id="crm-list"></div>
@@ -904,11 +905,11 @@
       <div class="panel" id="page-fila">
         <div class="page-header">
           <div><div class="page-title">Fila de produção</div><div class="page-sub">Acompanhe o status de cada pedido em produção</div></div>
-          <button class="btn btn-primary" onclick="openFilaModal()">+ Novo pedido</button>
+          <button class="btn btn-primary" data-click="openFilaModal()">+ Novo pedido</button>
         </div>
         <div class="content">
           <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:16px">
-            <select id="fila-status-filter" onchange="renderFila()" style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--rsm);padding:8px 10px;color:var(--text);outline:none;font-size:13px">
+            <select id="fila-status-filter" data-change="renderFila()" style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--rsm);padding:8px 10px;color:var(--text);outline:none;font-size:13px">
               <option value="">Todos os status</option>
               <option value="aguardando">Aguardando</option>
               <option value="fatiando">Fatiando</option>
@@ -983,8 +984,8 @@
     </div>
     <p style="font-size:12px;color:var(--text3);margin-bottom:20px">Tudo marcado como <em>(Exemplo)</em> — delete quando quiser e cadastre os seus dados.</p>
     <div style="display:flex;gap:10px">
-      <button class="btn" style="flex:1;background:var(--bg3);color:var(--text2);border:1px solid var(--border)" onclick="dispensarOnboarding()">Começar do zero</button>
-      <button class="btn btn-primary" style="flex:1" id="btn-seed-loading" onclick="carregarExemplos()">⚡ Carregar exemplos</button>
+      <button class="btn" style="flex:1;background:var(--bg3);color:var(--text2);border:1px solid var(--border)" data-click="dispensarOnboarding()">Começar do zero</button>
+      <button class="btn btn-primary" style="flex:1" id="btn-seed-loading" data-click="carregarExemplos()">⚡ Carregar exemplos</button>
     </div>
   </div>
 </div>
@@ -1010,7 +1011,7 @@
     <div style="font-size:24px;font-weight:700;color:var(--accent);margin-bottom:4px"><span class="js-preco-pro">R$ 23,50</span><span style="font-size:14px;font-weight:400;color:var(--text2)">/mês</span></div>
     <div style="font-size:12px;color:var(--text3);margin-bottom:20px">Cancele quando quiser · 7 dias de garantia</div>
     <div class="modal-footer" style="justify-content:center;gap:10px">
-      <button class="btn btn-ghost" onclick="closeModal('modal-upgrade')">Agora não</button>
+      <button class="btn btn-ghost" data-click="closeModal('modal-upgrade')">Agora não</button>
       <a href="https://pay.kiwify.com.br/8epGftp" target="_blank" class="btn btn-primary js-checkout" style="text-decoration:none">Assinar agora →</a>
     </div>
   </div>
@@ -1037,7 +1038,7 @@
     <div style="font-size:24px;font-weight:700;color:var(--accent);margin-bottom:4px"><span class="js-preco-pro">R$ 23,50</span><span style="font-size:14px;font-weight:400;color:var(--text2)">/mês</span></div>
     <div style="font-size:12px;color:var(--text3);margin-bottom:20px">Cancele quando quiser · 7 dias de garantia</div>
     <div class="modal-footer" style="justify-content:center;gap:10px">
-      <button class="btn btn-ghost" onclick="closeModal('modal-upgrade')">Agora não</button>
+      <button class="btn btn-ghost" data-click="closeModal('modal-upgrade')">Agora não</button>
       <a href="https://pay.kiwify.com.br/8epGftp" target="_blank" class="btn btn-primary js-checkout" style="text-decoration:none">Assinar agora →</a>
     </div>
   </div>
@@ -1050,14 +1051,14 @@
     <input type="hidden" id="ep-id">
     <div class="form-grid">
       <div class="field full"><label>Nome do produto</label><input type="text" id="ep-nome" placeholder="Nome do produto"></div>
-      <div class="field"><label>Custo total (R$)</label><input type="number" id="ep-custo" step="0.01" min="0" oninput="recalcEpMargem()"></div>
-      <div class="field"><label>Preço base (R$)</label><input type="number" id="ep-preco" step="0.01" min="0" oninput="recalcEpMargem()"></div>
+      <div class="field"><label>Custo total (R$)</label><input type="number" id="ep-custo" step="0.01" min="0" data-input="recalcEpMargem()"></div>
+      <div class="field"><label>Preço base (R$)</label><input type="number" id="ep-preco" step="0.01" min="0" data-input="recalcEpMargem()"></div>
       <div class="field"><label>Markup (%)</label><input type="number" id="ep-markup" step="0.1" min="0"></div>
       <div class="field"><label>Margem (%)</label><input type="text" id="ep-margem" readonly style="opacity:.7"></div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="closeModal('modal-edit-prod')">Cancelar</button>
-      <button class="btn btn-primary" onclick="salvarEdicaoProduto()">Salvar alterações</button>
+      <button class="btn btn-ghost" data-click="closeModal('modal-edit-prod')">Cancelar</button>
+      <button class="btn btn-primary" data-click="salvarEdicaoProduto()">Salvar alterações</button>
     </div>
   </div>
 </div>
@@ -1073,14 +1074,14 @@
         </select>
       </div>
       <div class="field full"><label>Preencher a partir de produto salvo</label>
-        <select id="orc-produto" onchange="preencherOrcProduto()" style="width:100%">
+        <select id="orc-produto" data-change="preencherOrcProduto()" style="width:100%">
           <option value="">Selecionar produto salvo (opcional)</option>
         </select>
       </div>
       <div class="field full">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
           <label style="margin-bottom:0">Itens do orçamento</label>
-          <button type="button" onclick="addOrcItem()" class="btn btn-ghost btn-sm" style="font-size:12px">+ Adicionar item</button>
+          <button type="button" data-click="addOrcItem()" class="btn btn-ghost btn-sm" style="font-size:12px">+ Adicionar item</button>
         </div>
         <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--rsm);padding:8px;margin-bottom:6px">
           <div style="display:grid;grid-template-columns:1fr 56px 90px 70px 28px;gap:4px;margin-bottom:6px;padding:0 4px">
@@ -1093,7 +1094,7 @@
           <div id="orc-itens-container"></div>
         </div>
       </div>
-      <div class="field"><label>Desconto geral (%)</label><input type="number" id="orc-desc" value="0" min="0" max="100" oninput="calcOrcTotal()"></div>
+      <div class="field"><label>Desconto geral (%)</label><input type="number" id="orc-desc" value="0" min="0" max="100" data-input="calcOrcTotal()"></div>
       <div class="field"><label>Total</label><input type="text" id="orc-total" readonly style="opacity:.7"></div>
       <div class="field full"><label>Marketplace / Canal</label>
         <select id="orc-mp" style="width:100%">
@@ -1108,8 +1109,8 @@
       <div class="field full"><label>Validade do orçamento</label><input type="date" id="orc-validade"></div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="closeModal('modal-orc')">Cancelar</button>
-      <button class="btn btn-primary" onclick="saveOrcamento()">Salvar orçamento</button>
+      <button class="btn btn-ghost" data-click="closeModal('modal-orc')">Cancelar</button>
+      <button class="btn btn-primary" data-click="saveOrcamento()">Salvar orçamento</button>
     </div>
   </div>
 </div>
@@ -1119,7 +1120,7 @@
   <div class="modal" style="max-width:580px">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
       <div class="modal-title" style="margin-bottom:0">Histórico do cliente</div>
-      <button class="btn btn-ghost btn-sm" onclick="closeModal('modal-crm-detalhe')">✕ Fechar</button>
+      <button class="btn btn-ghost btn-sm" data-click="closeModal('modal-crm-detalhe')">✕ Fechar</button>
     </div>
     <div id="crm-detalhe-body" style="max-height:65vh;overflow-y:auto"></div>
   </div>
@@ -1138,8 +1139,8 @@
       <div class="field full"><label>Observações</label><input type="text" id="cli-obs" placeholder="Ex: prefere PLA, paga no pix..."></div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="closeModal('modal-cliente')">Cancelar</button>
-      <button class="btn btn-primary" onclick="saveCliente()">Salvar</button>
+      <button class="btn btn-ghost" data-click="closeModal('modal-cliente')">Cancelar</button>
+      <button class="btn btn-primary" data-click="saveCliente()">Salvar</button>
     </div>
   </div>
 </div>
@@ -1158,8 +1159,8 @@
       <div class="field full"><label>Observações</label><input type="text" id="est-obs" placeholder="Ex: Comprado na 3DFila, lote maio/2025"></div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="closeModal('modal-estoque')">Cancelar</button>
-      <button class="btn btn-primary" onclick="saveEstoque()">Salvar</button>
+      <button class="btn btn-ghost" data-click="closeModal('modal-estoque')">Cancelar</button>
+      <button class="btn btn-primary" data-click="saveEstoque()">Salvar</button>
     </div>
   </div>
 </div>
@@ -1176,7 +1177,7 @@
     <p id="rastreio-msg-normal" style="font-size:13px;color:var(--text2);margin-bottom:16px">O pedido foi aprovado e está na fila. Deseja cadastrar o código de rastreio agora?</p>
     <div class="form-grid">
       <div class="field full"><label>Forma de entrega</label>
-        <select id="rastreio-transportadora" onchange="toggleRastreioOutro()" style="width:100%">
+        <select id="rastreio-transportadora" data-change="toggleRastreioOutro()" style="width:100%">
           <option value="">Sem rastreio por enquanto</option>
           <optgroup label="— Entrega pessoal (sem rastreio)">
             <option value="maos">🤝 Entrega em mãos</option>
@@ -1213,8 +1214,8 @@
       ℹ️ Quando o pedido estiver <strong>Pronto</strong> na fila de produção, será solicitado o código de rastreio ou forma de entrega antes de avançar para Entregue.
     </div>
     <div class="modal-footer" style="margin-top:16px">
-      <button class="btn btn-ghost" id="rastreio-btn-pular" onclick="pularRastreio()">Pular por agora</button>
-      <button class="btn btn-primary" onclick="salvarRastreioRapido()">💾 Salvar</button>
+      <button class="btn btn-ghost" id="rastreio-btn-pular" data-click="pularRastreio()">Pular por agora</button>
+      <button class="btn btn-primary" data-click="salvarRastreioRapido()">💾 Salvar</button>
     </div>
   </div>
 </div>
@@ -1244,7 +1245,7 @@
         </select>
       </div>
       <div class="field"><label>Transportadora</label>
-        <select id="fp-transportadora" onchange="toggleTranspOutro()" style="width:100%">
+        <select id="fp-transportadora" data-change="toggleTranspOutro()" style="width:100%">
           <option value="">Sem rastreio</option>
           <option value="correios">Correios</option>
           <option value="mercadolivre">Mercado Livre</option>
@@ -1261,8 +1262,8 @@
       <div class="field full"><label>Observações</label><input type="text" id="fp-obs" placeholder="Ex: Cor pantone 185, logo gravada..."></div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="closeModal('modal-fila')">Cancelar</button>
-      <button class="btn btn-primary" onclick="saveFila()">Salvar pedido</button>
+      <button class="btn btn-ghost" data-click="closeModal('modal-fila')">Cancelar</button>
+      <button class="btn btn-primary" data-click="saveFila()">Salvar pedido</button>
     </div>
   </div>
 </div>
@@ -1273,10 +1274,10 @@
     <div class="modal-title">Orçamento gerado</div>
     <div id="pdf-preview-content" style="background:#fff;color:#111;padding:24px;border-radius:8px;font-family:sans-serif;font-size:13px;line-height:1.6;max-height:60vh;overflow-y:auto"></div>
     <div class="modal-footer" style="gap:8px">
-      <button class="btn btn-ghost" onclick="closeModal('modal-pdf-preview')">Fechar</button>
-      <button class="btn btn-primary" onclick="exportarPDF()" id="btn-export-pdf">⬇ Baixar PDF</button>
-      <button class="btn btn-success" onclick="compartilharWhatsApp()" id="btn-wpp-share" style="background:rgba(34,197,94,.15);color:var(--green);border:1px solid rgba(34,197,94,.3)">📱 WhatsApp</button>
-      <button class="btn btn-ghost" onclick="enviarEmail()" id="btn-email-share" style="color:var(--blue);border-color:rgba(59,130,246,.4)">✉ E-mail</button>
+      <button class="btn btn-ghost" data-click="closeModal('modal-pdf-preview')">Fechar</button>
+      <button class="btn btn-primary" data-click="exportarPDF()" id="btn-export-pdf">⬇ Baixar PDF</button>
+      <button class="btn btn-success" data-click="compartilharWhatsApp()" id="btn-wpp-share" style="background:rgba(34,197,94,.15);color:var(--green);border:1px solid rgba(34,197,94,.3)">📱 WhatsApp</button>
+      <button class="btn btn-ghost" data-click="enviarEmail()" id="btn-email-share" style="color:var(--blue);border-color:rgba(59,130,246,.4)">✉ E-mail</button>
     </div>
   </div>
 </div>
@@ -1294,8 +1295,8 @@
       <div class="field"><label>Taxa de falhas (%)</label><input type="number" id="mi-fail" value="5"></div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="closeModal(&#39;modal-imp&#39;)">Cancelar</button>
-      <button class="btn btn-primary" onclick="saveImp()">Salvar</button>
+      <button class="btn btn-ghost" data-click="closeModal(&#39;modal-imp&#39;)">Cancelar</button>
+      <button class="btn btn-primary" data-click="saveImp()">Salvar</button>
     </div>
   </div>
 </div>
@@ -1307,7 +1308,7 @@
     <div class="form-grid">
       <div class="field full"><label>Nome</label><input type="text" id="mf-nome" placeholder="PLA ESUN Preto"></div>
       <div class="field"><label>Marca</label><input type="text" id="mf-marca" placeholder="ESUN"></div>
-      <div class="field"><label>Cor do filamento</label><div style="display:flex;align-items:center;gap:8px"><input type="color" id="mf-cor-picker" value="#cccccc" oninput="document.getElementById('mf-cor').value=this.value" style="width:36px;height:36px;border:none;background:none;cursor:pointer;padding:0;border-radius:6px"><input type="text" id="mf-cor" placeholder="#cccccc ou Nome" oninput="syncColorPicker()" style="flex:1"></div></div>
+      <div class="field"><label>Cor do filamento</label><div style="display:flex;align-items:center;gap:8px"><input type="color" id="mf-cor-picker" value="#cccccc" data-input="copiarValor('mf-cor',this.value)" style="width:36px;height:36px;border:none;background:none;cursor:pointer;padding:0;border-radius:6px"><input type="text" id="mf-cor" placeholder="#cccccc ou Nome" data-input="syncColorPicker()" style="flex:1"></div></div>
       <div class="field"><label>Tipo</label><select id="mf-tipo">
         <option>PLA</option><option>PLA+</option><option>Silk PLA</option><option>Matte PLA</option><option>Tough PLA</option>
         <option>ABS</option><option>ABS+</option><option>PETG</option><option>ASA</option>
@@ -1322,8 +1323,8 @@
       <div class="field"><label>Peso do carretel (g)</label><input type="number" id="mf-peso" value="1000"></div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="closeModal(&#39;modal-fil&#39;)">Cancelar</button>
-      <button class="btn btn-primary" onclick="saveFil()">Salvar</button>
+      <button class="btn btn-ghost" data-click="closeModal(&#39;modal-fil&#39;)">Cancelar</button>
+      <button class="btn btn-primary" data-click="saveFil()">Salvar</button>
     </div>
   </div>
 </div>
@@ -1341,25 +1342,25 @@
       <div class="field full"><label>Observações</label><input type="text" id="mc-obs" placeholder="Ex: Acabamento inferior, sem embalagem"></div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="closeModal(&#39;modal-conc&#39;)">Cancelar</button>
-      <button class="btn btn-primary" onclick="saveConc()">Salvar concorrente</button>
+      <button class="btn btn-ghost" data-click="closeModal(&#39;modal-conc&#39;)">Cancelar</button>
+      <button class="btn btn-primary" data-click="saveConc()">Salvar concorrente</button>
     </div>
   </div>
 </div>
 
 <div class="notif green" id="notif"></div>
 
-<script src="js/dados.js?v=9d1a625f24"></script>
+<script src="js/dados.js?v=4adabe393c"></script>
 <script src="js/acesso.js?v=3de1a872a3"></script>
-<script src="js/calculadora.js?v=18364dbfeb"></script>
-<script src="js/cadastros.js?v=5c24ead6c6"></script>
-<script src="js/importar.js?v=7ddce3854c"></script>
+<script src="js/calculadora.js?v=d4b4017281"></script>
+<script src="js/cadastros.js?v=df44724232"></script>
+<script src="js/importar.js?v=5f2bf9cea5"></script>
 <script src="js/configuracoes.js?v=05acfa34a9"></script>
-<script src="js/login.js?v=9fd3d358c0"></script>
-<script src="js/orcamentos.js?v=660ee54ad9"></script>
-<script src="js/crm.js?v=20d533535d"></script>
-<script src="js/estoque.js?v=1fa8b4376f"></script>
-<script src="js/producao.js?v=b7afcf139e"></script>
+<script src="js/login.js?v=832c7ab5d2"></script>
+<script src="js/orcamentos.js?v=5a2fbc28ee"></script>
+<script src="js/crm.js?v=2351d8cea8"></script>
+<script src="js/estoque.js?v=e98d71dced"></script>
+<script src="js/producao.js?v=fc0f8fb4b9"></script>
 <script src="js/inicio.js?v=f93cfb5f5b"></script>
 
 

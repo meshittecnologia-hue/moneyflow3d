@@ -196,6 +196,7 @@
 
   @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
 </style>
+<script src="js/eventos.js?v=5f06521870"></script>
 </head>
 <body>
 
@@ -545,23 +546,23 @@
     </div>
     <div class="faq-list">
       <div class="faq-item">
-        <button class="faq-q" onclick="toggleFaq(this)">Precisa instalar alguma coisa? <span class="arrow">▾</span></button>
+        <button class="faq-q" data-click="toggleFaq(this)">Precisa instalar alguma coisa? <span class="arrow">▾</span></button>
         <div class="faq-a">Não. MoneyFlow 3D roda direto no navegador — Chrome, Safari, Firefox. Funciona no celular Android, iPhone, tablet, notebook ou PC. Sem download, sem instalação.</div>
       </div>
       <div class="faq-item">
-        <button class="faq-q" onclick="toggleFaq(this)">A oferta fundador é realmente para sempre? <span class="arrow">▾</span></button>
+        <button class="faq-q" data-click="toggleFaq(this)">A oferta fundador é realmente para sempre? <span class="arrow">▾</span></button>
         <div class="faq-a">Sim. Os primeiros 50 assinantes pagam R$23,50/mês enquanto mantiverem a assinatura ativa. Se o preço aumentar no futuro, o valor de vocês fica travado. Isso é um compromisso nosso com os primeiros apoiadores.</div>
       </div>
       <div class="faq-item">
-        <button class="faq-q" onclick="toggleFaq(this)">Funciona para qualquer impressora? <span class="arrow">▾</span></button>
+        <button class="faq-q" data-click="toggleFaq(this)">Funciona para qualquer impressora? <span class="arrow">▾</span></button>
         <div class="faq-a">Sim. Você cadastra qualquer impressora FDM — Bambu Lab, Creality, Prusa, Ender, Anycubic, Artillery, ou qualquer outra. O sistema usa os dados que você informa (investimento, watts, horas de uso) para calcular o custo por hora real da sua máquina.</div>
       </div>
       <div class="faq-item">
-        <button class="faq-q" onclick="toggleFaq(this)">Posso cancelar a assinatura a qualquer momento? <span class="arrow">▾</span></button>
+        <button class="faq-q" data-click="toggleFaq(this)">Posso cancelar a assinatura a qualquer momento? <span class="arrow">▾</span></button>
         <div class="faq-a">Sim. Cancele quando quiser, sem fidelidade e sem multa. Se cancelar dentro dos primeiros 7 dias, devolvo o valor integralmente.</div>
       </div>
       <div class="faq-item">
-        <button class="faq-q" onclick="toggleFaq(this)">Quais marketplaces estão disponíveis? <span class="arrow">▾</span></button>
+        <button class="faq-q" data-click="toggleFaq(this)">Quais marketplaces estão disponíveis? <span class="arrow">▾</span></button>
         <div class="faq-a">Shopee, Mercado Livre, Amazon e venda direta (WhatsApp/site próprio) já estão configurados com as taxas atuais. Novos canais são adicionados nas atualizações mensais.</div>
       </div>
     </div>
@@ -590,24 +591,6 @@
   </div>
 </footer>
 
-<script>
-function toggleFaq(btn) {
-  const answer = btn.nextElementSibling;
-  btn.classList.toggle('open');
-  answer.classList.toggle('open');
-}
-
-// Animação do demo
-const prices = ['47,90', '62,40', '31,20', '89,00', '47,90'];
-const margins = ['38,4%', '41,2%', '35,8%', '43,1%', '38,4%'];
-let idx = 0;
-setInterval(() => {
-  idx = (idx + 1) % prices.length;
-  const el = document.getElementById('demo-price');
-  const mel = document.getElementById('demo-margin');
-  if (el) { el.style.transition = 'opacity 0.3s'; el.style.opacity = 0; setTimeout(() => { el.textContent = prices[idx]; el.style.opacity = 1; }, 300); }
-  if (mel) { mel.style.transition = 'opacity 0.3s'; mel.style.opacity = 0; setTimeout(() => { mel.textContent = margins[idx]; mel.style.opacity = 1; }, 300); }
-}, 3000);
-</script>
+<script src="js/lp.js?v=1cc0d4b43e"></script>
 </body>
 </html>

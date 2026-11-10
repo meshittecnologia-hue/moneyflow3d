@@ -530,8 +530,8 @@ function verificarEstoqueFilamento(nomeProduto, qtdPedido){
         Faltam: <strong style="color:var(--red)">${faltam}g</strong>
       </div>
       <div style="display:flex;gap:8px;justify-content:center">
-        <button onclick="showPage('filamentos');this.closest('[style*=inset]').remove()" style="padding:8px 18px;background:var(--accent);color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:600">Ver estoque</button>
-        <button onclick="this.closest('[style*=inset]').remove()" style="padding:8px 18px;background:var(--bg3);color:var(--text);border:1px solid var(--border);border-radius:8px;cursor:pointer">OK</button>
+        <button data-click="showPage('filamentos');removerMaisProximo(this,'[style*=inset]')" style="padding:8px 18px;background:var(--accent);color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:600">Ver estoque</button>
+        <button data-click="removerMaisProximo(this,'[style*=inset]')" style="padding:8px 18px;background:var(--bg3);color:var(--text);border:1px solid var(--border);border-radius:8px;cursor:pointer">OK</button>
       </div>
     </div>`;
     document.body.appendChild(popup);

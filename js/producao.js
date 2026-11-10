@@ -115,7 +115,7 @@ function renderFila(){
   DB.fila.forEach(i=>{counts[i.status]=(counts[i.status]||0)+1;});
   const statusOrder=['aguardando','fatiando','imprimindo','pos_processo','pronto','ag_envio','enviado','entregue'];
   const resumo=statusOrder.map(s=>`
-    <div onclick="document.getElementById('fila-status-filter').value=(document.getElementById('fila-status-filter').value==='${s}'?'':'${s}');renderFila()" style="text-align:center;padding:10px 12px;background:var(--bg2);border:1px solid ${sf===s?FILA_STATUS[s].cor:'var(--border)'};border-radius:8px;cursor:pointer;transition:border-color .15s">
+    <div data-click="filtrarFilaStatus('${s}')" style="text-align:center;padding:10px 12px;background:var(--bg2);border:1px solid ${sf===s?FILA_STATUS[s].cor:'var(--border)'};border-radius:8px;cursor:pointer;transition:border-color .15s">
       <div style="font-size:16px;font-weight:800;color:${esc(FILA_STATUS[s].cor)}">${counts[s]||0}</div>
       <div style="font-size:10px;color:var(--text3);white-space:nowrap">${FILA_STATUS[s].label}</div>
     </div>`).join('');
@@ -135,7 +135,7 @@ function renderFila(){
     const atrasado=i.prazo&&i.status!=='entregue'&&new Date(i.prazo)<new Date();
     const transp=i.transportadora?TRANSPORTADORAS[i.transportadora]:null;
     const rastreioHtml=i.rastreio?`
-      <div style="display:inline-flex;align-items:center;gap:6px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer" onclick="abrirRastreio('${i.transportadora||''}','${i.rastreio||''}')">
+      <div style="display:inline-flex;align-items:center;gap:6px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer" data-click="abrirRastreio('${i.transportadora||''}','${i.rastreio||''}')">
         📦 <span style="color:var(--text2)">${transp?transp.nome:'Rastreio'}:</span> <span style="color:var(--accent);font-weight:600">${i.rastreio}</span> <span style="color:var(--text3)">↗</span>
       </div>`:'';
     return `<div style="background:var(--bg2);border:1px solid ${atrasado?'rgba(239,68,68,.4)':'var(--border)'};border-radius:var(--r);padding:14px 16px">
@@ -152,13 +152,13 @@ function renderFila(){
           ${rastreioHtml}
         </div>
         <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;flex-shrink:0">
-          <select onchange="updateFilaStatus(${i.id},this.value)" style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:5px 8px;color:${esc(st.cor)};font-size:12px;outline:none">
+          <select data-change="updateFilaStatus('${i.id}',this.value)" style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:5px 8px;color:${esc(st.cor)};font-size:12px;outline:none">
             ${statusOrder.map(s=>`<option value="${s}" ${esc(i.status===s?'selected':'')}>${FILA_STATUS[s].label}</option>`).join('')}
           </select>
-          ${i.status!=='entregue'?`<button class="btn btn-ghost btn-sm" onclick="avancarStatus('${i.id}')" title="Avançar status" style="color:var(--accent)">▶</button>`:''}
-          <button class="btn btn-ghost btn-sm" onclick='openFilaModal(${JSON.stringify(i).replace(/'/g,"&#39;").replace(/"/g,"&quot;")})' title="Editar">✏</button>
-          <button class="btn btn-ghost btn-sm" style="color:var(--red)" onclick="delFila('${i.id}')" title="Remover">✕</button>
-          ${i.clienteNome&&i.clienteNome!=='—'?`<button class="btn btn-ghost btn-sm" style="color:var(--green)" onclick="wppFila(${i.id})" title="WhatsApp">📱</button>`:''}
+          ${i.status!=='entregue'?`<button class="btn btn-ghost btn-sm" data-click="avancarStatus('${i.id}')" title="Avançar status" style="color:var(--accent)">▶</button>`:''}
+          <button class="btn btn-ghost btn-sm" data-click="abrirFilaPorId('${i.id}')" title="Editar">✏</button>
+          <button class="btn btn-ghost btn-sm" style="color:var(--red)" data-click="delFila('${i.id}')" title="Remover">✕</button>
+          ${i.clienteNome&&i.clienteNome!=='—'?`<button class="btn btn-ghost btn-sm" style="color:var(--green)" data-click="wppFila('${i.id}')" title="WhatsApp">📱</button>`:''}
         </div>
       </div>
     </div>`;
@@ -254,7 +254,7 @@ function renderPedidos(){
         <td style="padding:11px 14px;color:var(--text2)">${o.produtoNome} × ${o.qtd}</td>
         <td style="padding:11px 14px;font-weight:700;color:var(--accent);text-align:right">R$ ${o.total.toFixed(2).replace('.',',')}</td>
         <td style="padding:11px 14px;text-align:center">
-          <select onchange="updateOrcStatus('${o.id}',this.value);setTimeout(renderPedidos,100)" style="background:${statusBg[o.status]||'var(--bg3)'};border:1px solid ${statusCores[o.status]||'var(--border)'};border-radius:20px;padding:3px 10px;color:${statusCores[o.status]||'var(--text)'};font-size:11px;font-weight:700;outline:none;cursor:pointer">
+          <select data-change="mudarStatusPedido('${o.id}',this.value)" style="background:${statusBg[o.status]||'var(--bg3)'};border:1px solid ${statusCores[o.status]||'var(--border)'};border-radius:20px;padding:3px 10px;color:${statusCores[o.status]||'var(--text)'};font-size:11px;font-weight:700;outline:none;cursor:pointer">
             ${['pendente','aprovado','recusado'].map(s=>`<option value="${s}" ${esc(o.status===s?'selected':'')}>${statusLabel[s]}</option>`).join('')}
           </select>
         </td>
@@ -262,17 +262,17 @@ function renderPedidos(){
         <td style="padding:11px 14px;font-size:12px;color:var(--text3)">${o.data}</td>
         <td style="padding:11px 14px"><span style="font-size:11px;font-weight:700;color:${esc(filaStatus.cor)}">${filaStatus.label}</span></td>
         <td style="padding:11px 14px"><div style="display:flex;gap:4px">
-          <button class="btn btn-ghost btn-sm" onclick="verOrcamentoPDF('${o.id}')" title="PDF">📄</button>
-          <button class="btn btn-ghost btn-sm" style="color:var(--green)" onclick="wppOrcamento('${o.id}')" title="WhatsApp">📱</button>
-          <button class="btn btn-ghost btn-sm" style="color:var(--blue)" onclick="emailOrcamento('${o.id}')" title="Email">✉</button>
-          ${pedidoFila?`<button class="btn btn-ghost btn-sm" style="color:var(--accent)" onclick="showPage('fila')" title="Ver na fila">🖨</button>`:''}
+          <button class="btn btn-ghost btn-sm" data-click="verOrcamentoPDF('${o.id}')" title="PDF">📄</button>
+          <button class="btn btn-ghost btn-sm" style="color:var(--green)" data-click="wppOrcamento('${o.id}')" title="WhatsApp">📱</button>
+          <button class="btn btn-ghost btn-sm" style="color:var(--blue)" data-click="emailOrcamento('${o.id}')" title="Email">✉</button>
+          ${pedidoFila?`<button class="btn btn-ghost btn-sm" style="color:var(--accent)" data-click="showPage('fila')" title="Ver na fila">🖨</button>`:''}
         </div></td>
       </tr>`;
     }).join('')}</tbody>
   </table></div>
   <div style="margin-top:10px;font-size:12px;color:var(--text3);display:flex;justify-content:space-between;align-items:center">
     <span>${orcs.length} pedido${orcs.length!==1?'s':''} · Total filtrado: R$ ${orcs.reduce((s,o)=>s+o.total,0).toFixed(2)}</span>
-    <button class="btn btn-ghost btn-sm" onclick="exportarPedidosCSV()">⬇ CSV</button>
+    <button class="btn btn-ghost btn-sm" data-click="exportarPedidosCSV()">⬇ CSV</button>
   </div>`;
 }
 
@@ -357,3 +357,13 @@ function setCrmView(m){
   renderCRM();
 }
 
+
+
+/* Item 25: ações da fila e do painel de pedidos (antes eram código solto no HTML). */
+function abrirFilaPorId(id){ const i=(DB.fila||[]).find(x=>String(x.id)===String(id)); if(i) openFilaModal(i); }
+function filtrarFilaStatus(s){
+  const f=document.getElementById('fila-status-filter');
+  f.value = f.value===s ? '' : s;
+  renderFila();
+}
+function mudarStatusPedido(id, status){ updateOrcStatus(id,status); setTimeout(renderPedidos,100); }
