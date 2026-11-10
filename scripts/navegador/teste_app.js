@@ -49,6 +49,9 @@ const SUPABASE_FALSO = `(function(){
   // Item 22: o jsPDF é o de verdade (mesma versão do index.html, conferida pela assinatura SRI abaixo).
   await pg.route(/jspdf/, r => r.fulfill({ contentType: 'application/javascript', body: fs.readFileSync(JSPDF) }));
   await pg.route(/sentry-cdn/, r => r.fulfill({ contentType: 'application/javascript', body: '' }));
+  // Backend falso: só confere que o app registra o acesso (Marco Civil) com o token da sessão.
+  const acessos = [];
+  await pg.route(/onrender\.com\/acesso/, r => { acessos.push(r.request().headers().authorization || ''); r.fulfill({ status: 200, contentType: 'application/json', body: '{"ok":true}' }); });
   await pg.route(/localhost:8765\/index\.html/, async r => {
     const resp = await r.fetch();
     r.fulfill({ response: resp, body: (await resp.text()).replace(/ integrity="[^"]+"/g, '') });
@@ -107,6 +110,7 @@ const SUPABASE_FALSO = `(function(){
     return out;
   });
   cliques.push(...comDados);
+  if (!acessos.length || !acessos[0].startsWith('Bearer ')) cliques.push('registro de acesso não foi chamado com o token da sessão');
   // Item 22: gera o PDF do orçamento com o jsPDF real e confere o arquivo baixado.
   const sriIndex = (fs.readFileSync(path.join(RAIZ, 'index.html'), 'utf8').match(/jspdf@([\d.]+)\/dist\/jspdf\.umd\.min\.js" integrity="([^"]+)"/) || []);
   const sriLocal = 'sha512-' + require('crypto').createHash('sha512').update(fs.readFileSync(JSPDF)).digest('base64');

@@ -4,10 +4,12 @@ Regra central: o navegador nunca recebe chave secreta. Ele manda só o token
 de sessão do usuário logado; aqui conferimos quem é e se é admin antes de
 usar a secret key do Supabase.
 """
+import ipaddress
 import logging
 import secrets
 import string
 from contextlib import asynccontextmanager
+from datetime import datetime, timedelta, timezone
 from typing import Literal
 
 import httpx
@@ -24,6 +26,9 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(messag
 log = logging.getLogger("moneyflow3d")
 
 PLANOS = {"free", "pro", "interno"}
+# Política de Privacidade: aviso aos 75 dias sem uso, exclusão aos 90.
+DIAS_AVISO = 75
+DIAS_EXCLUSAO = 90
 ROLES = {"user", "admin"}
 
 
@@ -41,6 +46,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     # Recuperação de senha: 3 pedidos por e-mail a cada 15 min e 10 por IP a cada hora.
     app.state.recover_email_limit = RateLimiter(3, 15 * 60)
     app.state.recover_ip_limit = RateLimiter(10, 60 * 60)
+    # Registro de acesso: no máximo 30 por usuário por hora (abrir o app várias vezes é normal).
+    app.state.acesso_limit = RateLimiter(30, 60 * 60)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.allowed_origins,
@@ -92,6 +99,30 @@ class AccessEmailIn(BaseModel):
     name: str = Field(default="", max_length=120)
 
 
+def _ip_do_cliente(cf_connecting_ip: str, xff: str, direto: str) -> str:
+    """IP real de quem acessou.
+
+    O Render fica atrás da Cloudflare: o X-Forwarded-For chega como
+    "cliente, cloudflare, rede interna do Render". A Cloudflare sempre sobrescreve o
+    CF-Connecting-IP com o IP real, então ele não pode ser forjado e é o preferido.
+    Sem ele: o último IP público da cadeia (o começo pode ter sido escrito pelo cliente
+    e o fim é rede interna).
+    """
+    cf = cf_connecting_ip.strip()
+    if cf:
+        try:
+            return str(ipaddress.ip_address(cf))
+        except ValueError:
+            pass
+    for parte in reversed([p.strip() for p in xff.split(",") if p.strip()]):
+        try:
+            if not ipaddress.ip_address(parte).is_private:
+                return parte
+        except ValueError:
+            continue
+    return direto or "desconhecido"
+
+
 def _temp_password() -> str:
     alphabet = string.ascii_letters + string.digits
     return "Tmp_" + "".join(secrets.choice(alphabet) for _ in range(16)) + "!1a"
@@ -106,6 +137,89 @@ def _sb_error(e: SupabaseError) -> HTTPException:
 def register_routes(app: FastAPI) -> None:
     @app.get("/health")
     async def health():
+        return {"ok": True}
+
+    @app.post("/tarefas/limpeza-contas")
+    async def limpeza_contas(
+        x_tarefa_token: str = Header(default=""),
+        sb: SupabaseAdmin = Depends(get_sb),
+    ):
+        """Conta sem plano pago e sem uso: aviso aos 75 dias, exclusão aos 90 (Política de Privacidade).
+
+        Chamado 1x por dia pelo GitHub Actions. Resposta só com contagens (o log do Actions é público).
+        """
+        settings: Settings = app.state.settings
+        if not settings.tarefa_token:
+            raise HTTPException(503, "TAREFA_TOKEN não configurado")
+        if not secrets.compare_digest(x_tarefa_token, settings.tarefa_token):
+            raise HTTPException(401, "Token de tarefa inválido")
+        agora = datetime.now(timezone.utc)
+        res = {"avisados": 0, "reativados": 0, "excluidos": 0, "excluiria": 0, "erros": 0,
+               "modo": "exclui" if settings.limpeza_excluir else "relatorio"}
+        try:
+            contas = await sb.contas_para_limpeza(DIAS_AVISO)
+        except SupabaseError as e:
+            raise _sb_error(e) from e
+        for c in contas:
+            try:
+                ultimo = datetime.fromisoformat(c["ultimo_acesso"])
+                aviso = datetime.fromisoformat(c["aviso_exclusao_em"]) if c.get("aviso_exclusao_em") else None
+                if aviso and ultimo > aviso:
+                    await sb.update_profile(c["id"], {"aviso_exclusao_em": None})
+                    res["reativados"] += 1
+                elif not aviso and agora - ultimo >= timedelta(days=DIAS_AVISO):
+                    if not c.get("email"):
+                        raise ValueError("conta sem e-mail: não dá para avisar, não será excluída")
+                    await send_template(settings, app.state.http, "aviso_exclusao", c["email"],
+                                        c.get("nome") or c["email"].split("@")[0], settings.app_url)
+                    await sb.update_profile(c["id"], {"aviso_exclusao_em": agora.isoformat()})
+                    res["avisados"] += 1
+                elif aviso and agora - aviso >= timedelta(days=DIAS_EXCLUSAO - DIAS_AVISO) \
+                        and agora - ultimo >= timedelta(days=DIAS_EXCLUSAO):
+                    if not settings.limpeza_excluir:
+                        res["excluiria"] += 1
+                        continue
+                    await sb.insert_admin_log({
+                        "admin_id": None, "action": "auto_delete_inactive", "target_user": c["id"],
+                        "details": {"motivo": f"sem plano pago e sem uso há {DIAS_EXCLUSAO} dias",
+                                    "ultimo_acesso": c["ultimo_acesso"], "aviso_em": c["aviso_exclusao_em"]},
+                    })
+                    await sb.delete_logos(c["id"])
+                    await sb.delete_user(c["id"])  # apaga em cascata perfil e dados do sistema
+                    res["excluidos"] += 1
+            except Exception as e:  # uma conta com problema não para as outras
+                res["erros"] += 1
+                log.error("limpeza: conta %s: %s", c.get("id"), str(e)[:200])
+        log.info("limpeza de contas: %s", res)
+        return res
+
+    @app.post("/acesso")
+    async def registrar_acesso(
+        request: Request,
+        authorization: str = Header(default=""),
+        user_agent: str = Header(default=""),
+        sb: SupabaseAdmin = Depends(get_sb),
+    ):
+        """Marco Civil art. 15: grava data, hora e IP de cada acesso ao app (guardados 6 meses)."""
+        if not authorization.lower().startswith("bearer "):
+            raise HTTPException(401, "Login obrigatório")
+        user = await sb.get_user_from_token(authorization[7:].strip())
+        if not user or not user.get("id"):
+            raise HTTPException(401, "Sessão inválida ou expirada")
+        if not app.state.acesso_limit.allow(user["id"]):
+            raise HTTPException(429, "Muitos registros de acesso")
+        xff = request.headers.get("x-forwarded-for", "")
+        ip = _ip_do_cliente(request.headers.get("cf-connecting-ip", ""), xff,
+                            request.client.host if request.client else "")
+        try:
+            await sb.insert_registro_acesso({
+                "user_id": user["id"],
+                "ip": ip[:64],
+                "ip_cadeia": xff[:300] or None,
+                "user_agent": user_agent[:300] or None,
+            })
+        except SupabaseError as e:
+            raise _sb_error(e) from e
         return {"ok": True}
 
     @app.post("/auth/recover")

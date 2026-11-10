@@ -14,7 +14,7 @@ jobs:
         with:
           node-version: 22
       - name: Regras 1 e 2 + varredura de segredos
-        run: python3 scripts/validar_html.py admin.html index.html lp.html
+        run: python3 scripts/validar_html.py admin.html index.html lp.html privacidade.html termos.html
       - name: Preços iguais a planos.js (item 24)
         run: python3 scripts/validar_precos.py admin.html index.html lp.html js/*.js
       - name: Carimbos de versão dos arquivos js/css (item 16)

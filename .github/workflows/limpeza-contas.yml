@@ -1,0 +1,26 @@
+# Política de Privacidade: conta sem plano pago e sem uso há 75 dias recebe aviso por e-mail;
+# aos 90 dias (e 15 depois do aviso) é excluída. Quem decide e executa é o backend; aqui só chama.
+# O log deste workflow é PÚBLICO (repositório público): a resposta tem só contagens, nunca e-mails.
+name: Limpeza de contas inativas
+
+on:
+  schedule:
+    - cron: "37 9 * * *"   # todo dia 06h37 (Brasília)
+  workflow_dispatch: {}
+
+permissions: {}
+
+jobs:
+  limpeza:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Produção
+        env:
+          TOKEN: ${{ secrets.TAREFA_TOKEN }}
+        run: |
+          if [ -z "$TOKEN" ]; then echo "Secret TAREFA_TOKEN não cadastrado: nada a fazer."; exit 0; fi
+          # O Render gratuito dorme: a 1ª chamada acorda o servidor, por isso as tentativas.
+          curl -fsS --retry 5 --retry-delay 20 --retry-all-errors --max-time 120 \
+            -X POST https://moneyflow3d-api.onrender.com/tarefas/limpeza-contas \
+            -H "X-Tarefa-Token: $TOKEN"
+          echo

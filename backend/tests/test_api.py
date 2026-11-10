@@ -239,3 +239,159 @@ def test_exclusao_grava_log_antes_de_apagar(client):
     r = client.delete(f"/admin/users/{USER_ID}", headers=AUTH)
     assert r.status_code == 200, r.text
     assert ordem == ["log", "auth", "perfil"]
+
+
+# ---------- Registro de acesso (Marco Civil, art. 15) ----------
+@respx.mock
+def test_acesso_sem_token_retorna_401(client):
+    assert client.post("/acesso").status_code == 401
+
+
+@respx.mock
+def test_acesso_token_invalido_retorna_401(client):
+    respx.get(f"{SB}/auth/v1/user").mock(return_value=httpx.Response(401, json={"msg": "bad jwt"}))
+    assert client.post("/acesso", headers={"Authorization": "Bearer ruim"}).status_code == 401
+
+
+@respx.mock
+def test_acesso_grava_ip_real_da_cloudflare(client):
+    # Formato real visto na homologação: cliente, Cloudflare, rede interna do Render.
+    respx.get(f"{SB}/auth/v1/user").mock(return_value=httpx.Response(200, json={"id": USER_ID}))
+    grava = respx.post(f"{SB}/rest/v1/registros_acesso").mock(return_value=httpx.Response(201))
+    cadeia = "6.6.6.6, 200.1.2.3, 172.71.234.65, 10.27.41.133"
+    r = client.post(
+        "/acesso",
+        headers={"Authorization": "Bearer tok", "X-Forwarded-For": cadeia,
+                 "CF-Connecting-IP": "200.1.2.3", "User-Agent": "Teste/1.0"},
+    )
+    assert r.status_code == 200 and r.json() == {"ok": True}
+    import json
+    row = json.loads(grava.calls.last.request.content)
+    assert row["user_id"] == USER_ID
+    assert row["ip"] == "200.1.2.3"  # nem o forjado (6.6.6.6) nem o interno (10.x)
+    assert row["ip_cadeia"] == cadeia
+    assert row["user_agent"] == "Teste/1.0"
+    assert grava.calls.last.request.headers["apikey"] == "sb_secret_test"
+
+
+def test_ip_do_cliente_sem_cloudflare_pula_rede_interna():
+    from app.main import _ip_do_cliente
+    assert _ip_do_cliente("", "6.6.6.6, 200.1.2.3, 10.27.41.133", "10.0.0.9") == "200.1.2.3"
+    assert _ip_do_cliente("lixo", "200.1.2.3", "") == "200.1.2.3"
+    assert _ip_do_cliente("", "10.1.1.1", "10.0.0.9") == "10.0.0.9"
+    assert _ip_do_cliente("2804:14c::1", "", "") == "2804:14c::1"
+
+
+@respx.mock
+def test_acesso_limite_por_usuario(client):
+    respx.get(f"{SB}/auth/v1/user").mock(return_value=httpx.Response(200, json={"id": OTHER_ID}))
+    respx.post(f"{SB}/rest/v1/registros_acesso").mock(return_value=httpx.Response(201))
+    codes = [client.post("/acesso", headers={"Authorization": "Bearer t"}).status_code for _ in range(31)]
+    assert codes[:30] == [200] * 30 and codes[30] == 429
+
+
+@respx.mock
+def test_acesso_falha_no_banco_aparece(client):
+    respx.get(f"{SB}/auth/v1/user").mock(return_value=httpx.Response(200, json={"id": USER_ID}))
+    respx.post(f"{SB}/rest/v1/registros_acesso").mock(return_value=httpx.Response(500, json={"message": "erro"}))
+    assert client.post("/acesso", headers={"Authorization": "Bearer t"}).status_code == 502
+
+
+# ---------- Limpeza de contas inativas (Política de Privacidade) ----------
+import json as _json
+from datetime import datetime as _dt, timedelta as _td, timezone as _tz
+
+
+def _dias_atras(d):
+    return (_dt.now(_tz.utc) - _td(days=d)).isoformat()
+
+
+@pytest.fixture
+def tarefa_client(monkeypatch):
+    def _make(excluir=False):
+        monkeypatch.setenv("TAREFA_TOKEN", "tok-tarefa")
+        monkeypatch.setenv("LIMPEZA_EXCLUIR", "1" if excluir else "")
+        return TestClient(create_app(Settings()))
+    return _make
+
+
+TAREFA = {"X-Tarefa-Token": "tok-tarefa"}
+
+
+@respx.mock
+def test_limpeza_sem_token_401(tarefa_client):
+    with tarefa_client() as c:
+        assert c.post("/tarefas/limpeza-contas").status_code == 401
+        assert c.post("/tarefas/limpeza-contas", headers={"X-Tarefa-Token": "errado"}).status_code == 401
+
+
+@respx.mock
+def test_limpeza_sem_token_configurado_503(client):
+    assert client.post("/tarefas/limpeza-contas", headers=TAREFA).status_code == 503
+
+
+@respx.mock
+def test_limpeza_avisa_aos_75_dias_e_marca(tarefa_client):
+    respx.post(f"{SB}/rest/v1/rpc/contas_para_limpeza").mock(return_value=httpx.Response(200, json=[
+        {"id": USER_ID, "email": "a@x.com", "nome": "Ana", "ultimo_acesso": _dias_atras(76), "aviso_exclusao_em": None}]))
+    resend = respx.post("https://api.resend.com/emails").mock(return_value=httpx.Response(200, json={"id": "e"}))
+    marca = respx.patch(f"{SB}/rest/v1/profiles").mock(return_value=httpx.Response(204))
+    with tarefa_client() as c:
+        r = c.post("/tarefas/limpeza-contas", headers=TAREFA)
+    assert r.json()["avisados"] == 1 and r.json()["excluidos"] == 0
+    corpo = _json.loads(resend.calls.last.request.content)
+    assert corpo["to"] == ["a@x.com"] and "15 dias" in corpo["subject"]
+    assert _json.loads(marca.calls.last.request.content)["aviso_exclusao_em"]
+
+
+@respx.mock
+def test_limpeza_falha_no_email_nao_marca_aviso(tarefa_client):
+    respx.post(f"{SB}/rest/v1/rpc/contas_para_limpeza").mock(return_value=httpx.Response(200, json=[
+        {"id": USER_ID, "email": "a@x.com", "nome": "Ana", "ultimo_acesso": _dias_atras(80), "aviso_exclusao_em": None}]))
+    respx.post("https://api.resend.com/emails").mock(return_value=httpx.Response(500, json={}))
+    marca = respx.patch(f"{SB}/rest/v1/profiles").mock(return_value=httpx.Response(204))
+    with tarefa_client(excluir=True) as c:
+        r = c.post("/tarefas/limpeza-contas", headers=TAREFA)
+    assert r.json()["erros"] == 1 and not marca.called
+
+
+@respx.mock
+def test_limpeza_reativa_quem_voltou_depois_do_aviso(tarefa_client):
+    respx.post(f"{SB}/rest/v1/rpc/contas_para_limpeza").mock(return_value=httpx.Response(200, json=[
+        {"id": USER_ID, "email": "a@x.com", "nome": "Ana", "ultimo_acesso": _dias_atras(1), "aviso_exclusao_em": _dias_atras(10)}]))
+    marca = respx.patch(f"{SB}/rest/v1/profiles").mock(return_value=httpx.Response(204))
+    apaga = respx.delete(f"{SB}/auth/v1/admin/users/{USER_ID}").mock(return_value=httpx.Response(200))
+    with tarefa_client(excluir=True) as c:
+        r = c.post("/tarefas/limpeza-contas", headers=TAREFA)
+    assert r.json()["reativados"] == 1 and not apaga.called
+    assert _json.loads(marca.calls.last.request.content) == {"aviso_exclusao_em": None}
+
+
+@respx.mock
+def test_limpeza_modo_relatorio_nao_apaga(tarefa_client):
+    respx.post(f"{SB}/rest/v1/rpc/contas_para_limpeza").mock(return_value=httpx.Response(200, json=[
+        {"id": USER_ID, "email": "a@x.com", "nome": "Ana", "ultimo_acesso": _dias_atras(95), "aviso_exclusao_em": _dias_atras(20)}]))
+    apaga = respx.delete(f"{SB}/auth/v1/admin/users/{USER_ID}").mock(return_value=httpx.Response(200))
+    with tarefa_client(excluir=False) as c:
+        r = c.post("/tarefas/limpeza-contas", headers=TAREFA)
+    assert r.json() == {"avisados": 0, "reativados": 0, "excluidos": 0, "excluiria": 1, "erros": 0, "modo": "relatorio"}
+    assert not apaga.called
+
+
+@respx.mock
+def test_limpeza_exclui_aos_90_dias_com_aviso_de_15(tarefa_client):
+    respx.post(f"{SB}/rest/v1/rpc/contas_para_limpeza").mock(return_value=httpx.Response(200, json=[
+        {"id": USER_ID, "email": "a@x.com", "nome": "Ana", "ultimo_acesso": _dias_atras(95), "aviso_exclusao_em": _dias_atras(16)},
+        # avisado há só 5 dias: ainda não pode excluir
+        {"id": OTHER_ID, "email": "b@x.com", "nome": "Bia", "ultimo_acesso": _dias_atras(100), "aviso_exclusao_em": _dias_atras(5)}]))
+    log_admin = respx.post(f"{SB}/rest/v1/admin_logs").mock(return_value=httpx.Response(201))
+    respx.post(f"{SB}/storage/v1/object/list/logos").mock(return_value=httpx.Response(200, json=[{"name": "logo.png"}]))
+    apaga_logo = respx.delete(f"{SB}/storage/v1/object/logos").mock(return_value=httpx.Response(200, json=[]))
+    apaga = respx.delete(f"{SB}/auth/v1/admin/users/{USER_ID}").mock(return_value=httpx.Response(200))
+    apaga_outro = respx.delete(f"{SB}/auth/v1/admin/users/{OTHER_ID}").mock(return_value=httpx.Response(200))
+    with tarefa_client(excluir=True) as c:
+        r = c.post("/tarefas/limpeza-contas", headers=TAREFA)
+    assert r.json()["excluidos"] == 1 and apaga.called and not apaga_outro.called
+    assert _json.loads(apaga_logo.calls.last.request.content) == {"prefixes": [f"{USER_ID}/logo.png"]}
+    assert _json.loads(log_admin.calls.last.request.content)["action"] == "auto_delete_inactive"
+    assert "a@x.com" not in r.text  # resposta só com números (log do Actions é público)
