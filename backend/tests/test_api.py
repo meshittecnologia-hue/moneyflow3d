@@ -254,21 +254,32 @@ def test_acesso_token_invalido_retorna_401(client):
 
 
 @respx.mock
-def test_acesso_grava_ip_real_do_fim_da_cadeia(client):
+def test_acesso_grava_ip_real_da_cloudflare(client):
+    # Formato real visto na homologação: cliente, Cloudflare, rede interna do Render.
     respx.get(f"{SB}/auth/v1/user").mock(return_value=httpx.Response(200, json={"id": USER_ID}))
     grava = respx.post(f"{SB}/rest/v1/registros_acesso").mock(return_value=httpx.Response(201))
+    cadeia = "6.6.6.6, 200.1.2.3, 172.71.234.65, 10.27.41.133"
     r = client.post(
         "/acesso",
-        headers={"Authorization": "Bearer tok", "X-Forwarded-For": "6.6.6.6, 200.1.2.3", "User-Agent": "Teste/1.0"},
+        headers={"Authorization": "Bearer tok", "X-Forwarded-For": cadeia,
+                 "CF-Connecting-IP": "200.1.2.3", "User-Agent": "Teste/1.0"},
     )
     assert r.status_code == 200 and r.json() == {"ok": True}
     import json
     row = json.loads(grava.calls.last.request.content)
     assert row["user_id"] == USER_ID
-    assert row["ip"] == "200.1.2.3"  # o forjado pelo cliente (6.6.6.6) não vira o IP gravado
-    assert row["ip_cadeia"] == "6.6.6.6, 200.1.2.3"
+    assert row["ip"] == "200.1.2.3"  # nem o forjado (6.6.6.6) nem o interno (10.x)
+    assert row["ip_cadeia"] == cadeia
     assert row["user_agent"] == "Teste/1.0"
     assert grava.calls.last.request.headers["apikey"] == "sb_secret_test"
+
+
+def test_ip_do_cliente_sem_cloudflare_pula_rede_interna():
+    from app.main import _ip_do_cliente
+    assert _ip_do_cliente("", "6.6.6.6, 200.1.2.3, 10.27.41.133", "10.0.0.9") == "200.1.2.3"
+    assert _ip_do_cliente("lixo", "200.1.2.3", "") == "200.1.2.3"
+    assert _ip_do_cliente("", "10.1.1.1", "10.0.0.9") == "10.0.0.9"
+    assert _ip_do_cliente("2804:14c::1", "", "") == "2804:14c::1"
 
 
 @respx.mock

@@ -4,6 +4,7 @@ Regra central: o navegador nunca recebe chave secreta. Ele manda só o token
 de sessão do usuário logado; aqui conferimos quem é e se é admin antes de
 usar a secret key do Supabase.
 """
+import ipaddress
 import logging
 import secrets
 import string
@@ -94,6 +95,30 @@ class AccessEmailIn(BaseModel):
     name: str = Field(default="", max_length=120)
 
 
+def _ip_do_cliente(cf_connecting_ip: str, xff: str, direto: str) -> str:
+    """IP real de quem acessou.
+
+    O Render fica atrás da Cloudflare: o X-Forwarded-For chega como
+    "cliente, cloudflare, rede interna do Render". A Cloudflare sempre sobrescreve o
+    CF-Connecting-IP com o IP real, então ele não pode ser forjado e é o preferido.
+    Sem ele: o último IP público da cadeia (o começo pode ter sido escrito pelo cliente
+    e o fim é rede interna).
+    """
+    cf = cf_connecting_ip.strip()
+    if cf:
+        try:
+            return str(ipaddress.ip_address(cf))
+        except ValueError:
+            pass
+    for parte in reversed([p.strip() for p in xff.split(",") if p.strip()]):
+        try:
+            if not ipaddress.ip_address(parte).is_private:
+                return parte
+        except ValueError:
+            continue
+    return direto or "desconhecido"
+
+
 def _temp_password() -> str:
     alphabet = string.ascii_letters + string.digits
     return "Tmp_" + "".join(secrets.choice(alphabet) for _ in range(16)) + "!1a"
@@ -125,11 +150,9 @@ def register_routes(app: FastAPI) -> None:
             raise HTTPException(401, "Sessão inválida ou expirada")
         if not app.state.acesso_limit.allow(user["id"]):
             raise HTTPException(429, "Muitos registros de acesso")
-        # O proxy do Render acrescenta o IP real no FIM do X-Forwarded-For. O começo da lista
-        # pode ter sido escrito pelo próprio cliente, então o IP gravado é o último.
         xff = request.headers.get("x-forwarded-for", "")
-        cadeia = [p.strip() for p in xff.split(",") if p.strip()]
-        ip = cadeia[-1] if cadeia else (request.client.host if request.client else "desconhecido")
+        ip = _ip_do_cliente(request.headers.get("cf-connecting-ip", ""), xff,
+                            request.client.host if request.client else "")
         try:
             await sb.insert_registro_acesso({
                 "user_id": user["id"],
