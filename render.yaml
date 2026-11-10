@@ -19,3 +19,37 @@ services:
         value: https://moneyflow3d.com.br
       - key: ALLOWED_ORIGINS
         value: https://moneyflow3d.com.br
+
+  # ── Homologação (item 2.2): mesma API, ligada à branch Desenvolvimento e ao Supabase moneyflow3d-dev.
+  - type: web
+    name: moneyflow3d-api-dev
+    runtime: python
+    plan: free
+    branch: Desenvolvimento
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: SUPABASE_URL
+        value: https://ilpjwzbiqbngimnsonfv.supabase.co
+      - key: SUPABASE_SECRET_KEY
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: APP_URL
+        value: https://moneyflow3d-web-dev.onrender.com
+      - key: ALLOWED_ORIGINS
+        value: https://moneyflow3d-web-dev.onrender.com
+
+  # Site de homologação: os mesmos HTML da branch Desenvolvimento.
+  - type: web
+    name: moneyflow3d-web-dev
+    runtime: static
+    branch: Desenvolvimento
+    buildCommand: mkdir -p site && cp index.html admin.html lp.html site/
+    staticPublishPath: site
+    headers:
+      - path: /*
+        name: X-Robots-Tag
+        value: noindex, nofollow
