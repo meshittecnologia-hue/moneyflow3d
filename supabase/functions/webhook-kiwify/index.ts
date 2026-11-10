@@ -5,12 +5,15 @@
 //   KIWIFY_WEBHOOK_TOKEN  token do webhook cadastrado na Kiwify
 //   RESEND_KEY            chave do Resend (e-mail de boas-vindas)
 //   SUPABASE_SECRET_KEYS  injetada pelo Supabase
+//   APP_URL               (opcional) endereço do site; padrão https://moneyflow3d.com.br
 // Verify JWT precisa ficar DESLIGADO (a Kiwify não manda JWT).
 
 const WEBHOOK_TOKEN = Deno.env.get("KIWIFY_WEBHOOK_TOKEN") ?? "";
 const RESEND_KEY = Deno.env.get("RESEND_KEY") ?? "";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_KEY = JSON.parse(Deno.env.get("SUPABASE_SECRET_KEYS") || "{}").default ?? "";
+// Endereço do site nos links do e-mail. Homologação define APP_URL nos Secrets; produção usa o padrão.
+const APP_URL = (Deno.env.get("APP_URL") || "https://moneyflow3d.com.br").replace(/\/$/, "");
 
 const PLAN_LABELS: Record<string, string> = { maker: "Maker", pro: "Pro", free: "Free" };
 
@@ -57,7 +60,7 @@ async function generatePasswordLink(email: string) {
   const data = await sbFetch("/auth/v1/admin/generate_link", "POST", {
     type: "recovery",
     email,
-    options: { redirect_to: "https://moneyflow3d.com.br" },
+    options: { redirect_to: APP_URL },
   });
   return data?.action_link ?? null;
 }
@@ -86,8 +89,8 @@ async function sendEmail(to: string, name: string, plan: string, link: string) {
   <p>Ola, <strong>${esc(name)}</strong>!</p>
   <p>Sua assinatura foi confirmada. Clique no botao abaixo para criar sua senha e acessar a plataforma:</p>
   <a href="${esc(link)}" class="btn">Criar minha senha e acessar</a>
-  <p style="font-size:13px;color:#999">O link expira em 24h. Apos criar sua senha, faca login normalmente em <a href="https://moneyflow3d.com.br" style="color:#a78bfa">moneyflow3d.com.br</a>.</p>
-  <div class="footer">MoneyFlow 3D - MeshIT Tecnologia | <a href="https://moneyflow3d.com.br" style="color:#a78bfa">moneyflow3d.com.br</a></div>
+  <p style="font-size:13px;color:#999">O link expira em 24h. Apos criar sua senha, faca login normalmente em <a href="${APP_URL}" style="color:#a78bfa">${APP_URL.replace("https://", "")}</a>.</p>
+  <div class="footer">MoneyFlow 3D - MeshIT Tecnologia | <a href="${APP_URL}" style="color:#a78bfa">${APP_URL.replace("https://", "")}</a></div>
 </div>
 </body>
 </html>`;

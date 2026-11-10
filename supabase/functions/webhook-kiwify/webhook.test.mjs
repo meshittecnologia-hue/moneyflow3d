@@ -200,6 +200,13 @@ test("Kiwify não manda o plano: comprador recebe pro", async () => {
   assert.equal(perfil("novo-id").plan, "pro");
 });
 
+test("link do e-mail usa o endereço de produção quando APP_URL não está definido", async () => {
+  await enviar(pedido());
+  const gl = feitas("POST /auth/v1/admin/generate_link")[0].body;
+  assert.equal(gl.options.redirect_to, "https://moneyflow3d.com.br");
+  assert.ok(feitas("POST /emails")[0].body.html.includes('href="https://moneyflow3d.com.br"'));
+});
+
 // ---------- Reembolso e chargeback: bloqueia na hora ----------
 test("reembolso: assinatura refunded e acesso bloqueado na hora", async () => {
   clienteAtivo();
