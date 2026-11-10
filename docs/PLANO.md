@@ -1,10 +1,10 @@
 # MoneyFlow 3D — Plano de Correção e Separação Front/Back
 
-Atualizado em 10/11/2026 (08h30) · Versão viva (editável, com diagramas): https://claude.ai/artifact/A5yhyA9VDmnz4pSLtQXwHt
+Atualizado em 10/11/2026 (09h30) · Versão viva (editável, com diagramas): https://claude.ai/artifact/A5yhyA9VDmnz4pSLtQXwHt
 
 ## Resumo
 
-Dos 34 problemas da auditoria de 04/11/2026, **23 estão resolvidos, 2 parcialmente e 9 pendentes**. Os 5 urgentes de segurança estão fechados ou mitigados; o backend Python está no ar e a Fase 1 foi concluída em 09/11; homologação, troca de chaves e Cloudflare na frente do site estão prontos; o que falta é separar o restante do frontend e os itens de polimento. Previsão de conclusão: **19/12/2026**, em 6 fases.
+Dos 34 problemas da auditoria de 04/11/2026, **24 estão resolvidos, 2 parcialmente e 8 pendentes**. Os 5 urgentes de segurança estão fechados ou mitigados; o backend Python está no ar e a Fase 1 foi concluída em 09/11; homologação, troca de chaves e Cloudflare na frente do site estão prontos; o que falta é separar o restante do frontend e os itens de polimento. Previsão de conclusão: **19/12/2026**, em 6 fases.
 
 Como usamos este plano:
 
@@ -39,7 +39,7 @@ Como usamos este plano:
 | 21 | Sem cabeçalhos de segurança | Moderado | Feito | 10/11: regra "Cabecalhos de seguranca" no Cloudflare (X-Frame-Options DENY, Referrer-Policy, Permissions-Policy, CSP frame-ancestors/base-uri/object-src), HSTS 6 meses, nosniff, HTTPS obrigatório, TLS mínimo 1.2 |
 | 22 | Bibliotecas sem versão fixa | Moderado | Parcial | supabase-js 2.118.0 e jsPDF 2.5.1 fixos com SRI, em produção; falta atualizar o jsPDF para 4.x |
 | 23 | Sem Política de Privacidade e Termos | Moderado | Pendente | Textos LGPD (revisão jurídica recomendada) |
-| 24 | Preços repetidos e MRR errado | Moderado | Pendente | Planos e preços num único lugar, servidos pelo backend |
+| 24 | Preços repetidos e MRR errado | Moderado | Feito | 10/11: `planos.js` é a fonte única (Pro R$ 23,50, depois R$ 47; maker e anual como planos antigos); index e admin leem dele; CI barra preço/link/vagas divergentes (`validar_precos.py`); MRR pela função `mrr_atual()` com o valor real cobrado pela Kiwify. Assinaturas de teste do Antonio apagadas e as de Willer/Eder canceladas (decisão de 10/11) |
 | 25 | 245 onclick no HTML | Moderado | Pendente | Trocar por eventos registrados no JavaScript |
 | 26 | Sem verificação automática | Moderado | Feito | GitHub Actions: JS, IDs, segredos e testes do backend em todo PR |
 | 27 | Sem monitoramento de erros | Moderado | Pendente | Sentry (plano gratuito) no front e no backend |
@@ -155,7 +155,7 @@ Alterações no banco: o SQL vai para `supabase/migrations/`, roda primeiro em h
 **Fase 3 · Regras no backend Python**
 
 - [x] 3.1 Fórmula de precificação em Python com testes de paridade; a fórmula não muda · item 17 (08/11)
-- [ ] 3.2 Planos e preços num só lugar; MRR correto no admin · item 24
+- [x] 3.2 Planos e preços num só lugar; MRR correto no admin · item 24 (10/11; homologação e produção)
 - [ ] 3.3 Logo e nome da empresa salvos no Supabase · item 11
 - [ ] 3.4 Itens do orçamento como dado estruturado · item 32
 - [ ] 3.5 Webhook da Kiwify migrado para o Python
