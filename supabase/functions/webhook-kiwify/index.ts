@@ -120,7 +120,7 @@ function resumo(body: Record<string, any>) {
     webhook_event_type: body?.webhook_event_type ?? null,
     product: body?.Product?.product_name ?? body?.product?.name ?? null,
     plan: body?.Product?.metadata?.plan ?? body?.product?.metadata?.plan ?? null,
-    amount: body?.Commissions?.charge_amount ?? body?.payment?.charge_amount ?? body?.amount ?? null,
+    amount: valorPago(body),
     payment_method: body?.payment_method ?? null,
   };
 }
@@ -166,6 +166,20 @@ async function assinaturaValida(url: URL, req: Request, rawBody: string) {
 
 // ---------- Regras de assinatura ----------
 type Sub = { id: string; user_id: string; external_id: string | null; plan: string; status: string; next_billing_at: string | null; started_at: string | null };
+// A Kiwify manda os valores em CENTAVOS (charge_amount 2350 = R$ 23,50). Guardamos em reais.
+// "amount" solto (compras simuladas da homologação) já vem em reais.
+function valorPago(body: any): number | null {
+  const centavos = body?.Commissions?.charge_amount ?? body?.payment?.charge_amount;
+  if (centavos !== undefined && centavos !== null && centavos !== "") {
+    const n = Number(centavos);
+    return Number.isFinite(n) ? Math.round(n) / 100 : null;
+  }
+  const reais = body?.amount;
+  if (reais === undefined || reais === null || reais === "") return null;
+  const n = Number(reais);
+  return Number.isFinite(n) ? n : null;
+}
+
 type Tipo = "compra" | "renovacao" | "reembolso" | "chargeback" | "cancelamento" | "atraso" | "ignorar";
 
 // O tipo vem primeiro do webhook_event_type (no cancelamento o order_status pode continuar "paid").
@@ -368,7 +382,7 @@ Deno.serve(async (req: Request) => {
       platform: "kiwify",
       plan,
       status: "active",
-      amount: body?.Commissions?.charge_amount ?? body?.payment?.charge_amount ?? body?.amount ?? null,
+      amount: valorPago(body),
       started_at: new Date().toISOString(),
       next_billing_at: proximaCobranca ? proximaCobranca.toISOString() : null,
     });

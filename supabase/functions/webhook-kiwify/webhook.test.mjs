@@ -130,7 +130,10 @@ test("compra aprovada de cliente novo: usuário, assinatura, plano, e-mail e his
   assert.equal(sub.plan, "pro");
   assert.equal(sub.external_subscription_id, "assin-k1");
   assert.equal(sub.next_billing_at, "2026-12-09T10:00:00.000Z");
+  assert.equal(sub.amount, 23.5, "Kiwify manda centavos (2350): guarda R$ 23,50");
   assert.equal(perfil("novo-id").plan, "pro");
+  const email = feitas("POST /emails")[0].body.html;
+  assert.ok(email.includes("#ff6b2b") && !email.includes("<style>"), "e-mail nas cores do app, estilo direto nos elementos");
   assert.ok(!feitas("POST /emails")[0].body.html.includes("<b>Cliente</b>"), "nome escapado");
   const texto = JSON.stringify(db.logs);
   assert.ok(!texto.includes("12345678900") && !texto.includes("99999"), "CPF e telefone fora do histórico");
