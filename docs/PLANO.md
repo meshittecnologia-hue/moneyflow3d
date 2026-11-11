@@ -1,10 +1,10 @@
 # MoneyFlow 3D — Plano de Correção e Separação Front/Back
 
-Atualizado em 10/11/2026 (17h10) · Versão viva (editável, com diagramas): https://claude.ai/artifact/A5yhyA9VDmnz4pSLtQXwHt
+Atualizado em 11/11/2026 (13h00) · Versão viva (editável, com diagramas): https://claude.ai/artifact/A5yhyA9VDmnz4pSLtQXwHt
 
 ## Resumo
 
-Dos 34 problemas da auditoria de 04/11/2026, **33 estão resolvidos e 1 pendente (DMARC, a partir de 24/11)**. Os 5 urgentes de segurança estão fechados ou mitigados; o backend Python está no ar e a Fase 1 foi concluída em 09/11; homologação, troca de chaves e Cloudflare na frente do site estão prontos; o que falta é separar o restante do frontend e os itens de polimento. Previsão de conclusão: **19/12/2026**, em 6 fases.
+Dos 34 problemas da auditoria de 04/11/2026, **33 estão resolvidos e 1 pendente (DMARC, a partir de 24/11)**. Os 5 urgentes de segurança estão fechados ou mitigados; backend Python, homologação, troca de chaves, Cloudflare, frontend em módulos, LGPD e versão v1.0.0 estão em produção. A compra real de teste (11/11) passou de ponta a ponta, incluindo o reembolso. Faltam só dois passos com data marcada: CSP em modo bloqueio (17/11) e DMARC (24/11). O plano original previa 19/12/2026.
 
 Como usamos este plano:
 
@@ -172,10 +172,21 @@ Alterações no banco: o SQL vai para `supabase/migrations/`, roda primeiro em h
 
 **Fase 5 · LGPD e entrega**
 
-- [ ] 5.1 Política de Privacidade e Termos de Uso · item 23
-- [ ] 5.2 Marcação de versões (v1.0.0) · item 31
-- [ ] 5.3 DMARC de `p=none` para `quarantine` · item 33
+- [x] 5.1 Política de Privacidade e Termos de Uso · item 23 (10/11, PR #26/#28): privacidade.html e termos.html; CNPJ e endereço físico no rodapé da página de vendas (Decreto 7.962/2013); registro de acesso por 6 meses (Marco Civil, conferido em produção com IP real); exclusão de contas sem plano pago e sem uso há 90 dias, com aviso aos 75 (tarefa diária testada em produção)
+- [x] 5.2 Marcação de versões (v1.0.0) · item 31 (10/11, release no GitHub)
+- [ ] 5.3 DMARC de `p=none` para `quarantine` · item 33 (a partir de 24/11; lembrete agendado nesta conversa)
 - [ ] 5.4 Revisão final: cada um dos 34 itens com prova
+
+**Compra real de teste em produção (11/11)** — R$ 23,50 com cartão, e-mail `meshit.tecnologia+teste1`, reembolsada em seguida:
+
+- [x] Pagamento → webhook → conta criada no plano Pro → e-mail de acesso chegou → senha criada → login
+- [x] Reembolso na Kiwify → assinatura "Reembolsado" → conta voltou sozinha para Free
+- [x] Corrigido: valor gravado como R$ 2350,00 (a Kiwify manda centavos) → agora em reais; dado da compra de teste corrigido no banco
+- [x] Corrigido: e-mail de boas-vindas ilegível no Gmail (texto escuro em fundo escuro) → preto/laranja/branco, como o app
+- [x] Corrigido: depois de criar a senha não aparecia mensagem (ficava atrás da tela de login) → mensagem visível e entrada direta no app
+- [x] Corrigido: selo "Reembolsado" sem cor no painel admin
+- [x] Sentry/CSP pegou o contador de visitas da Cloudflare → liberado na CSP (decisão: manter) e citado na Política de Privacidade
+- [x] CI: o teste no navegador não depende mais dos servidores do Ubuntu (falharam em 11/11)
 
 ## Decisões pendentes
 
@@ -185,8 +196,11 @@ Alterações no banco: o SQL vai para `supabase/migrations/`, roda primeiro em h
 | Repositório público ou privado (item 3) | Manter público: chaves do histórico revogadas; privado no plano gratuito desativa o GitHub Pages | Fase 2 |
 | Hospedagem do backend | Render gratuito agora; Railway (~US$ 5/mês) com o primeiro cliente pagante | Primeiro cliente |
 | Biometria (item 20) | Renomear para bloqueio de tela; passkey real só se clientes pedirem | Fase 4 |
-| Política de Privacidade e Termos (item 23) | Textos em homologação; revisão por advogado recomendada | Antes de publicar |
+| Política de Privacidade e Termos (item 23) | Publicados em 10/11; revisão por advogado recomendada | Quando possível |
 | Endereço físico na página de vendas (Decreto 7.962/2013, art. 2º) | Decidido 10/11: endereço do CNPJ (Rua Pouso Alto, 1266, Setor Centro-Oeste, Goiânia/GO) | — |
 | Regra de exclusão de dados | Decidido 10/11: sem plano pago e sem uso há 90 dias, aviso 15 dias antes; Free em uso nunca | — |
 | Fornecedores na política | Decidido 10/11: por categoria; nomes sob pedido (art. 18, VII). Trocou de fornecedor → atualizar claude/fornecedores_lgpd.md | — |
-| Vendas na Kiwify | Podem ficar ativas: webhook testado e liberando acesso | Já |
+| Vendas na Kiwify | Podem ficar ativas: compra real e reembolso testados em produção em 11/11 | Já |
+| Oferta fundador (50 vagas a R$ 23,50) | Limitar a 50 vendas no produto da Kiwify ou controlar à mão | Antes de divulgar |
+| Contador de visitas da Cloudflare | Decidido 11/11: manter (sem cookies), liberado na CSP | — |
+| Plano pago do servidor (Render) | Hoje dorme após 15 min (30–50 s na 1ª ação, ex.: "Esqueci minha senha"); compra e login não são afetados. Passar para pago com o primeiro cliente | Primeiro cliente |
