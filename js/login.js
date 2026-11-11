@@ -114,14 +114,32 @@ async function doResetSenha(){
   const pw = document.getElementById('reset-pw').value;
   const pw2 = document.getElementById('reset-pw2').value;
   const err = document.getElementById('reset-err');
-  err.textContent='';
+  const btn = document.querySelector('#reset-section .login-btn');
+  err.style.color=''; err.textContent='';
   if(!pw || pw.length < 6){ err.textContent='Senha deve ter pelo menos 6 caracteres.'; return; }
   if(pw !== pw2){ err.textContent='As senhas não coincidem.'; return; }
+  btn.disabled = true; btn.textContent = 'Salvando...';
   const { error } = await _supa.auth.updateUser({ password: pw });
-  if(error){ err.textContent='Erro ao atualizar senha. Tente novamente.'; return; }
-  document.getElementById('reset-section').style.display='none';
-  document.getElementById('login-section').style.display='block';
-  notify('Senha atualizada com sucesso! Faça login.', 'green');
+  if(error){
+    btn.disabled = false; btn.textContent = 'Salvar nova senha';
+    err.textContent = /expired|invalid|session/i.test(error.message||'')
+      ? 'O link expirou. Peça um novo em "Esqueci minha senha".'
+      : 'Erro ao salvar a senha. Tente novamente.';
+    return;
+  }
+  // A mensagem fica DENTRO do cartão: o aviso flutuante (notify) fica atrás da tela de login.
+  err.style.color='var(--green)';
+  err.textContent='Senha criada com sucesso! Entrando no sistema...';
+  btn.textContent='Senha salva ✓';
+  // O link do e-mail já autenticou a pessoa: entra direto, sem pedir a senha de novo.
+  setTimeout(()=>{
+    sessionStorage.setItem('p3d_ok','1');
+    document.getElementById('reset-section').style.display='none';
+    document.getElementById('login-section').style.display='block';
+    document.getElementById('login-overlay').style.display='none';
+    initApp();
+    notify('Senha criada! Use este e-mail e senha nos próximos acessos.', 'green');
+  }, 1500);
 }
 
 async function doLogout(){
