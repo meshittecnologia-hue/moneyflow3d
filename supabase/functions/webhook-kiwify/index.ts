@@ -71,29 +71,32 @@ function esc(v: string) {
 
 async function sendEmail(to: string, name: string, plan: string, link: string) {
   const planLabel = PLAN_LABELS[plan] ?? plan;
-  const html = `
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head><meta charset="UTF-8"><style>
-  body{font-family:Arial,sans-serif;background:#0a0a0f;color:#e0e0e0;margin:0;padding:20px}
-  .card{background:#12121a;border:1px solid #1e1e2e;border-radius:12px;max-width:520px;margin:0 auto;padding:32px}
-  h1{color:#a78bfa;margin:0 0 8px}
-  .badge{background:#1a1a2e;color:#a78bfa;border:1px solid #7c3aed;padding:4px 14px;border-radius:20px;font-size:13px;display:inline-block;margin-bottom:20px}
-  .btn{display:inline-block;background:linear-gradient(135deg,#7c3aed,#4f46e5);color:#fff;text-decoration:none;padding:14px 28px;border-radius:8px;font-size:16px;font-weight:700;margin:24px 0}
-  .footer{margin-top:24px;font-size:12px;color:#666;border-top:1px solid #1e1e2e;padding-top:16px}
-</style></head>
-<body>
-<div class="card">
-  <h1>MoneyFlow 3D</h1>
-  <span class="badge">Plano ${esc(planLabel)}</span>
-  <p>Ola, <strong>${esc(name)}</strong>!</p>
-  <p>Sua assinatura foi confirmada. Clique no botao abaixo para criar sua senha e acessar a plataforma:</p>
-  <a href="${esc(link)}" class="btn">Criar minha senha e acessar</a>
-  <p style="font-size:13px;color:#999">O link expira em 24h. Apos criar sua senha, faca login normalmente em <a href="${APP_URL}" style="color:#a78bfa">${APP_URL.replace("https://", "")}</a>.</p>
-  <div class="footer">MoneyFlow 3D - MeshIT Tecnologia | <a href="${APP_URL}" style="color:#a78bfa">${APP_URL.replace("https://", "")}</a></div>
+  // Estilos direto em cada elemento: o Gmail descarta parte do <style> e o texto ficava escuro no fundo escuro.
+  // Mesmas cores do app e dos outros e-mails (backend/app/emails.py): preto, laranja #ff6b2b, branco.
+  const site = APP_URL.replace("https://", "");
+  const html = `<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="UTF-8"><meta name="color-scheme" content="dark light"></head>
+<body style="margin:0;padding:24px 12px;background:#0a0a0a;font-family:Arial,Helvetica,sans-serif">
+<div style="max-width:600px;margin:0 auto;background:#0f0f0f;color:#f0f0f0;border-radius:12px;overflow:hidden">
+  <div style="background:#ff6b2b;padding:24px;text-align:center">
+    <h1 style="margin:0;color:#ffffff;font-size:24px">&#11041; MoneyFlow 3D</h1>
+    <p style="margin:6px 0 0;color:#ffffff;opacity:.85;font-size:14px">Precificação Inteligente para Makers</p>
+  </div>
+  <div style="padding:32px">
+    <span style="display:inline-block;background:#1a1a1a;color:#ff6b2b;border:1px solid #ff6b2b;padding:4px 14px;border-radius:20px;font-size:13px;font-weight:700">Plano ${esc(planLabel)}</span>
+    <h2 style="color:#ff6b2b;margin:20px 0 12px;font-size:20px">Assinatura confirmada!</h2>
+    <p style="color:#cccccc;line-height:1.6;margin:0 0 12px">Olá, <strong style="color:#ffffff">${esc(name)}</strong>!</p>
+    <p style="color:#cccccc;line-height:1.6;margin:0">Seu pagamento foi aprovado. Clique no botão abaixo para criar sua senha e entrar no <strong style="color:#ffffff">MoneyFlow 3D</strong>:</p>
+    <div style="text-align:center;margin:32px 0">
+      <a href="${esc(link)}" style="background:#ff6b2b;color:#ffffff;padding:14px 32px;border-radius:8px;text-decoration:none;font-weight:700;font-size:16px;display:inline-block">Criar minha senha e acessar &rarr;</a>
+    </div>
+    <p style="color:#999999;font-size:13px;line-height:1.6;margin:0">O link vale por 24 horas. Depois de criar a senha, entre normalmente em <a href="${APP_URL}" style="color:#ff6b2b;text-decoration:none">${site}</a> com este e-mail.</p>
+  </div>
+  <div style="background:#1a1a1a;padding:16px;text-align:center">
+    <p style="color:#777777;font-size:11px;margin:0">MoneyFlow 3D · MeshIT Tecnologia · <a href="${APP_URL}" style="color:#ff6b2b;text-decoration:none">${site}</a></p>
+  </div>
 </div>
-</body>
-</html>`;
+</body></html>`;
 
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
@@ -117,7 +120,7 @@ function resumo(body: Record<string, any>) {
     webhook_event_type: body?.webhook_event_type ?? null,
     product: body?.Product?.product_name ?? body?.product?.name ?? null,
     plan: body?.Product?.metadata?.plan ?? body?.product?.metadata?.plan ?? null,
-    amount: body?.Commissions?.charge_amount ?? body?.payment?.charge_amount ?? body?.amount ?? null,
+    amount: valorPago(body),
     payment_method: body?.payment_method ?? null,
   };
 }
@@ -163,6 +166,20 @@ async function assinaturaValida(url: URL, req: Request, rawBody: string) {
 
 // ---------- Regras de assinatura ----------
 type Sub = { id: string; user_id: string; external_id: string | null; plan: string; status: string; next_billing_at: string | null; started_at: string | null };
+// A Kiwify manda os valores em CENTAVOS (charge_amount 2350 = R$ 23,50). Guardamos em reais.
+// "amount" solto (compras simuladas da homologação) já vem em reais.
+function valorPago(body: any): number | null {
+  const centavos = body?.Commissions?.charge_amount ?? body?.payment?.charge_amount;
+  if (centavos !== undefined && centavos !== null && centavos !== "") {
+    const n = Number(centavos);
+    return Number.isFinite(n) ? Math.round(n) / 100 : null;
+  }
+  const reais = body?.amount;
+  if (reais === undefined || reais === null || reais === "") return null;
+  const n = Number(reais);
+  return Number.isFinite(n) ? n : null;
+}
+
 type Tipo = "compra" | "renovacao" | "reembolso" | "chargeback" | "cancelamento" | "atraso" | "ignorar";
 
 // O tipo vem primeiro do webhook_event_type (no cancelamento o order_status pode continuar "paid").
@@ -365,7 +382,7 @@ Deno.serve(async (req: Request) => {
       platform: "kiwify",
       plan,
       status: "active",
-      amount: body?.Commissions?.charge_amount ?? body?.payment?.charge_amount ?? body?.amount ?? null,
+      amount: valorPago(body),
       started_at: new Date().toISOString(),
       next_billing_at: proximaCobranca ? proximaCobranca.toISOString() : null,
     });

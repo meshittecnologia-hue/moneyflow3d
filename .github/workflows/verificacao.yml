@@ -23,7 +23,7 @@ jobs:
         run: |
           cd scripts/navegador
           npm install --no-audit --no-fund
-          npx playwright install --with-deps chromium
+          npx playwright install --with-deps chromium || { echo "::warning::Pacotes do Ubuntu indisponíveis; instalando só o navegador"; npx playwright install chromium; }
           node teste_app.js
       - name: Testes do webhook da Kiwify
         run: node --experimental-strip-types --no-warnings --test supabase/functions/webhook-kiwify/webhook.test.mjs

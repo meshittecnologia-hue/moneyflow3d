@@ -880,7 +880,7 @@ function planLabel(plan) {
   return PLANOS.nome(plan);
 }
 function statusLabel(s) {
-  return { active:'Ativo', cancelled:'Cancelado', overdue:'Inadimplente', refunded:'Reembolsado', trial:'Trial' }[s] || s || '—';
+  return { active:'Ativo', cancelled:'Cancelado', overdue:'Inadimplente', refunded:'Reembolsado', chargeback:'Chargeback', trial:'Trial' }[s] || s || '—';
 }
 function fmtDate(d) {
   if (!d) return '—';
