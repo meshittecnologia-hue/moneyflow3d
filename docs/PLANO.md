@@ -4,7 +4,7 @@ Atualizado em 22/11/2026 (14h15) · Versão viva (editável, com diagramas): htt
 
 ## Resumo
 
-Dos 34 problemas da auditoria de 04/11/2026, **33 estão resolvidos e 1 pendente (DMARC, a partir de 24/11)**. Os 5 urgentes de segurança estão fechados ou mitigados; backend Python, homologação, troca de chaves, Cloudflare, frontend em módulos, LGPD e versão v1.0.0 estão em produção. A compra real de teste (11/11) passou de ponta a ponta, incluindo o reembolso. CSP em modo bloqueio ligada em 22/11; falta só o DMARC (24/11). O plano original previa 19/12/2026.
+Dos 34 problemas da auditoria de 04/11/2026, **todos os 34 estão resolvidos**. Os 5 urgentes de segurança estão fechados ou mitigados; backend Python, homologação, troca de chaves, Cloudflare, frontend em módulos, LGPD e versão v1.0.0 estão em produção. A compra real de teste (11/11) passou de ponta a ponta, incluindo o reembolso. CSP em modo bloqueio e DMARC em `quarantine` ligados em 22/11 (e-mail de teste com SPF, DKIM e DMARC = PASS no Gmail). O plano original previa 19/12/2026.
 
 Como usamos este plano:
 
@@ -48,7 +48,7 @@ Como usamos este plano:
 | 30 | Funções esquecidas no servidor | Moderado | Feito | 09/11: código revisado (sem segredo escrito; `bright-api` mostrava o início da chave mestra, `admin-ops` enviava e-mail livre) e as 4 apagadas com autorização; restam só `webhook-kiwify` e `send-email` (desativada) |
 | 31 | Commits sem descrição | Baixo | Feito | Commits descritivos desde 06/11; versão v1.0.0 marcada em 10/11 (release no GitHub) |
 | 32 | Itens do orçamento como texto | Baixo | Feito | 10/11: `orcamentos.itens` virou jsonb obrigatório, sempre lista com 1+ item (constraint); os 9 de produção convertidos (2 antigos sem itens montados de produto/qtd/preço); app grava a lista direto, sem fallback silencioso, e marca ⚠ se ler algo ilegível. Testado em homologação pelo Antonio |
-| 33 | DMARC em observação | Baixo | Pendente | Subir para `quarantine` depois de 2 semanas de relatórios limpos |
+| 33 | DMARC em observação | Baixo | Resolvido | `p=quarantine` desde 22/11; e-mail de teste: SPF, DKIM e DMARC = PASS |
 | 34 | Zoom bloqueado no celular | Baixo | Feito | Removido `maximum-scale`; em produção desde 08/11 |
 
 Encontrados durante o trabalho, fora da lista original:
@@ -174,7 +174,7 @@ Alterações no banco: o SQL vai para `supabase/migrations/`, roda primeiro em h
 
 - [x] 5.1 Política de Privacidade e Termos de Uso · item 23 (10/11, PR #26/#28): privacidade.html e termos.html; CNPJ e endereço físico no rodapé da página de vendas (Decreto 7.962/2013); registro de acesso por 6 meses (Marco Civil, conferido em produção com IP real); exclusão de contas sem plano pago e sem uso há 90 dias, com aviso aos 75 (tarefa diária testada em produção)
 - [x] 5.2 Marcação de versões (v1.0.0) · item 31 (10/11, release no GitHub)
-- [ ] 5.3 DMARC de `p=none` para `quarantine` · item 33 (a partir de 24/11; lembrete agendado nesta conversa)
+- [x] 5.3 DMARC de `p=none` para `quarantine` · item 33 (feito em 22/11; SPF/DKIM/DMARC = PASS)
 - [ ] 5.4 Revisão final: cada um dos 34 itens com prova
 
 **Compra real de teste em produção (11/11)** — R$ 23,50 com cartão, e-mail `meshit.tecnologia+teste1`, reembolsada em seguida:
