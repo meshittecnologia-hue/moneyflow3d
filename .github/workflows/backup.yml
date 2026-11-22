@@ -55,3 +55,18 @@ jobs:
           path: moneyflow3d-*.sql.gz.gpg
           retention-days: 30
           if-no-files-found: error
+
+  # O Supabase gratuito PAUSA o projeto depois de 7 dias sem uso. A produção tem uso todo dia
+  # (este backup e a limpeza), mas a homologação ficou parada e foi pausada em 22/11/2026.
+  # Uma consulta diária pela API pública (chave publishable, que já é pública no site) mantém ativa.
+  manter-homologacao-ativa:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - name: Consulta diária ao banco de homologação
+        run: |
+          curl -fsS --retry 3 --retry-delay 10 --max-time 60 \
+            -X POST https://ilpjwzbiqbngimnsonfv.supabase.co/rest/v1/rpc/vagas_fundador \
+            -H "apikey: sb_publishable_RivUXUH7Vlo0hF1XtlMbag_TFR9HN_4" \
+            -H "Content-Type: application/json" -d '{}'
+          echo

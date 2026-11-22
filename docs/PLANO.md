@@ -1,6 +1,6 @@
 # MoneyFlow 3D — Plano de Correção e Separação Front/Back
 
-Atualizado em 11/11/2026 (13h00) · Versão viva (editável, com diagramas): https://claude.ai/artifact/A5yhyA9VDmnz4pSLtQXwHt
+Atualizado em 13/11/2026 (11h20) · Versão viva (editável, com diagramas): https://claude.ai/artifact/A5yhyA9VDmnz4pSLtQXwHt
 
 ## Resumo
 
@@ -201,6 +201,7 @@ Alterações no banco: o SQL vai para `supabase/migrations/`, roda primeiro em h
 | Regra de exclusão de dados | Decidido 10/11: sem plano pago e sem uso há 90 dias, aviso 15 dias antes; Free em uso nunca | — |
 | Fornecedores na política | Decidido 10/11: por categoria; nomes sob pedido (art. 18, VII). Trocou de fornecedor → atualizar claude/fornecedores_lgpd.md | — |
 | Vendas na Kiwify | Podem ficar ativas: compra real e reembolso testados em produção em 11/11 | Já |
-| Oferta fundador (50 vagas a R$ 23,50) | Limitar a 50 vendas no produto da Kiwify ou controlar à mão | Antes de divulgar |
+| Oferta fundador (50 vagas a R$ 23,50) | Resolvido 13/11: a Kiwify não tem limite de vendas; o contador da página de vendas virou real (lia texto fixo "10 preenchidas" sem vendas — propaganda enganosa) e, ao chegar a 50, os botões viram lista de espera. Quando esgotar: criar o plano de R$ 47 na Kiwify e trocar o link | Quando esgotar |
+| Contador de visitas na CSP de produção (Cloudflare) | Feito 13/11 | — |
 | Contador de visitas da Cloudflare | Decidido 11/11: manter (sem cookies), liberado na CSP | — |
 | Plano pago do servidor (Render) | Hoje dorme após 15 min (30–50 s na 1ª ação, ex.: "Esqueci minha senha"); compra e login não são afetados. Passar para pago com o primeiro cliente | Primeiro cliente |
