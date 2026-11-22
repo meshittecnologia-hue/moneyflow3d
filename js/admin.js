@@ -442,7 +442,7 @@ document.querySelectorAll('.js-preco-pro').forEach(el => { el.textContent = PLAN
 document.querySelectorAll('.js-preco-pro-depois').forEach(el => { el.textContent = PLANOS.brl(PLANOS.lista.pro.precoDepois); });
 document.querySelectorAll('.js-checkout').forEach(a => { a.href = PLANOS.checkout; a.textContent = PLANOS.checkout.replace('https://', '') + ' ↗'; });
 document.querySelectorAll('.js-opt-pro').forEach(o => {
-  o.textContent = 'Pro — ' + PLANOS.brl(PLANOS.lista.pro.preco) + '/mês (Oferta Fundador)';
+  o.textContent = 'Pro — ' + PLANOS.brl(PLANOS.lista.pro.preco) + '/mês (Lançamento)';
 });
 
 function applyPlanModules(prefix, plan) {

@@ -14,7 +14,7 @@
 
   var lista = {
     free:         { nome: 'Free',           preco: 0,     aVenda: true,  acessoPro: false, modulos: ['calc'] },
-    pro:          { nome: 'Pro',            preco: 23.50, precoDepois: 47, cobranca: 'mensal',
+    pro:          { nome: 'Pro',            preco: 23.50, precoDepois: 29.90, cobranca: 'mensal',
                     aVenda: true,  acessoPro: true, modulos: TODOS },
     // Planos antigos: não se vendem mais; mantidos para quem já tem.
     maker:        { nome: 'Maker (antigo)', preco: null,  aVenda: false, acessoPro: true,  modulos: ['calc', 'pdf', 'wpp', 'crm', 'fila', 'estoque'] },
@@ -29,7 +29,11 @@
   window.PLANOS = Object.freeze({
     lista: lista,
     checkout: 'https://pay.kiwify.com.br/8epGftp',
-    vagasFundador: 50,
+    // Preço de lançamento: quem assina até esta data (23h59, Brasília) mantém o preço
+    // enquanto a assinatura estiver ativa. Depois dela o Pro sobe para precoDepois DE VERDADE
+    // (criar o plano novo na Kiwify e trocar o checkout acima).
+    lancamentoAte: '2026-12-31',
+    lancamentoAteTexto: '31/12/2026',
     brl: brl,
     nome: function (slug) { return (lista[slug] && lista[slug].nome) || slug || '—'; },
     comAcessoPro: Object.keys(lista).filter(function (k) { return lista[k].acessoPro; }),
