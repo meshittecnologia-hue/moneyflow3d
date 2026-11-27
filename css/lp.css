@@ -147,37 +147,66 @@ input[type=range]::-moz-range-thumb { width: 14px; height: 14px; border-radius: 
 .duelo-nota { margin-top: 22px; font-size: .9rem; color: var(--faint); max-width: 60em; }
 
 /* Por dentro do sistema */
-.dentro { display: grid; grid-template-columns: 1.6fr 1fr; gap: 48px; align-items: center; }
+.dentro { display: grid; grid-template-columns: 1fr; gap: 40px; }
+.dentro > div:last-child { order: -1; }
+.dentro .sec-head { margin-bottom: 28px; }
 .telas { position: relative; padding-bottom: 40px; }
 .telas { aspect-ratio: 16 / 10.5; }
-/* Ilustração das telas: formas que sugerem o sistema, sem copiar o layout real. */
-.mock-pc { position: absolute; inset: 0 7% 40px 0; display: flex; background: var(--plate); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; box-shadow: 0 24px 60px -20px rgba(0,0,0,.8); }
-.mk-side { width: 17%; padding: 16px 12px; display: flex; flex-direction: column; gap: 12px; border-right: 1px solid var(--line); background: var(--bg); }
-.mk-side i { height: 8px; border-radius: 4px; background: var(--line); }
-.mk-side i:nth-child(odd) { width: 70%; }
-.mk-side i.on { background: rgba(232,96,28,.6); }
-.mk-side .mk-logo { width: 60%; height: 14px; margin-bottom: 10px; background: repeating-linear-gradient(to bottom, var(--orange) 0 2px, #B8460F 2px 3px); }
-.mk-main { flex: 1; padding: 16px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
-.mk-row { display: flex; gap: 8px; }
-.mk-pill { flex: 1; height: 22px; border-radius: 6px; background: var(--plate2); border: 1px solid var(--line); }
-.mk-pill.on { border-color: var(--orange); background: rgba(232,96,28,.12); }
-.mk-grid { flex: 1; display: grid; grid-template-columns: 1.2fr 1fr; gap: 12px; min-height: 0; }
-.mk-card { background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 14px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
-.mk-label { display: block; width: 40%; height: 7px; border-radius: 4px; background: var(--line); }
-.mk-preco { font-size: clamp(1.3rem, 3vw, 2.1rem); font-weight: 850; font-stretch: 118%; line-height: 1; color: var(--text); }
-.mk-bar { display: flex; height: 14px; border-radius: 4px; overflow: hidden; }
+/* Ilustração das telas: precificação com números do exemplo, layout próprio (não é o app). */
+.telas { aspect-ratio: auto; padding-bottom: 0; max-width: 1040px; }
+.mock-pc { margin-right: 200px; background: var(--plate); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; box-shadow: 0 24px 60px -20px rgba(0,0,0,.8); font-size: 12px; line-height: 1.35; }
+.mk-barra { display: flex; align-items: center; gap: 6px; padding: 9px 12px; background: var(--bg); border-bottom: 1px solid var(--line); }
+.mk-barra i { width: 8px; height: 8px; border-radius: 50%; background: var(--line); }
+.mk-barra span { margin-left: 8px; color: var(--faint); font-size: 11px; }
+.mk-corpo { padding: 16px; display: grid; gap: 14px; }
+.mk-topo { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; flex-wrap: wrap; }
+.mk-prod { display: block; color: var(--text); font-weight: 750; font-stretch: 112%; font-size: 14px; }
+.mk-tags { color: var(--faint); font-size: 11px; }
+.mk-abas { display: flex; background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 2px; }
+.mk-abas span { padding: 4px 9px; border-radius: 4px; color: var(--faint); font-size: 11px; }
+.mk-abas span.on { background: var(--orange); color: #fff; font-weight: 650; }
+.mk-resumo { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.mk-resumo div { background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 9px 10px; min-width: 0; }
+.mk-resumo small, .mk-bloco > small, .mock-cel small { display: block; color: var(--faint); font-size: 10.5px; margin-bottom: 3px; }
+.mk-resumo b { color: var(--text); font-size: 16px; font-weight: 800; font-stretch: 112%; white-space: nowrap; }
+.mk-resumo div:first-child { border-color: rgba(232,96,28,.55); }
+.mk-resumo div:first-child b { color: var(--orange-hi); }
+.mock-pc .pos, .mock-cel .pos { color: var(--profit); }
+.mock-cel .neg { color: var(--loss); }
+.mk-cols { display: grid; grid-template-columns: 1fr 1.15fr; gap: 10px; }
+.mk-bloco { background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 11px; min-width: 0; }
+.mk-custos { list-style: none; display: grid; gap: 7px; margin-top: 6px; }
+.mk-custos li { display: grid; grid-template-columns: 1fr auto; position: relative; padding-bottom: 5px; color: var(--muted); }
+.mk-custos li i { position: absolute; left: 0; bottom: 0; height: 3px; border-radius: 2px; max-width: 100%; }
+.mk-custos b, .mk-total b { color: var(--text); font-weight: 650; }
+.mk-total { display: flex; justify-content: space-between; border-top: 1px solid var(--line); margin-top: 9px; padding-top: 8px; color: var(--muted); }
+.mk-canais { width: 100%; min-width: 0; border-collapse: collapse; margin-top: 4px; font-size: 11.5px; }
+.mk-canais th { text-align: left; font-weight: 500; color: var(--faint); font-size: 10.5px; padding: 4px 4px 6px; }
+.mk-canais td { padding: 6px 4px; border-top: 1px solid var(--line); color: var(--muted); white-space: nowrap; }
+.mk-canais td:first-child { color: var(--text); }
+.mk-canais tr.on td { background: rgba(232,96,28,.08); }
+.mk-canais tr.on td:first-child { box-shadow: inset 2px 0 0 var(--orange); }
+.mk-canais td:last-child { position: relative; padding-bottom: 9px; }
+.mk-canais td:last-child i { position: absolute; left: 4px; bottom: 3px; height: 3px; max-width: 80%; border-radius: 2px; background: var(--profit); opacity: .7; }
+.mock-cel { position: absolute; right: 0; bottom: -36px; width: 250px; background: var(--plate); border: 4px solid #2a2c33; border-radius: 22px; padding: 18px 12px 14px; display: flex; flex-direction: column; gap: 6px; box-shadow: 0 20px 50px -10px rgba(0,0,0,.9); font-size: 11.5px; }
+.mock-cel .mk-prod { font-size: 12.5px; }
+.mock-cel .mk-tags { margin-bottom: 6px; }
+.mk-preco { font-size: 22px; font-weight: 850; font-stretch: 118%; line-height: 1; color: var(--text); }
+.mk-bar { display: flex; height: 9px; border-radius: 3px; overflow: hidden; margin: 4px 0 6px; }
 .mk-bar i { display: block; }
-.mk-linha { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-.mk-linha i { height: 7px; width: 45%; border-radius: 4px; background: var(--line); }
-.mk-linha em { height: 7px; width: 22%; border-radius: 4px; }
-.mk-linha em.neg { background: rgba(240,86,74,.55); }
-.mk-linha em.pos { background: rgba(52,209,122,.65); }
-.mk-lista { gap: 13px; }
-.mock-cel { position: absolute; right: 0; bottom: 0; width: 25%; aspect-ratio: 9 / 18; background: var(--plate); border: 4px solid #2a2c33; border-radius: 20px; padding: 18px 10px 12px; display: flex; flex-direction: column; gap: 9px; box-shadow: 0 20px 50px -10px rgba(0,0,0,.9); }
-.mock-cel .mk-preco { font-size: clamp(.95rem, 2vw, 1.3rem); }
-.mock-cel .mk-bar { height: 10px; }
-.mk-btn { margin-top: auto; height: 22px; border-radius: 6px; background: var(--orange); display: block; }
-.modulos { list-style: none; display: grid; gap: 18px; }
+.mk-l { display: flex; justify-content: space-between; color: var(--muted); padding: 3px 0; border-top: 1px solid var(--line); }
+.mk-l b { color: var(--text); font-weight: 650; }
+.mk-btn { margin-top: 8px; text-align: center; padding: 7px; border-radius: 6px; background: var(--orange); color: #fff; font-weight: 700; font-size: 11.5px; }
+.tela-legenda { margin-top: 18px; max-width: 760px; }
+@media (max-width: 720px) {
+  .mock-pc { margin-right: 0; }
+  .tela-legenda { margin-top: 14px; }
+  .mk-resumo { grid-template-columns: 1fr 1fr; }
+  .mk-cols { grid-template-columns: 1fr; }
+  .mock-cel { position: relative; right: auto; bottom: auto; width: 75%; margin: 16px 0 0 auto; }
+  .tela-legenda { margin-top: 14px; }
+}
+.modulos { list-style: none; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 18px 24px; }
 .modulos li { padding-left: 18px; border-left: 2px solid var(--line); }
 .modulos li b { display: block; color: var(--text); font-weight: 700; margin-bottom: 2px; }
 .modulos li span { color: var(--muted); font-size: .95rem; }

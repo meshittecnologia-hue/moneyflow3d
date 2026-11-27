@@ -9,7 +9,7 @@
 <meta property="og:title" content="MoneyFlow 3D — quanto cada peça impressa realmente te paga">
 <meta property="og:description" content="Filamento, energia, desgaste, falhas, mão de obra e taxa do marketplace numa conta só.">
 <link rel="preload" href="css/fonts/archivo-var.woff2?v=e3a28eade2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="css/lp.css?v=426fbaf624">
+<link rel="stylesheet" href="css/lp.css?v=fb277fa0c9">
 <script src="js/eventos.js?v=5f06521870"></script>
 </head>
 <body>
@@ -143,42 +143,64 @@
 <section id="dentro">
   <div class="wrap dentro">
     <div>
-      <!-- Ilustração (não é print do sistema): só sugere as telas, sem expor o layout real. -->
-      <div class="telas" role="img" aria-label="Ilustração do MoneyFlow 3D no computador e no celular, com preço sugerido e lucro">
-        <div class="mock-pc">
-          <div class="mk-side"><i class="mk-logo"></i><i></i><i class="on"></i><i></i><i></i><i></i><i></i></div>
-          <div class="mk-main">
-            <div class="mk-row"><i class="mk-pill"></i><i class="mk-pill"></i><i class="mk-pill on"></i></div>
-            <div class="mk-grid">
-              <div class="mk-card">
-                <i class="mk-label"></i>
-                <b class="mk-preco num">R$ 75,62</b>
-                <div class="mk-bar"><i style="flex:19;background:var(--seg-fil)"></i><i style="flex:18;background:var(--seg-maq)"></i><i style="flex:3;background:var(--seg-emb)"></i><i style="flex:10;background:var(--seg-mo)"></i><i style="flex:14;background:var(--seg-tax)"></i><i style="flex:36;background:var(--seg-lucro)"></i></div>
-                <div class="mk-linha"><i></i><em class="neg"></em></div>
-                <div class="mk-linha"><i></i><em class="neg"></em></div>
-                <div class="mk-linha"><i></i><em class="pos"></em></div>
+      <!-- Ilustração (não é print do sistema): mostra a precificação com números reais do exemplo,
+           num layout próprio da página de vendas, sem copiar as telas do app. -->
+      <div class="telas" role="img" aria-label="Ilustração da precificação: suporte de headset, preço sugerido R$ 75,62, lucro R$ 27,22 na Shopee, composição do custo e lucro por canal de venda">
+        <div class="mock-pc" aria-hidden="true">
+          <div class="mk-barra"><i></i><i></i><i></i><span>Precificação</span></div>
+          <div class="mk-corpo">
+            <div class="mk-topo">
+              <div>
+                <b class="mk-prod">Suporte de headset</b>
+                <span class="mk-tags">PLA preto · 85 g · 4h20 · Bambu Lab X1C</span>
               </div>
-              <div class="mk-card mk-lista">
-                <i class="mk-label"></i>
-                <div class="mk-linha"><i></i><em class="pos" style="width:34%"></em></div>
-                <div class="mk-linha"><i></i><em class="pos" style="width:28%"></em></div>
-                <div class="mk-linha"><i></i><em class="pos" style="width:31%"></em></div>
-                <div class="mk-linha"><i></i><em class="pos" style="width:22%"></em></div>
-                <div class="mk-linha"><i></i><em class="pos" style="width:40%"></em></div>
+              <div class="mk-abas"><span class="on">Preço sugerido</span><span>Com desconto</span></div>
+            </div>
+            <div class="mk-resumo">
+              <div><small>Preço sugerido</small><b class="num">R$ 75,62</b></div>
+              <div><small>Custo da peça</small><b class="num">R$ 37,81</b></div>
+              <div><small>Lucro na Shopee</small><b class="num pos">R$ 27,22</b></div>
+              <div><small>Margem</small><b class="num pos">36%</b></div>
+            </div>
+            <div class="mk-cols">
+              <div class="mk-bloco">
+                <small>Composição do custo</small>
+                <ul class="mk-custos num">
+                  <li><i style="background:var(--seg-fil);width:100%"></i><span>Filamento</span><b>R$ 14,45</b></li>
+                  <li><i style="background:var(--seg-maq);width:88%"></i><span>Máquina e energia</span><b>R$ 12,72</b></li>
+                  <li><i style="background:var(--seg-mo);width:52%"></i><span>Mão de obra (15 min)</span><b>R$ 7,50</b></li>
+                  <li><i style="background:var(--seg-emb);width:17%"></i><span>Embalagem</span><b>R$ 2,50</b></li>
+                  <li><i style="background:var(--loss);width:5%"></i><span>Falhas (5%)</span><b>R$ 0,64</b></li>
+                </ul>
+                <div class="mk-total num"><span>Custo total</span><b>R$ 37,81</b></div>
+              </div>
+              <div class="mk-bloco">
+                <small>Lucro por canal de venda</small>
+                <table class="mk-canais num">
+                  <tr><th>Canal</th><th>Taxa</th><th>Lucro</th><th>Margem</th></tr>
+                  <tr class="on"><td>Shopee</td><td>R$ 10,59</td><td class="pos">R$ 27,22</td><td><i style="width:72%"></i>36%</td></tr>
+                  <tr><td>Mercado Livre</td><td>R$ 8,70</td><td class="pos">R$ 29,11</td><td><i style="width:77%"></i>38,5%</td></tr>
+                  <tr><td>Amazon</td><td>R$ 11,34</td><td class="pos">R$ 26,47</td><td><i style="width:70%"></i>35%</td></tr>
+                  <tr><td>Pix direto</td><td>R$ 0,00</td><td class="pos">R$ 37,81</td><td><i style="width:100%"></i>50%</td></tr>
+                </table>
               </div>
             </div>
           </div>
         </div>
-        <div class="mock-cel">
-          <i class="mk-label"></i>
+        <div class="mock-cel" aria-hidden="true">
+          <b class="mk-prod">Suporte de headset</b>
+          <span class="mk-tags">85 g · 4h20 · Shopee</span>
+          <small>Preço sugerido</small>
           <b class="mk-preco num">R$ 75,62</b>
           <div class="mk-bar"><i style="flex:19;background:var(--seg-fil)"></i><i style="flex:18;background:var(--seg-maq)"></i><i style="flex:3;background:var(--seg-emb)"></i><i style="flex:10;background:var(--seg-mo)"></i><i style="flex:14;background:var(--seg-tax)"></i><i style="flex:36;background:var(--seg-lucro)"></i></div>
-          <div class="mk-linha"><i></i><em class="neg"></em></div>
-          <div class="mk-linha"><i></i><em class="pos"></em></div>
-          <i class="mk-btn"></i>
+          <div class="mk-l num"><span>Custo</span><b>R$ 37,81</b></div>
+          <div class="mk-l num"><span>Taxa Shopee</span><b class="neg">− R$ 10,59</b></div>
+          <div class="mk-l num"><span>Lucro</span><b class="pos">R$ 27,22</b></div>
+          <div class="mk-l num"><span>Margem</span><b class="pos">36%</b></div>
+          <span class="mk-btn">Salvar produto</span>
         </div>
       </div>
-      <p class="tela-legenda">Ilustração. Funciona no computador e no celular, com os dados na nuvem.</p>
+      <p class="tela-legenda">Ilustração com a peça do exemplo. Funciona no computador e no celular, com os dados na nuvem.</p>
     </div>
     <div>
       <div class="sec-head">
