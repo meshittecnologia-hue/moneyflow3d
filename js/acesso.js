@@ -126,7 +126,7 @@ function abrirModalUpgrade(){
     document.getElementById('upgrade-titulo').textContent = expirou ? 'Acesso bloqueado' : 'Módulo exclusivo Pro';
     document.getElementById('upgrade-msg').textContent = expirou
       ? 'Seu acesso expirou. Assine o MoneyFlow 3D Pro por '+PRECO_PRO+'/mês e desbloqueie tudo. Garantia de 7 dias com reembolso total.'
-      : 'Este módulo está disponível no plano Pro. Aproveite a oferta de fundador: '+PRECO_PRO+'/mês para sempre (sobe para '+PRECO_PRO_DEPOIS+'/mês após os '+PLANOS.vagasFundador+' primeiros).';
+      : 'Este módulo está disponível no plano Pro. Preço de lançamento: '+PRECO_PRO+'/mês, travado enquanto a assinatura estiver ativa, para quem assinar até '+PLANOS.lancamentoAteTexto+' (depois, '+PRECO_PRO_DEPOIS+'/mês).';
     m.classList.add('open');
   }
 }

@@ -1,10 +1,10 @@
 # MoneyFlow 3D — Plano de Correção e Separação Front/Back
 
-Atualizado em 13/11/2026 (11h20) · Versão viva (editável, com diagramas): https://claude.ai/artifact/A5yhyA9VDmnz4pSLtQXwHt
+Atualizado em 22/11/2026 (14h15) · Versão viva (editável, com diagramas): https://claude.ai/artifact/A5yhyA9VDmnz4pSLtQXwHt
 
 ## Resumo
 
-Dos 34 problemas da auditoria de 04/11/2026, **33 estão resolvidos e 1 pendente (DMARC, a partir de 24/11)**. Os 5 urgentes de segurança estão fechados ou mitigados; backend Python, homologação, troca de chaves, Cloudflare, frontend em módulos, LGPD e versão v1.0.0 estão em produção. A compra real de teste (11/11) passou de ponta a ponta, incluindo o reembolso. Faltam só dois passos com data marcada: CSP em modo bloqueio (17/11) e DMARC (24/11). O plano original previa 19/12/2026.
+Dos 34 problemas da auditoria de 04/11/2026, **todos os 34 estão resolvidos**. Os 5 urgentes de segurança estão fechados ou mitigados; backend Python, homologação, troca de chaves, Cloudflare, frontend em módulos, LGPD e versão v1.0.0 estão em produção. A compra real de teste (11/11) passou de ponta a ponta, incluindo o reembolso. CSP em modo bloqueio e DMARC em `quarantine` ligados em 22/11 (e-mail de teste com SPF, DKIM e DMARC = PASS no Gmail). O plano original previa 19/12/2026.
 
 Como usamos este plano:
 
@@ -48,7 +48,7 @@ Como usamos este plano:
 | 30 | Funções esquecidas no servidor | Moderado | Feito | 09/11: código revisado (sem segredo escrito; `bright-api` mostrava o início da chave mestra, `admin-ops` enviava e-mail livre) e as 4 apagadas com autorização; restam só `webhook-kiwify` e `send-email` (desativada) |
 | 31 | Commits sem descrição | Baixo | Feito | Commits descritivos desde 06/11; versão v1.0.0 marcada em 10/11 (release no GitHub) |
 | 32 | Itens do orçamento como texto | Baixo | Feito | 10/11: `orcamentos.itens` virou jsonb obrigatório, sempre lista com 1+ item (constraint); os 9 de produção convertidos (2 antigos sem itens montados de produto/qtd/preço); app grava a lista direto, sem fallback silencioso, e marca ⚠ se ler algo ilegível. Testado em homologação pelo Antonio |
-| 33 | DMARC em observação | Baixo | Pendente | Subir para `quarantine` depois de 2 semanas de relatórios limpos |
+| 33 | DMARC em observação | Baixo | Resolvido | `p=quarantine` desde 22/11; e-mail de teste: SPF, DKIM e DMARC = PASS |
 | 34 | Zoom bloqueado no celular | Baixo | Feito | Removido `maximum-scale`; em produção desde 08/11 |
 
 Encontrados durante o trabalho, fora da lista original:
@@ -165,7 +165,7 @@ Alterações no banco: o SQL vai para `supabase/migrations/`, roda primeiro em h
 
 - [x] 4.1 Dividir o `index.html` em módulos · item 16 (10/11)
 - [x] 4.2 Trocar os 245 onclick por eventos no JavaScript · item 25 (10/11, PR #23)
-- [ ] 4.2b Ligar CSP script-src: Report-Only ligado em 10/11 (homologação: Render → Headers; produção: Cloudflare → regra "Cabecalhos de seguranca"; violações vão ao Sentry, projeto moneyflow3d-web). Passar para bloqueio (trocar o nome do cabeçalho para Content-Security-Policy e juntar com a atual) a partir de 17/11 se o Sentry não tiver nenhuma violação
+- [x] 4.2b CSP bloqueando (22/11): Sentry sem violação de visitante real desde 13/11 (só um robô da Rússia em 18/11, que a proteção barrou). Homologação: Render → Headers; produção: Cloudflare → regra "Cabecalhos de seguranca", uma linha Content-Security-Policy com a política completa (inclui frame-ancestors/base-uri/object-src) e report-uri para o Sentry. Para voltar ao modo aviso: renomear para Content-Security-Policy-Report-Only
 - [x] 4.3 Fixar versões das bibliotecas e atualizar o jsPDF · item 22 (versões fixas com SRI em 08/11; jsPDF 4.2.1 em 10/11)
 - [x] 4.4 Monitoramento de erros (Sentry) · item 27 (10/11; backend Python fica para quando houver uso real da API)
 - [x] 4.5 Biometria: bloqueio de tela deste aparelho · item 20 (10/11)
@@ -174,7 +174,7 @@ Alterações no banco: o SQL vai para `supabase/migrations/`, roda primeiro em h
 
 - [x] 5.1 Política de Privacidade e Termos de Uso · item 23 (10/11, PR #26/#28): privacidade.html e termos.html; CNPJ e endereço físico no rodapé da página de vendas (Decreto 7.962/2013); registro de acesso por 6 meses (Marco Civil, conferido em produção com IP real); exclusão de contas sem plano pago e sem uso há 90 dias, com aviso aos 75 (tarefa diária testada em produção)
 - [x] 5.2 Marcação de versões (v1.0.0) · item 31 (10/11, release no GitHub)
-- [ ] 5.3 DMARC de `p=none` para `quarantine` · item 33 (a partir de 24/11; lembrete agendado nesta conversa)
+- [x] 5.3 DMARC de `p=none` para `quarantine` · item 33 (feito em 22/11; SPF/DKIM/DMARC = PASS)
 - [ ] 5.4 Revisão final: cada um dos 34 itens com prova
 
 **Compra real de teste em produção (11/11)** — R$ 23,50 com cartão, e-mail `meshit.tecnologia+teste1`, reembolsada em seguida:
@@ -204,4 +204,5 @@ Alterações no banco: o SQL vai para `supabase/migrations/`, roda primeiro em h
 | Oferta fundador (50 vagas a R$ 23,50) | Resolvido 13/11: a Kiwify não tem limite de vendas; o contador da página de vendas virou real (lia texto fixo "10 preenchidas" sem vendas — propaganda enganosa) e, ao chegar a 50, os botões viram lista de espera. Quando esgotar: criar o plano de R$ 47 na Kiwify e trocar o link | Quando esgotar |
 | Contador de visitas na CSP de produção (Cloudflare) | Feito 13/11 | — |
 | Contador de visitas da Cloudflare | Decidido 11/11: manter (sem cookies), liberado na CSP | — |
+| Homologação pausada pelo Supabase (7 dias sem uso) | Resolvido 22/11: reativada e consulta diária no workflow de backup | — |
 | Plano pago do servidor (Render) | Hoje dorme após 15 min (30–50 s na 1ª ação, ex.: "Esqueci minha senha"); compra e login não são afetados. Passar para pago com o primeiro cliente | Primeiro cliente |
