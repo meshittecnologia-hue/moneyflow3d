@@ -205,6 +205,32 @@ const SUPABASE_FALSO = `(function(){
     adminFalhas.push(...(await p.evaluate(() => window.__csp)).map(v => 'CSP: ' + v));
     await p.close();
   }
+  // Admin com biometria ativada: CANCELAR a biometria não pode abrir o painel (bug de 27/11);
+  // confirmar abre; sessão recusada pelo Supabase (getUser com erro) também não abre.
+  for (const [nome, bio, getUserOk, deveEntrar] of [
+    ['biometria cancelada', 'cancela', true, false],
+    ['biometria confirmada', 'ok', true, true],
+    ['sessão encerrada no servidor', 'ok', false, false],
+  ]) {
+    const p = await navegador.newPage();
+    p.on('pageerror', e => adminFalhas.push(nome + ' erro: ' + e.message.split('\n')[0]));
+    await p.addInitScript(b => {
+      localStorage.setItem('admin_bio_cred', 'AAAA');
+      window.PublicKeyCredential = window.PublicKeyCredential || function () {};
+      Object.defineProperty(navigator, 'credentials', { value: { get: () => b === 'ok' ? Promise.resolve({}) : Promise.reject(new DOMException('cancelado', 'NotAllowedError')) } });
+    }, bio);
+    let sb = SUPABASE_FALSO.replace("role: 'user'", "role: 'admin'");
+    if (!getUserOk) sb = sb.replace("getUser: async () => ({ data: { user: { id: 'u1', email: 't@t.com' } } })", "getUser: async () => ({ data: { user: null }, error: { message: 'session_not_found' } })");
+    await p.route(/supabase-js/, r => r.fulfill({ contentType: 'application/javascript', body: sb }));
+    await p.route(/sentry-cdn/, r => r.fulfill({ contentType: 'application/javascript', body: '' }));
+    await p.route(/localhost:8765\/admin\.html/, async r => { const resp = await r.fetch();
+      r.fulfill({ response: resp, body: (await resp.text()).replace(/ integrity="[^"]+"/g, '') }); });
+    await p.goto('http://localhost:8765/admin.html');
+    await p.waitForTimeout(1500);
+    const entrou = await p.evaluate(() => document.getElementById('app').style.display === 'block');
+    if (entrou !== deveEntrar) adminFalhas.push(`admin, ${nome}: ${entrou ? 'ENTROU' : 'não entrou'} (esperado: ${deveEntrar ? 'entrar' : 'ficar no login'})`);
+    await p.close();
+  }
   console.log('painel admin:', adminFalhas.length ? adminFalhas : 'OK (menu inteiro clicado)');
 
   await navegador.close(); servidor.close();
