@@ -1,6 +1,6 @@
 # MoneyFlow 3D — Plano de Correção e Separação Front/Back
 
-Atualizado em 22/11/2026 (14h15) · Versão viva (editável, com diagramas): https://claude.ai/artifact/A5yhyA9VDmnz4pSLtQXwHt
+Atualizado em 27/11/2026 · Versão viva (editável, com diagramas): https://claude.ai/artifact/A5yhyA9VDmnz4pSLtQXwHt
 
 ## Resumo
 
@@ -68,6 +68,8 @@ Encontrados durante o trabalho, fora da lista original:
 | Renovação mensal criaria assinatura nova e reenviaria boas-vindas | Feito | Assinatura ligada à da Kiwify (`external_subscription_id`); renovação reativa a mesma |
 | 12 assinaturas "ativas" sem usuário (pedidos de teste de jul e nov) | Feito | Apagadas com autorização do Antonio em 09/11; restam 6 assinaturas reais ativas |
 | Usuário de teste `@example.com` no banco | Feito | Removido em 08/11 |
+| Admin: cancelar a biometria abria o painel; "Sair" não encerrava a sessão (sessão morta após troca de senha → "Sessão inválida ou expirada" ao criar usuário) | Feito | 27/11, PR #33: biometria obrigatória quando ativada, Sair faz signOut, sessão conferida com o Supabase ao abrir e 401 do servidor pede login; teste no navegador cobre os 3 casos. Validado em homologação pelo Antonio |
+| Página de vendas nova e preço de lançamento | Feito | 27/11, PR #32: calculadora ao vivo, ilustração (sem prints reais), R$ 23,50 até 31/12/2026 e R$ 32,90 depois; rodapé com link "Dados da empresa". Falta criar o plano de R$ 32,90 na Kiwify e trocar o checkout antes de 01/01/2027 |
 | Backend e admin sem permissão no banco (`permission denied`) | Feito | Permissões restauradas em 08/11; telas de Logs, Webhooks, Módulos e Assinaturas voltaram |
 | Exclusão mostrava erro mesmo concluída | Feito | Corrigido no PR #4 |
 | `/auth/recover` devolvia 502 sem registrar a causa | Feito | PR #11: resposta do Supabase/Resend vai para o log (foi assim que se achou a chave antiga ainda no Render) |
