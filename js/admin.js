@@ -74,12 +74,28 @@ async function doLogin() {
 }
 
 async function doLogout() {
-  // Não faz signOut — mantém sessão para biometria automática no próximo acesso
+  // Sair encerra a sessão de verdade. A biometria é só o bloqueio de tela de uma sessão salva:
+  // sem sessão, o próximo acesso pede e-mail e senha (mesma regra do app, item 20).
+  try { await sb.auth.signOut({ scope: 'local' }); } catch (e) { /* sem rede: limpa assim mesmo */ }
   currentAdmin = null;
   document.getElementById('app').style.display = 'none';
   document.getElementById('login-screen').style.display = 'flex';
   // Recarrega para acionar boot com biometria
   location.reload();
+}
+
+// Confere a sessão salva COM o Supabase (getUser), não só no navegador (getSession).
+// Sessão encerrada no servidor (ex.: troca de senha) volta null e é apagada daqui.
+async function adminSessaoValida() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) return null;
+  const { data, error } = await sb.auth.getUser();
+  if (error || !data?.user) {
+    try { await sb.auth.signOut({ scope: 'local' }); } catch (e) { /* ignora */ }
+    return null;
+  }
+  const { data: profile } = await sb.from('profiles').select('*').eq('id', data.user.id).single();
+  return profile && profile.role === 'admin' ? profile : null;
 }
 
 async function checkSession() {
@@ -246,8 +262,9 @@ async function ativarAdminBio() {
   }
 }
 
+// Devolve true só se a biometria foi confirmada E a sessão salva é válida. Cancelar = false.
 async function loginAdminBio() {
-  const credId = localStorage.getItem('admin_bio_cred'); if (!credId) return;
+  const credId = localStorage.getItem('admin_bio_cred'); if (!credId) return false;
   try {
     await navigator.credentials.get({ publicKey: {
       challenge: crypto.getRandomValues(new Uint8Array(32)),
@@ -255,13 +272,18 @@ async function loginAdminBio() {
       allowCredentials: [{ type: 'public-key', id: fromB64urlAdmin(credId) }],
       userVerification: 'required', timeout: 60000
     }});
-    // Biometria ok — fazer login com sessão salva
-    const { data: { session } } = await sb.auth.getSession();
-    if (session) {
-      const { data: profile } = await sb.from('profiles').select('*').eq('id', session.user.id).single();
-      if (profile?.role === 'admin') { currentAdmin = profile; initApp(); }
-    }
-  } catch(e) { /* silencioso — usuário cancela */ }
+  } catch(e) {
+    return false; // cancelou ou falhou: continua na tela de login
+  }
+  const profile = await adminSessaoValida();
+  if (!profile) {
+    document.getElementById('bio-admin-section').style.display = 'none';
+    const err = document.getElementById('login-error');
+    if (err) err.textContent = 'Sessão encerrada. Entre com e-mail e senha.';
+    return false;
+  }
+  currentAdmin = profile; initApp();
+  return true;
 }
 
 function removerAdminBio() {
@@ -540,6 +562,11 @@ async function adminApi(path, method, body) {
   });
   let data = {};
   try { data = await res.json(); } catch (e) { /* resposta sem corpo */ }
+  if (res.status === 401) {
+    try { await sb.auth.signOut({ scope: 'local' }); } catch (e) { /* ignora */ }
+    setTimeout(() => location.reload(), 1800);
+    throw new Error('Sua sessão expirou. Entre de novo com e-mail e senha.');
+  }
   if (!res.ok) {
     const d = data.detail;
     const msg = typeof d === 'string' ? d : (Array.isArray(d) ? d.map(x => x.msg).join('; ') : `HTTP ${res.status}`);
@@ -911,38 +938,11 @@ document.querySelectorAll('.modal-overlay').forEach(o => {
 // INICIALIZAR
 // ============================================================
 (async () => {
-  const { data: { session } } = await sb.auth.getSession();
-  if (session) {
-    const { data: profile } = await sb.from('profiles').select('*').eq('id', session.user.id).single();
-    if (profile && profile.role === 'admin') {
-      const hasCred = window.PublicKeyCredential && localStorage.getItem('admin_bio_cred');
-      if (hasCred) {
-        document.getElementById('bio-admin-section').style.display = 'block';
-        setTimeout(async () => {
-          try {
-            // Tenta biometria — loginAdminBio já seta currentAdmin e chama initApp
-            await loginAdminBio();
-            // Se chegou aqui sem entrar, entra direto
-            if (!currentAdmin) { currentAdmin = profile; initApp(); }
-          } catch(e) {
-            currentAdmin = profile;
-            initApp();
-          }
-        }, 400);
-      } else {
-        currentAdmin = profile;
-        initApp();
-      }
-    } else {
-      if (window.PublicKeyCredential && localStorage.getItem('admin_bio_cred')) {
-        document.getElementById('bio-admin-section').style.display = 'block';
-        setTimeout(loginAdminBio, 600);
-      }
-    }
-  } else {
-    if (window.PublicKeyCredential && localStorage.getItem('admin_bio_cred')) {
-      document.getElementById('bio-admin-section').style.display = 'block';
-      setTimeout(loginAdminBio, 600);
-    }
-  }
+  const profile = await adminSessaoValida();
+  if (!profile) return; // sem sessão válida: fica na tela de login
+  const hasCred = window.PublicKeyCredential && localStorage.getItem('admin_bio_cred');
+  if (!hasCred) { currentAdmin = profile; initApp(); return; }
+  // Com biometria ativada, ela é obrigatória para abrir a sessão salva. Cancelar NÃO entra.
+  document.getElementById('bio-admin-section').style.display = 'block';
+  setTimeout(loginAdminBio, 400);
 })();
