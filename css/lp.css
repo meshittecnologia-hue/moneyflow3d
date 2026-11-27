@@ -149,8 +149,34 @@ input[type=range]::-moz-range-thumb { width: 14px; height: 14px; border-radius: 
 /* Por dentro do sistema */
 .dentro { display: grid; grid-template-columns: 1.6fr 1fr; gap: 48px; align-items: center; }
 .telas { position: relative; padding-bottom: 40px; }
-.tela-pc { border-radius: 12px; border: 1px solid var(--line); box-shadow: 0 24px 60px -20px rgba(0,0,0,.8); }
-.tela-cel { position: absolute; right: -18px; bottom: 0; width: 26%; border-radius: 18px; border: 4px solid #2a2c33; box-shadow: 0 20px 50px -10px rgba(0,0,0,.9); }
+.telas { aspect-ratio: 16 / 10.5; }
+/* Ilustração das telas: formas que sugerem o sistema, sem copiar o layout real. */
+.mock-pc { position: absolute; inset: 0 7% 40px 0; display: flex; background: var(--plate); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; box-shadow: 0 24px 60px -20px rgba(0,0,0,.8); }
+.mk-side { width: 17%; padding: 16px 12px; display: flex; flex-direction: column; gap: 12px; border-right: 1px solid var(--line); background: var(--bg); }
+.mk-side i { height: 8px; border-radius: 4px; background: var(--line); }
+.mk-side i:nth-child(odd) { width: 70%; }
+.mk-side i.on { background: rgba(232,96,28,.6); }
+.mk-side .mk-logo { width: 60%; height: 14px; margin-bottom: 10px; background: repeating-linear-gradient(to bottom, var(--orange) 0 2px, #B8460F 2px 3px); }
+.mk-main { flex: 1; padding: 16px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.mk-row { display: flex; gap: 8px; }
+.mk-pill { flex: 1; height: 22px; border-radius: 6px; background: var(--plate2); border: 1px solid var(--line); }
+.mk-pill.on { border-color: var(--orange); background: rgba(232,96,28,.12); }
+.mk-grid { flex: 1; display: grid; grid-template-columns: 1.2fr 1fr; gap: 12px; min-height: 0; }
+.mk-card { background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 14px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.mk-label { display: block; width: 40%; height: 7px; border-radius: 4px; background: var(--line); }
+.mk-preco { font-size: clamp(1.3rem, 3vw, 2.1rem); font-weight: 850; font-stretch: 118%; line-height: 1; color: var(--text); }
+.mk-bar { display: flex; height: 14px; border-radius: 4px; overflow: hidden; }
+.mk-bar i { display: block; }
+.mk-linha { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.mk-linha i { height: 7px; width: 45%; border-radius: 4px; background: var(--line); }
+.mk-linha em { height: 7px; width: 22%; border-radius: 4px; }
+.mk-linha em.neg { background: rgba(240,86,74,.55); }
+.mk-linha em.pos { background: rgba(52,209,122,.65); }
+.mk-lista { gap: 13px; }
+.mock-cel { position: absolute; right: 0; bottom: 0; width: 25%; aspect-ratio: 9 / 18; background: var(--plate); border: 4px solid #2a2c33; border-radius: 20px; padding: 18px 10px 12px; display: flex; flex-direction: column; gap: 9px; box-shadow: 0 20px 50px -10px rgba(0,0,0,.9); }
+.mock-cel .mk-preco { font-size: clamp(.95rem, 2vw, 1.3rem); }
+.mock-cel .mk-bar { height: 10px; }
+.mk-btn { margin-top: auto; height: 22px; border-radius: 6px; background: var(--orange); display: block; }
 .modulos { list-style: none; display: grid; gap: 18px; }
 .modulos li { padding-left: 18px; border-left: 2px solid var(--line); }
 .modulos li b { display: block; color: var(--text); font-weight: 700; margin-bottom: 2px; }
@@ -215,7 +241,6 @@ footer a { color: var(--muted); }
 /* Celular */
 @media (max-width: 960px) {
   .hero, .dentro, .oferta { grid-template-columns: 1fr; gap: 40px; }
-  .tela-cel { right: 0; }
 }
 @media (max-width: 720px) {
   body { font-size: 16px; }

@@ -8,9 +8,8 @@
 <meta name="theme-color" content="#121317">
 <meta property="og:title" content="MoneyFlow 3D — quanto cada peça impressa realmente te paga">
 <meta property="og:description" content="Filamento, energia, desgaste, falhas, mão de obra e taxa do marketplace numa conta só.">
-<meta property="og:image" content="https://moneyflow3d.com.br/css/img/app-calculadora.webp">
 <link rel="preload" href="css/fonts/archivo-var.woff2?v=e3a28eade2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="css/lp.css?v=e077d76286">
+<link rel="stylesheet" href="css/lp.css?v=426fbaf624">
 <script src="js/eventos.js?v=5f06521870"></script>
 </head>
 <body>
@@ -144,11 +143,42 @@
 <section id="dentro">
   <div class="wrap dentro">
     <div>
-      <div class="telas">
-        <img class="tela-pc" src="css/img/app-calculadora.webp?v=e64c87d95d" width="1600" height="1075" alt="Tela de resultado da precificação no MoneyFlow 3D: preço sugerido, lucro líquido, margem e comparação entre marketplaces" loading="lazy">
-        <img class="tela-cel" src="css/img/app-celular.webp?v=0c0c00d83a" width="780" height="1688" alt="A mesma tela no celular" loading="lazy">
+      <!-- Ilustração (não é print do sistema): só sugere as telas, sem expor o layout real. -->
+      <div class="telas" role="img" aria-label="Ilustração do MoneyFlow 3D no computador e no celular, com preço sugerido e lucro">
+        <div class="mock-pc">
+          <div class="mk-side"><i class="mk-logo"></i><i></i><i class="on"></i><i></i><i></i><i></i><i></i></div>
+          <div class="mk-main">
+            <div class="mk-row"><i class="mk-pill"></i><i class="mk-pill"></i><i class="mk-pill on"></i></div>
+            <div class="mk-grid">
+              <div class="mk-card">
+                <i class="mk-label"></i>
+                <b class="mk-preco num">R$ 75,62</b>
+                <div class="mk-bar"><i style="flex:19;background:var(--seg-fil)"></i><i style="flex:18;background:var(--seg-maq)"></i><i style="flex:3;background:var(--seg-emb)"></i><i style="flex:10;background:var(--seg-mo)"></i><i style="flex:14;background:var(--seg-tax)"></i><i style="flex:36;background:var(--seg-lucro)"></i></div>
+                <div class="mk-linha"><i></i><em class="neg"></em></div>
+                <div class="mk-linha"><i></i><em class="neg"></em></div>
+                <div class="mk-linha"><i></i><em class="pos"></em></div>
+              </div>
+              <div class="mk-card mk-lista">
+                <i class="mk-label"></i>
+                <div class="mk-linha"><i></i><em class="pos" style="width:34%"></em></div>
+                <div class="mk-linha"><i></i><em class="pos" style="width:28%"></em></div>
+                <div class="mk-linha"><i></i><em class="pos" style="width:31%"></em></div>
+                <div class="mk-linha"><i></i><em class="pos" style="width:22%"></em></div>
+                <div class="mk-linha"><i></i><em class="pos" style="width:40%"></em></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="mock-cel">
+          <i class="mk-label"></i>
+          <b class="mk-preco num">R$ 75,62</b>
+          <div class="mk-bar"><i style="flex:19;background:var(--seg-fil)"></i><i style="flex:18;background:var(--seg-maq)"></i><i style="flex:3;background:var(--seg-emb)"></i><i style="flex:10;background:var(--seg-mo)"></i><i style="flex:14;background:var(--seg-tax)"></i><i style="flex:36;background:var(--seg-lucro)"></i></div>
+          <div class="mk-linha"><i></i><em class="neg"></em></div>
+          <div class="mk-linha"><i></i><em class="pos"></em></div>
+          <i class="mk-btn"></i>
+        </div>
       </div>
-      <p class="tela-legenda">Telas reais do sistema, com a peça do exemplo.</p>
+      <p class="tela-legenda">Ilustração. Funciona no computador e no celular, com os dados na nuvem.</p>
     </div>
     <div>
       <div class="sec-head">
@@ -255,10 +285,9 @@
 
 <footer>
   <div class="wrap">
-    <span>© 2026 MeshIT Tecnologia, CNPJ 30.015.882/0001-20</span>
-    <span>Rua Pouso Alto, 1266, Quadra 05, Setor Centro-Oeste, Goiânia/GO, CEP 74550-180</span>
+    <span>© 2026 MoneyFlow 3D</span>
     <span><a href="mailto:suporte@moneyflow3d.com.br">suporte@moneyflow3d.com.br</a></span>
-    <span><a href="privacidade.html">Privacidade</a> &nbsp; <a href="termos.html">Termos de Uso</a></span>
+    <span><a href="privacidade.html">Privacidade</a> &nbsp; <a href="termos.html">Termos de Uso</a> &nbsp; <a href="termos.html#contato">Dados da empresa</a></span>
   </div>
 </footer>
 
