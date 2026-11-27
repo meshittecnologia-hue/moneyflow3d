@@ -44,9 +44,9 @@ async function abrir(nav, opts) {
   await new Promise(r => servidor.listen(8766, r));
   const nav = await chromium.launch();
   const pc = await abrir(nav, { viewport: { width: 1280, height: 860 }, deviceScaleFactor: 2 });
-  await pc.screenshot({ path: path.join(RAIZ, 'img/app-calculadora.png') });
+  await pc.screenshot({ path: path.join(RAIZ, 'css/img/app-calculadora.png') });
   const cel = await abrir(nav, { viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
-  await cel.screenshot({ path: path.join(RAIZ, 'img/app-celular.png') });
+  await cel.screenshot({ path: path.join(RAIZ, 'css/img/app-celular.png') });
   await nav.close(); servidor.close();
   console.log('prints OK');
 })();
