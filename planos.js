@@ -14,7 +14,7 @@
 
   var lista = {
     free:         { nome: 'Free',           preco: 0,     aVenda: true,  acessoPro: false, modulos: ['calc'] },
-    pro:          { nome: 'Pro',            preco: 23.50, precoDepois: 29.90, cobranca: 'mensal',
+    pro:          { nome: 'Pro',            preco: 23.50, precoDepois: 32.90, cobranca: 'mensal',
                     aVenda: true,  acessoPro: true, modulos: TODOS },
     // Planos antigos: não se vendem mais; mantidos para quem já tem.
     maker:        { nome: 'Maker (antigo)', preco: null,  aVenda: false, acessoPro: true,  modulos: ['calc', 'pdf', 'wpp', 'crm', 'fila', 'estoque'] },
